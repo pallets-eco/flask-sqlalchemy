@@ -12,6 +12,7 @@ from __future__ import with_statement, absolute_import
 import sys
 import time
 import sqlalchemy
+from math import ceil
 from flask import _request_ctx_stack, abort
 from operator import itemgetter
 from threading import Lock
@@ -103,6 +104,32 @@ def get_debug_queries():
     return getattr(_request_ctx_stack.top, 'sqlalchemy_queries', [])
 
 
+class Pagination(object):
+
+    def __init__(self, query, page, per_page, total, items):
+        self.query = query
+        self.page = page
+        self.per_page = per_page
+        self.total = total
+        self.items = items
+
+    @property
+    def pages(self):
+        return int(ceil(self.total / float(self.per_page)))
+
+    def prev(self, error_out=False):
+        return self.query.paginate(self.page - 1, self.per_page, error_out)
+
+    def have_prev(self):
+        return self.page > 1
+
+    def next(self, error_out=False):
+        return self.query.paginate(self.page + 1, self.per_page, error_out)
+
+    def have_next(self):
+        return self.page < self.pages
+
+
 class BaseQuery(orm.Query):
 
     def get_or_404(self, *args, **kwargs):
@@ -110,6 +137,15 @@ class BaseQuery(orm.Query):
         if rv is None:
             abort(404)
         return rv
+
+    def paginate(self, page, per_page=20, error_out=True):
+        if error_out and page < 1:
+            abort(404)
+        total_count = self.count()
+        items = self.limit(per_page).offset((page - 1) * per_page).all()
+        if not items and page != 1 and error_out:
+            abort(404)
+        return Pagination(self, page, per_page, total, items)
 
 
 class QueryProperty(object):
