@@ -1,0 +1,10 @@
+<!doctype html>
+<title>SQLAlchemy Todo</title>
+<h1>SQLAlchemy Todo</h1>
+{%- for category, message in get_flashed_messages(with_categories=true) %}
+  <p class="flask {{ category }}-flash">{{
+    "Error: " if category == 'error' }}{{ message }}</p>
+{%- endfor %}
+{% block body %}{% endblock %}
+<hr>
+<address>SQLAlchemy and Flask powered todo application</address>
