@@ -175,15 +175,18 @@ class _EngineConnector(object):
     def get_engine(self):
         with self._lock:
             uri = self._app.config['SQLALCHEMY_DATABASE_URI']
-            if uri == self._connected_for:
+            echo = self._app.config['SQLALCHEMY_ECHO']
+            if (uri, echo) == self._connected_for:
                 return self._engine
             info = make_url(uri)
             options = {'convert_unicode': True}
             self._sa.apply_driver_hacks(info, options)
             if self._app.debug:
                 options['proxy'] = _ConnectionDebugProxy(self._app.import_name)
+            if echo:
+                options['echo'] = True
             self._engine = rv = sqlalchemy.create_engine(info, **options)
-            self._engine_for = uri
+            self._connected_for = (uri, echo)
             return rv
 
 
@@ -209,6 +212,7 @@ class SQLAlchemy(object):
 
     def init_app(self, app):
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
+        app.config.setdefault('SQLALCHEMY_ECHO', False)
         @app.after_request
         def shutdown_session(response):
             self.session.remove()
