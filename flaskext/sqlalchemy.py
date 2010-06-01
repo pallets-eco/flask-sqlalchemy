@@ -161,6 +161,8 @@ class SQLAlchemy(object):
         self.Base.query_class = BaseQuery
         self.Base.query = QueryProperty(self)
 
+        self._engine_lock = Lock()
+
         if app is not None:
             self.app = app
             self.init_app(app)
@@ -184,21 +186,22 @@ class SQLAlchemy(object):
 
     @property
     def engine(self):
-        if self.app is not None:
-            app = self.app
-        else:
-            ctx = _request_ctx_stack.top
-            if ctx is not None:
-                app = ctx.app
+        with self._engine_lock:
+            if self.app is not None:
+                app = self.app
             else:
-                raise RuntimeError('application not registered on db '
-                                   'instance and no application bound '
-                                   'to current context')
-        connector = getattr(app, '_sqlalchemy_connector', None)
-        if connector is None:
-            connector = _EngineConnector(self, app)
-            app._sqlalchemy_connector = connector
-        return connector.get_engine()
+                ctx = _request_ctx_stack.top
+                if ctx is not None:
+                    app = ctx.app
+                else:
+                    raise RuntimeError('application not registered on db '
+                                       'instance and no application bound '
+                                       'to current context')
+            connector = getattr(app, '_sqlalchemy_connector', None)
+            if connector is None:
+                connector = _EngineConnector(self, app)
+                app._sqlalchemy_connector = connector
+            return connector.get_engine()
 
     def create_all(self):
         self.Base.metadata.create_all(bind=self.engine)

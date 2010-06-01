@@ -47,11 +47,6 @@ def new():
     return render_template('new.html')
 
 
-def _change_state(id, done, message):
-    todo = Todo.query.get_or_404(id)
-    todo.done = done
-
-
 @app.route('/update', methods=['POST'])
 def update_done():
     for todo in Todo.query.all():
