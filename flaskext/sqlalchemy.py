@@ -16,6 +16,7 @@ from flask import _request_ctx_stack, abort
 from operator import itemgetter
 from threading import Lock
 from sqlalchemy import orm
+from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.interfaces import ConnectionProxy
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base
@@ -111,22 +112,65 @@ class BaseQuery(orm.Query):
         return rv
 
 
+class QueryProperty(object):
+
+    def __init__(self, sa):
+        self.sa = sa
+
+    def __get__(self, obj, type):
+        try:
+            mapper = orm.class_mapper(type)
+            ctx = _request_ctx_stack.top
+            if mapper and ctx is not None:
+                return type.query_class(mapper, session=self.sa.session())
+        except UnmappedClassError:
+            return None
+
+
+class _EngineConnector(object):
+
+    def __init__(self, sa, app):
+        self._sa = sa
+        self._app = app
+        self._engine = None
+        self._connected_for = None
+        self._lock = Lock()
+
+    def get_engine(self):
+        with self._lock:
+            uri = self._app.config['SQLALCHEMY_DATABASE_URI']
+            if uri == self._connected_for:
+                return self._engine
+            info = make_url(uri)
+            options = {'convert_unicode': True}
+            self._sa.apply_driver_hacks(info, options)
+            if self._app.debug:
+                options['proxy'] = _ConnectionDebugProxy(self._app.import_name)
+            self._engine = rv = sqlalchemy.create_engine(info, **options)
+            self._engine_for = uri
+            return rv
+
+
 class SQLAlchemy(object):
 
-    def __init__(self, app, disable_native_unicode=False):
-        app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
+    def __init__(self, app=None, disable_native_unicode=False):
         self.disable_native_unicode = disable_native_unicode
-        self.app = app
         self.session = _create_scoped_session(self)
-        self.Base = declarative_base()
-        self.Base.query = self.session.query_property()
 
-        self._engine = None
-        self._engine_for = None
-        self._engine_lock = Lock()
+        self.Base = declarative_base()
+        self.Base.query_class = BaseQuery
+        self.Base.query = QueryProperty(self)
+
+        if app is not None:
+            self.app = app
+            self.init_app(app)
+        else:
+            self.app = None
 
         _include_sqlalchemy(self)
 
+    def init_app(self, app):
+        app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
         @app.after_request
         def shutdown_session(response):
             self.session.remove()
@@ -140,18 +184,21 @@ class SQLAlchemy(object):
 
     @property
     def engine(self):
-        with self._engine_lock:
-            uri = self.app.config['SQLALCHEMY_DATABASE_URI']
-            if uri == self._engine_for:
-                return self._engine
-            info = make_url(uri)
-            options = {'convert_unicode': True}
-            self.apply_driver_hacks(info, options)
-            if self.app.debug:
-                options['proxy'] = _ConnectionDebugProxy(self.app.import_name)
-            self._engine = rv = sqlalchemy.create_engine(info, **options)
-            self._engine_for = uri
-            return rv
+        if self.app is not None:
+            app = self.app
+        else:
+            ctx = _request_ctx_stack.top
+            if ctx is not None:
+                app = ctx.app
+            else:
+                raise RuntimeError('application not registered on db '
+                                   'instance and no application bound '
+                                   'to current context')
+        connector = getattr(app, '_sqlalchemy_connector', None)
+        if connector is None:
+            connector = _EngineConnector(self, app)
+            app._sqlalchemy_connector = connector
+        return connector.get_engine()
 
     def create_all(self):
         self.Base.metadata.create_all(bind=self.engine)
