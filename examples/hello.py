@@ -9,7 +9,7 @@ app.config.from_pyfile('hello.cfg')
 db = SQLAlchemy(app)
 
 
-class Todo(db.Base):
+class Todo(db.Model):
     __tablename__ = 'todos'
     id = db.Column('todo_id', db.Integer, primary_key=True)
     title = db.Column(db.String(60))
