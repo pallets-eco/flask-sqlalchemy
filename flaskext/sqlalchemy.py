@@ -200,6 +200,15 @@ class BaseQuery(orm.Query):
             abort(404)
         return rv
 
+    def first_or_404(self):
+        """Like :meth:`first` but aborts with 404 if not found instead of
+        returning `None`.
+        """
+        rv = self.first()
+        if rv is None:
+            abort(404)
+        return rv
+
     def paginate(self, page, per_page=20, error_out=True):
         """Returns `per_page` items from page `page`.  By default it will
         abort with 404 if no items were found and the page was larger than

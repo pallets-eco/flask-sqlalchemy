@@ -32,7 +32,7 @@ Models
    :members:
 
 .. autoclass:: BaseQuery
-   :members: get, get_or_404, paginate
+   :members: get, get_or_404, paginate, first_or_404
 
    .. method:: get(ident)
 
