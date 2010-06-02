@@ -378,11 +378,11 @@ class SQLAlchemy(object):
 
     def create_all(self):
         """Creates all tables."""
-        self.Base.metadata.create_all(bind=self.engine)
+        self.Model.metadata.create_all(bind=self.engine)
 
     def drop_all(self):
         """Drops all tables."""
-        self.Base.metadata.drop_all(bind=self.engine)
+        self.Model.metadata.drop_all(bind=self.engine)
 
     def __repr__(self):
         return '<%s engine=%r>' % (
