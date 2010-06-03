@@ -58,7 +58,7 @@ class _DebugQueryTuple(tuple):
         return '<query statement="%s" parameters=%r duration=%.03f>' % (
             self.statement,
             self.parameters,
-            shelf.duration
+            self.duration
         )
 
 
