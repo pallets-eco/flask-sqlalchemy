@@ -384,6 +384,10 @@ class SQLAlchemy(object):
         """Drops all tables."""
         self.Model.metadata.drop_all(bind=self.engine)
 
+    def reflect(self):
+        """Reflects tables from the database."""
+        self.Model.metadata.reflect(bind=self.engine)
+
     def __repr__(self):
         return '<%s engine=%r>' % (
             self.__class__.__name__,
