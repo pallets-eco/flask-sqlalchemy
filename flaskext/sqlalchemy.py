@@ -136,7 +136,12 @@ def get_debug_queries():
 
 
 class Pagination(object):
-    """Internal helper class returned by :meth:`BaseQuery.paginate`."""
+    """Internal helper class returned by :meth:`BaseQuery.paginate`.  You
+    can also construct it from any other SQLAlchemy query object if you are
+    working with other libraries.  Additionally it is possible to pass `None`
+    as query object in which case the :meth:`prev` and :meth:`next` will
+    no longer work.
+    """
 
     def __init__(self, query, page, per_page, total, items):
         #: the unlimited query object that was used to create this
@@ -158,6 +163,8 @@ class Pagination(object):
 
     def prev(self, error_out=False):
         """Returns a :class:`Pagination` object for the previous page."""
+        assert self.query is not None, 'a query object is required ' \
+                                       'for this method to work'
         return self.query.paginate(self.page - 1, self.per_page, error_out)
 
     @property
@@ -172,6 +179,8 @@ class Pagination(object):
 
     def next(self, error_out=False):
         """Returns a :class:`Pagination` object for the next page."""
+        assert self.query is not None, 'a query object is required ' \
+                                       'for this method to work'
         return self.query.paginate(self.page + 1, self.per_page, error_out)
 
     @property
@@ -184,8 +193,31 @@ class Pagination(object):
         """Number of the next page"""
         return self.page + 1
 
-    def iter_numbers(self, left_edge=2, left_current=2,
-                     right_current=5, right_edge=2):
+    def iter_pages(self, left_edge=2, left_current=2,
+                   right_current=5, right_edge=2):
+        """Iterates over the page numbers in the pagination.  The four
+        parameters control the thresholds how many numbers should be produced
+        from the sides.  Skipped page numbers are represented as `None`.
+        This is how you could render such a pagination in the templates:
+
+        .. sourcecode:: html+jinja
+
+            {% macro render_pagination(pagination, endpoint) %}
+              <div class=pagination>
+              {%- for page in pagination.iter_pages() %}
+                {% if page %}
+                  {% if page != pagination.numbers %}
+                    <a href="{{ url_for(endpoint, page=page) }}">{{ page }}</a>
+                  {% else %}
+                    <strong>{{ page }}</strong>
+                  {% endif %}
+                {% else %}
+                  <span class=ellipsis>…</span>
+                {% endif %}
+              {%- endfor %}
+              </div>
+            {% endmacro %}
+        """
         last = 0
         for num in xrange(1, self.pages + 1):
             if num <= left_edge or \
@@ -326,6 +358,14 @@ class SQLAlchemy(object):
     unicode it will let the library handle that, otherwise do that itself.
     Sometimes this detection can fail in which case you might want to set
     `use_native_unicode` to `False`.
+
+    Additionally this class also provides access to all the SQLAlchemy
+    functions from the :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` modules.
+    So you can declare models like this::
+
+        class User(db.Model):
+            username = db.Column(db.String(80), unique=True)
+            pw_hash = db.Column(db.String(80))
     """
 
     def __init__(self, app=None, use_native_unicode=True):

@@ -13,6 +13,105 @@ documentation is lacking.  If you want to get started, have a look at the
 .. _example sourcecode:
    http://github.com/mitsuhiko/flask-sqlalchemy/tree/master/examples/
 
+Installation
+------------
+
+Install the extension with one of the following commands::
+
+    $ easy_install Flask-SQLAlchemy
+
+or alternatively if you have pip installed::
+
+    $ pip install Flask-SQLAlchemy
+
+
+How to Use
+----------
+
+Flask-SQLAlchemy is fun to use, and for the basic applications also
+incredible easy.  For the complete guide, checkout out the API
+documentation on the :class:`SQLAlchemy` class.
+
+Basically all you have to do is to create an :class:`SQLAlchemy` object
+and use this to declare models.  Here a complete example::
+
+    from flask import Flask
+    from flaskext.sqlalchemy import SQLAlchemy
+    from werkzeug import generate_password_hash, check_password_hash
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
+    db = SQLAlchemy(app)
+
+
+    class User(db.Model):
+        username = db.Column(db.String(80), unique=True)
+        pw_hash = db.Column(db.String(80))
+
+        def __init__(self, username, password):
+            self.username = username
+            self.set_password(password)
+
+        def set_password(self, password):
+            self.pw_hash = generate_password_hash(password)
+
+        def check_password(self, password):
+            return check_password_hash(self.pwhash, password)
+
+        def __repr__(self):
+            return '<User %r>' % self.username
+
+So how to create that database, just import the `db` object from your
+interactive Python shell and run the :meth:`~SQLAlchemy.create_all` method
+to create the tables and database:
+
+>>> from yourapplication import db
+>>> db.create_all()
+
+Boom, and there is your database.  Now to create some users:
+
+>>> from yourapplication import User
+>>> admin = User('admin', 'open sesame')
+>>> guest = User('guest', 'i-shall-pass')
+
+But they are still not in the database, so let's make sure they are:
+
+>>> db.session.add(admin)
+>>> db.session.add(guest)
+>>> db.session.commit()
+
+And how do you get the data back?  Easy as pie:
+
+>>> users = User.query.all()
+[<User u'admin'>, <User u'guest'>]
+>>> admin = User.query.filter_by(username='admin').first()
+<User u'admin'>
+
+Road to Enlightenment
+---------------------
+
+All you need to know compared to plain SQLAlchemy is this:
+
+1.  :class:`SQLAlchemy` gives you access to the following things:
+
+    -   all the functions and classes from :mod:`sqlalchemy` and
+        :mod:`sqlalchemy.orm`
+    -   a preconfigured scoped session called `session`
+    -   the `metadata`
+    -   as well as a :meth:`SQLAlchemy.create_all` and
+        :meth:`SQLAlchemy.drop_all` methods to create and drop
+        tables according to the models.
+    -   a :class:`Model` baseclass that is a configured declarative base.
+
+2.  The :class:`Model` declarative base class behaves like a regular
+    Python class but has a `query` attribute attached that can be used to
+    query the model.  (:class:`Model` and :class:`BaseQuery`)
+
+3.  You have to commit the session, but you don't have to remove it at
+    the end of the request, Flask-SQLAlchemy does that for you.
+
+4.  In general it behaves as a declarative base system, for everything
+    else, just look at the SQLAlchemy documentation.
+
 API
 ---
 
@@ -20,13 +119,13 @@ This part of the documentation documents each and every public class or
 function from Flask-SQLAlchemy.
 
 Configuration
--------------
+`````````````
 
 .. autoclass:: SQLAlchemy
    :members:
 
 Models
-------
+``````
 
 .. autoclass:: Model
    :members:
@@ -64,10 +163,10 @@ Models
       doesn’t contain any row.  This results in an execution of the
       underlying query.
 
+Utilities
+`````````
+
 .. autoclass:: Pagination
    :members:
-
-Debug Helpers
--------------
 
 .. autofunction:: get_debug_queries
