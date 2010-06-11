@@ -165,7 +165,8 @@ class Pagination(object):
         """Number of the previous page."""
         return self.page - 1
 
-    def have_prev(self):
+    @property
+    def has_prev(self):
         """True if a previous page exists"""
         return self.page > 1
 
@@ -173,7 +174,8 @@ class Pagination(object):
         """Returns a :class:`Pagination` object for the next page."""
         return self.query.paginate(self.page + 1, self.per_page, error_out)
 
-    def have_next(self):
+    @property
+    def has_next(self):
         """True if a next page exists."""
         return self.page < self.pages
 
@@ -181,6 +183,19 @@ class Pagination(object):
     def next_num(self):
         """Number of the next page"""
         return self.page + 1
+
+    def iter_numbers(self, left_edge=2, left_current=2,
+                     right_current=5, right_edge=2):
+        last = 0
+        for num in xrange(1, self.pages + 1):
+            if num <= left_edge or \
+               (num > self.page - left_current - 1 and \
+                num < self.page + right_current) or \
+               num > self.pages - right_edge:
+                if last + 1 != num:
+                    yield None
+                yield num
+                last = num
 
 
 class BaseQuery(orm.Query):
