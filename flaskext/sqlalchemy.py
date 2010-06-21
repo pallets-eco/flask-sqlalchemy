@@ -287,12 +287,12 @@ class _QueryProperty(object):
 
 
 def _record_queries(app):
-    if self._app.debug:
+    if app.debug:
         return True
-    rq = self._app.config['SQLALCHEMY_RECORD_QUERIES']
+    rq = app.config['SQLALCHEMY_RECORD_QUERIES']
     if rq is not None:
         return rq
-    return bool(self._app.config.get('TESTING'))
+    return bool(app.config.get('TESTING'))
 
 
 class _EngineConnector(object):
