@@ -28,8 +28,8 @@ or alternatively if you have pip installed::
 How to Use
 ----------
 
-Flask-SQLAlchemy is fun to use, and for the basic applications also
-incredible easy.  For the complete guide, checkout out the API
+Flask-SQLAlchemy is fun to use, and incredibly easy for basic applications.
+For the complete guide, checkout out the API
 documentation on the :class:`SQLAlchemy` class.
 
 Basically all you have to do is to create an :class:`SQLAlchemy` object
@@ -60,7 +60,7 @@ and use this to declare models.  Here a complete example::
         def __repr__(self):
             return '<User %r>' % self.username
 
-So how to create that database, just import the `db` object from your
+To create the initial database, just import the `db` object from a
 interactive Python shell and run the :meth:`~SQLAlchemy.create_all` method
 to create the tables and database:
 
@@ -73,7 +73,7 @@ Boom, and there is your database.  Now to create some users:
 >>> admin = User('admin', 'open sesame')
 >>> guest = User('guest', 'i-shall-pass')
 
-But they are still not in the database, so let's make sure they are:
+But they are not yet in the database, so let's make sure they are:
 
 >>> db.session.add(admin)
 >>> db.session.add(guest)
@@ -89,7 +89,7 @@ And how do you get the data back?  Easy as pie:
 Road to Enlightenment
 ---------------------
 
-All you need to know compared to plain SQLAlchemy is this:
+The only things you need to know compared to plain SQLAlchemy are:
 
 1.  :class:`SQLAlchemy` gives you access to the following things:
 
@@ -97,9 +97,8 @@ All you need to know compared to plain SQLAlchemy is this:
         :mod:`sqlalchemy.orm`
     -   a preconfigured scoped session called `session`
     -   the `metadata`
-    -   as well as a :meth:`SQLAlchemy.create_all` and
-        :meth:`SQLAlchemy.drop_all` methods to create and drop
-        tables according to the models.
+    -   a :meth:`SQLAlchemy.create_all` and :meth:`SQLAlchemy.drop_all`
+        methods to create and drop tables according to the models.
     -   a :class:`Model` baseclass that is a configured declarative base.
 
 2.  The :class:`Model` declarative base class behaves like a regular
@@ -120,7 +119,7 @@ The following configuration values exist for Flask-SQLAlchemy:
 .. tabularcolumns:: |p{6.5cm}|p{8.5cm}|
 
 =============================== =========================================
-``SQLALCHEMY_DATABASE_URI``     the database URI that should be used for
+``SQLALCHEMY_DATABASE_URI``     The database URI that should be used for
                                 the connection.  Examples:
 
                                 - ``sqlite:////tmp/test.db``
@@ -138,14 +137,14 @@ The following configuration values exist for Flask-SQLAlchemy:
                                 some database adapters like postgres when
                                 used with inproper database defaults that
                                 specify encoding-less databases (like
-                                postgres on some ubuntu versions)
-``SQLALCHEMY_POOL_SIZE``        the size of the database pool.  Defaults
-                                to engine defaults (usually 5)
-``SQLALCHEMY_POOL_TIMEOUT``     specifies the connection timeout for the
-                                pool.  Defaults to 10
-``SQLALCHEMY_POOL_RECYCLE``     number of sections after which a
+                                postgres on some Ubuntu versions)
+``SQLALCHEMY_POOL_SIZE``        The size of the database pool.  Defaults
+                                to the engine's default (usually 5)
+``SQLALCHEMY_POOL_TIMEOUT``     Specifies the connection timeout for the
+                                pool.  Defaults to 10.
+``SQLALCHEMY_POOL_RECYCLE``     Number of seconds after which a
                                 connection is automatically recycled.
-                                This is required for MySQL that removes
+                                This is required for MySQL, which removes
                                 connections after 8 hours idle by
                                 default.  Note that Flask-SQLAlchemy
                                 automatically sets this to 2 hours if
@@ -160,8 +159,8 @@ The following configuration values exist for Flask-SQLAlchemy:
 API
 ---
 
-This part of the documentation documents each and every public class or
-function from Flask-SQLAlchemy.
+This part of the documentation documents all the public classes and
+functions in Flask-SQLAlchemy.
 
 Configuration
 `````````````
