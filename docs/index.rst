@@ -112,6 +112,51 @@ All you need to know compared to plain SQLAlchemy is this:
 4.  In general it behaves as a declarative base system, for everything
     else, just look at the SQLAlchemy documentation.
 
+Configuration Values
+--------------------
+
+The following configuration values exist for Flask-SQLAlchemy:
+
+.. tabularcolumns:: |p{6.5cm}|p{8.5cm}|
+
+=============================== =========================================
+``SQLALCHEMY_DATABASE_URI``     the database URI that should be used for
+                                the connection.  Examples:
+
+                                - ``sqlite:////tmp/test.db``
+                                - ``mysql://username:password@server/db``
+``SQLALCHEMY_ECHO``             If set to `True` SQLAlchemy will log all
+                                the statements issued to stderr which can
+                                be useful for debugging.
+``SQLALCHEMY_RECORD_QUERIES``   Can be used to explicitly disable or
+                                enable query recording.  Query recording
+                                automatically happens in debug or testing
+                                mode.  See :func:`get_debug_queries` for
+                                more information.
+``SQLALCHEMY_NATIVE_UNICODE``   Can be used to explicitly disable native
+                                unicode support.  This is required for
+                                some database adapters like postgres when
+                                used with inproper database defaults that
+                                specify encoding-less databases (like
+                                postgres on some ubuntu versions)
+``SQLALCHEMY_POOL_SIZE``        the size of the database pool.  Defaults
+                                to engine defaults (usually 5)
+``SQLALCHEMY_POOL_TIMEOUT``     specifies the connection timeout for the
+                                pool.  Defaults to 10
+``SQLALCHEMY_POOL_RECYCLE``     number of sections after which a
+                                connection is automatically recycled.
+                                This is required for MySQL that removes
+                                connections after 8 hours idle by
+                                default.  Note that Flask-SQLAlchemy
+                                automatically sets this to 2 hours if
+                                MySQL is used.
+=============================== =========================================
+
+.. versionadded:: 0.8
+   The ``SQLALCHEMY_NATIVE_UNICODE``, ``SQLALCHEMY_POOL_SIZE``,
+   ``SQLALCHEMY_POOL_TIMEOUT`` and ``SQLALCHEMY_POOL_RECYCLE``
+   configuration keys were added.
+
 API
 ---
 
@@ -170,3 +215,20 @@ Utilities
    :members:
 
 .. autofunction:: get_debug_queries
+
+Changelog
+---------
+
+0.8
+```
+
+-   added a few configuration keys for creating connections.
+
+-   automatically activate connection recycling for MySQL connections.
+
+-   added support for the Flask testing mode.
+
+0.7
+```
+
+-   Initial public release

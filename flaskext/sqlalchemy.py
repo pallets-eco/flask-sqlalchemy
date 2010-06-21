@@ -107,7 +107,7 @@ def get_debug_queries():
     one expected on errors or in unittesting.  If you don't want to enable
     the DEBUG mode for your unittests you can also enable the query
     recording by setting the ``'SQLALCHEMY_RECORD_QUERIES'`` config variable
-    to `True`.
+    to `True`.  This is automatically enablde if Flask is in testing mode.
 
     The value returned will be a list of named tuples with the following
     attributes:
@@ -286,6 +286,15 @@ class _QueryProperty(object):
             return None
 
 
+def _record_queries(app):
+    if self._app.debug:
+        return True
+    rq = self._app.config['SQLALCHEMY_RECORD_QUERIES']
+    if rq is not None:
+        return rq
+    return bool(self._app.config.get('TESTING'))
+
+
 class _EngineConnector(object):
 
     def __init__(self, sa, app):
@@ -303,9 +312,9 @@ class _EngineConnector(object):
                 return self._engine
             info = make_url(uri)
             options = {'convert_unicode': True}
-            self._sa.apply_driver_hacks(info, options)
-            if self._app.debug or \
-               self._app.config['SQLALCHEMY_RECORD_QUERIES']:
+            self._sa.apply_pool_defaults(self._app, options)
+            self._sa.apply_driver_hacks(self._app, info, options)
+            if _record_queries(self._app):
                 options['proxy'] = _ConnectionDebugProxy(self._app.import_name)
             if echo:
                 options['echo'] = True
@@ -357,7 +366,9 @@ class SQLAlchemy(object):
     will probe the library for native unicode support.  If it detects
     unicode it will let the library handle that, otherwise do that itself.
     Sometimes this detection can fail in which case you might want to set
-    `use_native_unicode` to `False`.
+    `use_native_unicode` (or the ``SQLALCHEMY_NATIVE_UNICODE`` configuration
+    key) to `False`.  Note that the configuration key overrides the
+    value you pass to the constructor.
 
     Additionally this class also provides access to all the SQLAlchemy
     functions from the :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` modules.
@@ -392,18 +403,37 @@ class SQLAlchemy(object):
         leak.
         """
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
+        app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
-        app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', False)
+        app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
+        app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
+        app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
+        app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
 
         @app.after_request
         def shutdown_session(response):
             self.session.remove()
             return response
 
-    def apply_driver_hacks(self, info, options):
+    def apply_pool_defaults(self, app, options):
+        def _setdefault(optionkey, configkey):
+            value = app.config[configkey]
+            if value is not None:
+                options[optionkey] = value
+        _setdefault('pool_size', 'SQLALCHEMY_POOL_SIZE')
+        _setdefault('pool_timeout', 'SQLALCHEMY_POOL_TIMEOUT')
+        _setdefault('pool_recycle', 'SQLALCHEMY_POOL_RECYCLE')
+
+    def apply_driver_hacks(self, app, info, options):
         if info.drivername == 'mysql':
             info.query.setdefault('charset', 'utf8')
-        if not self.use_native_unicode:
+            options.setdefault('pool_size', 10)
+            options.setdefault('pool_recycle', 7200)
+
+        unu = app.config['SQLALCHEMY_NATIVE_UNICODE']
+        if unu is None:
+            unu = self.use_native_unicode
+        if not unu:
             options['use_native_unicode'] = False
 
     @property
