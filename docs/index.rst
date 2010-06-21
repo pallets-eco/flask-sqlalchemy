@@ -55,7 +55,7 @@ and use this to declare models.  Here a complete example::
             self.pw_hash = generate_password_hash(password)
 
         def check_password(self, password):
-            return check_password_hash(self.pwhash, password)
+            return check_password_hash(self.pw_hash, password)
 
         def __repr__(self):
             return '<User %r>' % self.username
