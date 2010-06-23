@@ -120,7 +120,7 @@ def get_debug_queries():
 
     `start_time` / `end_time`
         Time the query started / the results arrived.  Please keep in mind
-        that the timer function used for your platform might different this
+        that the timer function used depends on your platform. These
         values are only useful for sorting or comparing.  They do not
         necessarily represent an absolute timestamp.
 
