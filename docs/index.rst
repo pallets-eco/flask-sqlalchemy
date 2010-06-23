@@ -178,11 +178,6 @@ Models
 .. autoclass:: BaseQuery
    :members: get, get_or_404, paginate, first_or_404
 
-   .. method:: get(ident)
-
-      Return an instance of the object based on the given identifier
-      (primary key), or `None` if not found.
-
    .. method:: all()
 
       Return the results represented by this query as a list.  This
