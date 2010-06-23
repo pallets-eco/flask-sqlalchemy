@@ -30,7 +30,8 @@ setup(
     platforms='any',
     install_requires=[
         'setuptools',
-        'Flask'
+        'Flask',
+        'SQLAlchemy'
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
