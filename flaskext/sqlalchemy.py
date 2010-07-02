@@ -396,6 +396,11 @@ class SQLAlchemy(object):
 
         _include_sqlalchemy(self)
 
+    @property
+    def metadata(self):
+        """Returns the metadata"""
+        return self.Model.metadata
+
     def init_app(self, app):
         """This callback can be used to initialize an application for the
         use with this database setup.  Never use a database in the context
@@ -474,7 +479,14 @@ class SQLAlchemy(object):
         self.Model.metadata.reflect(bind=self.engine)
 
     def __repr__(self):
+        app = None
+        if self.app is not None:
+            app = self.app
+        else:
+            ctx = _request_ctx_stack.top
+            if ctx is not None:
+                app = ctx.app
         return '<%s engine=%r>' % (
             self.__class__.__name__,
-            self.app.config['SQLALCHEMY_DATABASE_URI']
+            app and self.app.config['SQLALCHEMY_DATABASE_URI'] or None
         )
