@@ -206,7 +206,7 @@ class Pagination(object):
               <div class=pagination>
               {%- for page in pagination.iter_pages() %}
                 {% if page %}
-                  {% if page != pagination.numbers %}
+                  {% if page != pagination.page %}
                     <a href="{{ url_for(endpoint, page=page) }}">{{ page }}</a>
                   {% else %}
                     <strong>{{ page }}</strong>
