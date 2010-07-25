@@ -120,7 +120,7 @@ def get_debug_queries():
 
     `start_time` / `end_time`
         Time the query started / the results arrived.  Please keep in mind
-        that the timer function used for your platform might different this
+        that the timer function used depends on your platform. These
         values are only useful for sorting or comparing.  They do not
         necessarily represent an absolute timestamp.
 
@@ -206,7 +206,7 @@ class Pagination(object):
               <div class=pagination>
               {%- for page in pagination.iter_pages() %}
                 {% if page %}
-                  {% if page != pagination.numbers %}
+                  {% if page != pagination.page %}
                     <a href="{{ url_for(endpoint, page=page) }}">{{ page }}</a>
                   {% else %}
                     <strong>{{ page }}</strong>
@@ -359,7 +359,7 @@ class SQLAlchemy(object):
 
     The difference between the two is that in the first case methods like
     :meth:`create_all` and :meth:`drop_all` will work all the time but in
-    the section case a :meth:`flask.Flask.request_context` has to exist.
+    the second case a :meth:`flask.Flask.request_context` has to exist.
 
     By default Flask-SQLAlchemy will apply some backend-specific settings
     to improve your experience with them.  As of SQLAlchemy 0.6 SQLAlchemy
