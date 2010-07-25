@@ -9,7 +9,7 @@ Links
 
 * `documentation <http://packages.python.org/Flask-SQLAlchemy>`_
 * `development version
-  <http://github.com/USERNAME/REPOSITORY/zipball/master#egg=Flask-SQLAlchemy-dev>`_
+  <http://github.com/mitsuhiko/flask-sqlalchemy/zipball/master#egg=Flask-SQLAlchemy-dev>`_
 
 """
 from setuptools import setup
