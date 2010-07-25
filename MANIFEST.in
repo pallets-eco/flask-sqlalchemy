@@ -1,0 +1,6 @@
+include LICENSE *.py
+recursive-include docs *
+recursive-exclude docs *.pyc
+recursive-exclude docs *.pyo
+prune docs/_build
+prune docs/_themes/.git
