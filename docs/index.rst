@@ -45,6 +45,7 @@ and use this to declare models.  Here a complete example::
 
     class User(db.Model):
         __tablename__ = 'users'
+        id = db.Column(db.Integer, primary_key=True)
         username = db.Column(db.String(80), unique=True)
         pw_hash = db.Column(db.String(80))
 
