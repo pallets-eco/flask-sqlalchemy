@@ -1,0 +1,29 @@
+Changelog
+---------
+
+Here you can see the full list of changes between each Flask-SQLAlchemy
+release.
+
+Version 0.10
+````````````
+
+- Added support for signals.
+- Table names are now automatically set from the class name unless
+  overriden.
+
+Version 0.9
+```````````
+
+- applied changes to pass the Flask extension approval process.
+
+Version 0.8
+```````````
+
+- added a few configuration keys for creating connections.
+- automatically activate connection recycling for MySQL connections.
+- added support for the Flask testing mode.
+
+Version 0.7
+```````````
+
+- Initial public release
