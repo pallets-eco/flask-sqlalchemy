@@ -9,19 +9,27 @@
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement, absolute_import
+import re
 import sys
 import time
 import sqlalchemy
 from math import ceil
 from types import MethodType
+from functools import partial
 from flask import _request_ctx_stack, abort
+from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
 from sqlalchemy import orm
 from sqlalchemy.orm.exc import UnmappedClassError
+from sqlalchemy.orm.mapper import Mapper
+from sqlalchemy.orm.session import Session
+from sqlalchemy.orm.interfaces import MapperExtension, SessionExtension, \
+     EXT_CONTINUE
 from sqlalchemy.interfaces import ConnectionProxy
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.util import to_list
 
 # the best timer function for the platform
 if sys.platform == 'win32':
@@ -30,10 +38,16 @@ else:
     _timer = time.time
 
 
+_camelcase_re = re.compile(r'([A-Z]+)(?=[a-z0-9])')
+_signals = Namespace()
+
+
+models_committed = _signals.signal('models-committed')
+before_models_committed = _signals.signal('before-models-committed')
+
+
 def _create_scoped_session(db):
-    return orm.scoped_session(lambda: orm.create_session(autocommit=False,
-                                                         autoflush=False,
-                                                         bind=db.engine))
+    return orm.scoped_session(partial(_SignallingSession, db))
 
 
 def _include_sqlalchemy(obj):
@@ -98,6 +112,62 @@ class _ConnectionDebugProxy(ConnectionProxy):
                 queries.append(_DebugQueryTuple((
                     statement, parameters, start, _timer(),
                     _calling_context(self.app_package))))
+
+
+class _SignalTrackingMapperExtension(MapperExtension):
+
+    def after_delete(self, mapper, connection, instance):
+        return self._record(mapper, instance, 'delete')
+
+    def after_insert(self, mapper, connection, instance):
+        return self._record(mapper, instance, 'insert')
+
+    def after_update(self, mapper, connection, instance):
+        return self._record(mapper, instance, 'update')
+
+    def _record(self, mapper, model, operation):
+        pk = tuple(mapper.primary_key_from_instance(model))
+        orm.object_session(model)._model_changes[pk] = (model, operation)
+        return EXT_CONTINUE
+
+
+class _SignalTrackingMapper(Mapper):
+
+    def __init__(self, *args, **kwargs):
+        extensions = to_list(kwargs.pop('extension', None), [])
+        extensions.append(_SignalTrackingMapperExtension())
+        kwargs['extension'] = extensions
+        Mapper.__init__(self, *args, **kwargs)
+
+
+class _SignallingSessionExtension(SessionExtension):
+
+    def before_commit(self, session):
+        d = session._model_changes
+        if d:
+            before_models_committed.send(session.app, changes=d.values())
+        return EXT_CONTINUE
+
+    def after_commit(self, session):
+        d = session._model_changes
+        if d:
+            models_committed.send(session.app, changes=d.values())
+            d.clear()
+        return EXT_CONTINUE
+
+    def after_rollback(self, session):
+        session._model_changes.clear()
+        return EXT_CONTINUE
+
+
+class _SignallingSession(Session):
+
+    def __init__(self, db):
+        Session.__init__(self, autocommit=False, autoflush=False,
+                         extension=[_SignallingSessionExtension()],
+                         bind=db.engine)
+        self.app = db.app or _request_ctx_stack.top.app
+        self._model_changes = {}
 
 
 def get_debug_queries():
@@ -323,6 +393,21 @@ class _EngineConnector(object):
             return rv
 
 
+class _ModelTableNameDescriptor(object):
+
+    def __get__(self, obj, type):
+        tablename = type.__dict__.get('__tablename__')
+        if not tablename:
+            def _join(match):
+                word = match.group()
+                if len(word) > 1:
+                    return ('_%s_%s' % (word[:-1], word[-1])).lower()
+                return '_' + word.lower()
+            tablename = _camelcase_re.sub(_join, type.__name__).lstrip('_')
+            setattr(type, '__tablename__', tablename)
+        return tablename
+
+
 class Model(object):
     """Baseclass for custom user models."""
 
@@ -333,6 +418,11 @@ class Model(object):
     #: an instance of :attr:`query_class`.  Can be used to query the
     #: database for instances of this model.
     query = None
+
+    #: arguments for the mapper
+    __mapper_cls__ = _SignalTrackingMapper
+
+    __tablename__ = _ModelTableNameDescriptor()
 
 
 class SQLAlchemy(object):
