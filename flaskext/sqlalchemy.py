@@ -162,12 +162,7 @@ class _SignallingSessionExtension(SessionExtension):
 
 class _SignallingSession(Session):
 
-    def __init__(self, db):
-        if isinstance(db.session_extensions, list):
-            db.session_extensions.append(_SignallingSessionExtension())
-        else:
-            db.session_extensions = [db.session_extensions, _SignallingSessionExtension()]
-    
+    def __init__(self, db):            
         Session.__init__(self, autocommit=False, autoflush=False,
                          extension=db.session_extensions,
                          bind=db.engine)
@@ -474,9 +469,14 @@ class SQLAlchemy(object):
             pw_hash = db.Column(db.String(80))
     """
 
-    def __init__(self, app=None, use_native_unicode=True, session_extensions=[]):
+    def __init__(self, app=None, use_native_unicode=True, session_extensions=None):
         self.use_native_unicode = use_native_unicode
         self.session_extensions = session_extensions
+        
+        if self.session_extensions:
+            self.session_extensions = to_list(self.session_extensions) + [_SignallingSessionExtension()]
+        else:
+            self.session_extensions = [_SignallingSessionExtension()]
         
         self.session = _create_scoped_session(self)
 
