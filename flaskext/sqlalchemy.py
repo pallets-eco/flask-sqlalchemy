@@ -163,8 +163,13 @@ class _SignallingSessionExtension(SessionExtension):
 class _SignallingSession(Session):
 
     def __init__(self, db):
+        if isinstance(db.session_extensions, list):
+            db.session_extensions.append(_SignallingSessionExtension())
+        else:
+            db.session_extensions = [db.session_extensions, _SignallingSessionExtension()]
+    
         Session.__init__(self, autocommit=False, autoflush=False,
-                         extension=[_SignallingSessionExtension()],
+                         extension=db.session_extensions,
                          bind=db.engine)
         self.app = db.app or _request_ctx_stack.top.app
         self._model_changes = {}
@@ -469,8 +474,10 @@ class SQLAlchemy(object):
             pw_hash = db.Column(db.String(80))
     """
 
-    def __init__(self, app=None, use_native_unicode=True):
+    def __init__(self, app=None, use_native_unicode=True, session_extensions=[]):
         self.use_native_unicode = use_native_unicode
+        self.session_extensions = session_extensions
+        
         self.session = _create_scoped_session(self)
 
         self.Model = declarative_base(cls=Model, name='Model')
