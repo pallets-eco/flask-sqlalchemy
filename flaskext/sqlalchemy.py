@@ -471,12 +471,7 @@ class SQLAlchemy(object):
 
     def __init__(self, app=None, use_native_unicode=True, session_extensions=None):
         self.use_native_unicode = use_native_unicode
-        self.session_extensions = session_extensions
-        
-        if self.session_extensions:
-            self.session_extensions = to_list(self.session_extensions) + [_SignallingSessionExtension()]
-        else:
-            self.session_extensions = [_SignallingSessionExtension()]
+        self.session_extensions = to_list(session_extensions, []) + [_SignallingSessionExtension()]
         
         self.session = _create_scoped_session(self)
 
