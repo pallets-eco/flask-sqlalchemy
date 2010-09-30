@@ -545,6 +545,21 @@ class SQLAlchemy(object):
             info.query.setdefault('charset', 'utf8')
             options.setdefault('pool_size', 10)
             options.setdefault('pool_recycle', 7200)
+        elif info.drivername == 'sqlite':
+            pool_size = options.get('pool_size')
+            # we go to memory and the pool size was explicitly set to 0
+            # which is fail.  Let the user know that
+            if info.database in (None, '', ':memory:'):
+                if pool_size == 0:
+                    raise RuntimeError('SQLite in memory database with an '
+                                       'empty queue not possible do to data '
+                                       'loss.')
+            # if pool size is None or explicitly set to 0 we assume the
+            # user did not want a queue for this sqlite connection and
+            # hook in the null pool.
+            elif not pool_size:
+                from sqlalchemy.pool import NullPool
+                options['poolclass'] = NullPool
 
         unu = app.config['SQLALCHEMY_NATIVE_UNICODE']
         if unu is None:
