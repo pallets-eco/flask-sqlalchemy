@@ -552,7 +552,7 @@ class SQLAlchemy(object):
             if info.database in (None, '', ':memory:'):
                 if pool_size == 0:
                     raise RuntimeError('SQLite in memory database with an '
-                                       'empty queue not possible do to data '
+                                       'empty queue not possible due to data '
                                        'loss.')
             # if pool size is None or explicitly set to 0 we assume the
             # user did not want a queue for this sqlite connection and
