@@ -51,7 +51,7 @@ def _create_scoped_session(db):
 
 
 def _include_sqlalchemy(obj):
-    for module in sqlalchemy, sqlalchemy.orm:
+    for module in sqlalchemy, sqlalchemy.orm, sqlalchemy.orm.exc:
         for key in module.__all__:
             if not hasattr(obj, key):
                 setattr(obj, key, getattr(module, key))
