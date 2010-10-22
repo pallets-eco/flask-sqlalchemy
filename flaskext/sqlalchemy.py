@@ -349,8 +349,7 @@ class _QueryProperty(object):
     def __get__(self, obj, type):
         try:
             mapper = orm.class_mapper(type)
-            ctx = _request_ctx_stack.top
-            if mapper and ctx is not None:
+            if mapper:
                 return type.query_class(mapper, session=self.sa.session())
         except UnmappedClassError:
             return None
