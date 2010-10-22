@@ -59,14 +59,6 @@ class BasicAppTestCase(unittest.TestCase):
         rv = c.get('/')
         assert rv.data == 'First Item\n2nd Item'
 
-    def test_request_context(self):
-        self.assertEqual(self.Todo.query, None)
-        with self.app.test_request_context():
-            todo = self.Todo('Test', 'test')
-            self.db.session.add(todo)
-            self.db.session.commit()
-            self.assertEqual(len(self.Todo.query.all()), 1)
-
     def test_query_recording(self):
         with self.app.test_request_context():
             todo = self.Todo('Test 1', 'test')
@@ -84,6 +76,41 @@ class BasicAppTestCase(unittest.TestCase):
 
     def test_helper_api(self):
         self.assertEqual(self.db.metadata, self.db.Model.metadata)
+
+
+class TestQueryProperty(unittest.TestCase):
+
+    def setUp(self):
+        self.app = flask.Flask(__name__)
+        self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        self.app.config['TESTING'] = True
+
+    def test_no_app_bound(self):
+        db = sqlalchemy.SQLAlchemy()
+        db.init_app(self.app)
+        Todo = make_todo_model(db)
+
+        # If no app is bound to the SQLAlchemy instance, a
+        # request context is required to access Model.query.
+        self.assertRaises(RuntimeError, getattr, Todo, 'query')
+        with self.app.test_request_context():
+            db.create_all()
+            todo = Todo('Test', 'test')
+            db.session.add(todo)
+            db.session.commit()
+            self.assertEqual(len(Todo.query.all()), 1)
+
+    def test_app_bound(self):
+        db = sqlalchemy.SQLAlchemy(self.app)
+        Todo = make_todo_model(db)
+        db.create_all()
+
+        # If an app was passed to the SQLAlchemy constructor,
+        # the query property is always available.
+        todo = Todo('Test', 'test')
+        db.session.add(todo)
+        db.session.commit()
+        self.assertEqual(len(Todo.query.all()), 1)
 
 
 class SignallingTestCase(unittest.TestCase):
