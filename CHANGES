@@ -10,6 +10,9 @@ Version 0.10
 - Added support for signals.
 - Table names are now automatically set from the class name unless
   overriden.
+- Model.query now always works for applications directly passed to
+  the SQLAlchemy constructor.  Furthermore the property now raises
+  an RuntimeError instead of being None.
 
 Version 0.9
 ```````````
