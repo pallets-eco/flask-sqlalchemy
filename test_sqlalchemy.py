@@ -210,5 +210,20 @@ class DefaultQueryClassTestCase(unittest.TestCase):
         self.assert_(isinstance(c.parents, sqlalchemy.BaseQuery))
 
 
+class SQLAlchemyIncludesTestCase(unittest.TestCase):
+
+    def test(self):
+        """Various SQLAlchemy objects are exposed as attributes.
+        """
+        db = sqlalchemy.SQLAlchemy()
+
+        import sqlalchemy as sqlalchemy_lib
+        self.assertTrue(db.Column == sqlalchemy_lib.Column)
+
+        # The Query object we expose is actually our own subclass.
+        from flaskext.sqlalchemy import BaseQuery
+        self.assertTrue(db.Query == BaseQuery)
+
+
 if __name__ == '__main__':
     unittest.main()

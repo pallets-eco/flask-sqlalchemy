@@ -333,7 +333,8 @@ class Pagination(object):
 
 
 class BaseQuery(orm.Query):
-    """The default query object used for models.  This can be subclassed and
+    """The default query object used for models, and exposed as
+    :attr:`~SQLAlchemy.Query`. This can be subclassed and
     replaced for individual models by setting the :attr:`~Model.query_class`
     attribute.  This is a subclass of a standard SQLAlchemy
     :class:`~sqlalchemy.orm.query.Query` class and has all the methods of a
@@ -544,6 +545,7 @@ class SQLAlchemy(object):
             self.app = None
 
         _include_sqlalchemy(self)
+        self.Query = BaseQuery
 
     @property
     def metadata(self):

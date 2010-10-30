@@ -211,6 +211,10 @@ Configuration
 .. autoclass:: SQLAlchemy
    :members:
 
+   .. attribute:: Query
+
+      The :class:`BaseQuery` class.
+
 Models
 ``````
 
@@ -231,7 +235,7 @@ Models
       newly resulting query.
 
    .. method:: limit(limit)
-      
+
       Apply a LIMIT  to the query and return the newly resulting query.
 
    .. method:: offset(offset)
