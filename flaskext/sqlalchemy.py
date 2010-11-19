@@ -526,7 +526,6 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
 
         self.app = app
-        self.Model.metadata.bind = self.engine
 
         @app.after_request
         def shutdown_session(response):
