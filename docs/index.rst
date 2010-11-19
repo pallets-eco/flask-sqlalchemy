@@ -33,7 +33,7 @@ For the complete guide, checkout out the API
 documentation on the :class:`SQLAlchemy` class.
 
 Basically all you have to do is to create an :class:`SQLAlchemy` object
-and use this to declare models.  Here a complete example::
+and use this to declare models.  Here is a complete example::
 
     from flask import Flask
     from flaskext.sqlalchemy import SQLAlchemy
@@ -90,7 +90,7 @@ And how do you get the data back?  Easy as pie:
 
 .. versionchanged:: 0.10
    The `__tablename__` attribute is now optional.  If not defined, the
-   class name (converted to lowercases and camel cased words separated
+   class name (converted to lowercase and camel cased words separated
    by underscores) is used.
 
 Road to Enlightenment
@@ -141,10 +141,10 @@ The following configuration values exist for Flask-SQLAlchemy:
                                 more information.
 ``SQLALCHEMY_NATIVE_UNICODE``   Can be used to explicitly disable native
                                 unicode support.  This is required for
-                                some database adapters like postgres when
-                                used with inproper database defaults that
-                                specify encoding-less databases (like
-                                postgres on some Ubuntu versions)
+                                some database adapters (like PostgreSQL
+                                on some Ubuntu versions) when used with
+                                inproper database defaults that specify
+                                encoding-less databases.
 ``SQLALCHEMY_POOL_SIZE``        The size of the database pool.  Defaults
                                 to the engine's default (usually 5)
 ``SQLALCHEMY_POOL_TIMEOUT``     Specifies the connection timeout for the
@@ -168,8 +168,8 @@ Signalling Support
 
 .. versionadded:: 0.10
 
-Starting with Flask-SQLAlchemy 0.10 you can now connect to signals to be
-notified when certain things happen.
+Starting with Flask-SQLAlchemy 0.10 you can now connect to signals to get
+notifications when certain things happen.
 
 The following two signals exist:
 
@@ -189,7 +189,7 @@ The following two signals exist:
 .. data:: before_models_committed
 
    Works exactly the same as :data:`models_committed` but is emitted
-   right before the comitting takes place.
+   right before the committing takes place.
 
 API
 ---
@@ -217,7 +217,7 @@ Models
       Return the results represented by this query as a list.  This
       results in an execution of the underlying query.
 
-   .. method:: order_by(*criteron)
+   .. method:: order_by(*criterion)
 
       apply one or more ORDER BY criterion to the query and return the
       newly resulting query.
@@ -234,7 +234,7 @@ Models
    .. method:: first()
 
       Return the first result of this query or `None` if the result
-      doesn’t contain any row.  This results in an execution of the
+      doesn’t contain any rows.  This results in an execution of the
       underlying query.
 
 Utilities
