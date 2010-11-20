@@ -162,7 +162,7 @@ class _SignallingSessionExtension(SessionExtension):
 
 class _SignallingSession(Session):
 
-    def __init__(self, db):            
+    def __init__(self, db):
         Session.__init__(self, autocommit=False, autoflush=False,
                          extension=db.session_extensions,
                          bind=db.engine)
@@ -177,7 +177,7 @@ def get_debug_queries():
     one expected on errors or in unittesting.  If you don't want to enable
     the DEBUG mode for your unittests you can also enable the query
     recording by setting the ``'SQLALCHEMY_RECORD_QUERIES'`` config variable
-    to `True`.  This is automatically enablde if Flask is in testing mode.
+    to `True`.  This is automatically enabled if Flask is in testing mode.
 
     The value returned will be a list of named tuples with the following
     attributes:
@@ -526,7 +526,6 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
 
         self.app = app
-        self.Model.metadata.bind = self.engine
 
         @app.after_request
         def shutdown_session(response):
