@@ -81,7 +81,15 @@ But they are not yet in the database, so let's make sure they are:
 >>> db.session.add(guest)
 >>> db.session.commit()
 
-And how do you get the data back?  Easy as pie:
+And how do you get the data back? Firstly, because we are not inside the WSGI
+application, but using the Python shell we are missing the request context
+that is required for accessing the query method for models. So lets set up
+a dummy request context for our shell:
+
+>>> from yourapplication import app
+>>> app.test_request_context().push()
+
+And now, accessing the data in database is easy as a pie:
 
 >>> users = User.query.all()
 [<User u'admin'>, <User u'guest'>]
