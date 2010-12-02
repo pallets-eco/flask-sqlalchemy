@@ -46,8 +46,8 @@ models_committed = _signals.signal('models-committed')
 before_models_committed = _signals.signal('before-models-committed')
 
 
-def _create_scoped_session(db):
-    return orm.scoped_session(partial(_SignallingSession, db))
+def _create_scoped_session(db, **options):
+    return orm.scoped_session(partial(_SignallingSession, db, **options))
 
 
 def _include_sqlalchemy(obj):
@@ -162,10 +162,10 @@ class _SignallingSessionExtension(SessionExtension):
 
 class _SignallingSession(Session):
 
-    def __init__(self, db):
-        Session.__init__(self, autocommit=False, autoflush=False,
-                         extension=db.session_extensions,
-                         bind=db.engine)
+    def __init__(self, db, **options):
+        options["extension"] = db.session_extensions
+        options["bind"] = db.engine
+        Session.__init__(self, **options)
         self.app = db.app or _request_ctx_stack.top.app
         self._model_changes = {}
 
@@ -486,12 +486,12 @@ class SQLAlchemy(object):
     """
 
     def __init__(self, app=None, use_native_unicode=True, 
-                 session_extensions=None):
+                 session_extensions=None, **session_options):
         self.use_native_unicode = use_native_unicode
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
         
-        self.session = _create_scoped_session(self)
+        self.session = _create_scoped_session(self, **session_options)
 
         self.Model = declarative_base(cls=Model, name='Model')
         self.Model.query = _QueryProperty(self)
