@@ -533,8 +533,6 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
 
-        self.app = app
-
         @app.after_request
         def shutdown_session(response):
             self.session.remove()
