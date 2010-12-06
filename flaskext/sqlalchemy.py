@@ -14,7 +14,6 @@ import sys
 import time
 import sqlalchemy
 from math import ceil
-from types import MethodType
 from functools import partial
 from flask import _request_ctx_stack, abort
 from flask.signals import Namespace
@@ -466,31 +465,31 @@ class SQLAlchemy(object):
         class User(db.Model):
             username = db.Column(db.String(80), unique=True)
             pw_hash = db.Column(db.String(80))
-            
+
     You may also define your own SessionExtension instances as well when
     defining your SQLAlchemy class instance. You may pass your custom instances
-    to the `session_extensions` keyword. This can be either a single 
+    to the `session_extensions` keyword. This can be either a single
     SessionExtension instance, or a list of SessionExtension instances. In the 
-    following use case we use the VersionedListener from the SQLAlchemy 
+    following use case we use the VersionedListener from the SQLAlchemy
     versioning examples.::
-    
+
         from history_meta import VersionedMeta, VersionedListener
-        
+
         app = Flask(__name__)
         db = SQLAlchemy(app, session_extensions=[VersionedListener()])
-        
+
         class User(db.Model):
             __metaclass__ = VersionedMeta
             username = db.Column(db.String(80), unique=True)
             pw_hash = db.Column(db.String(80))
     """
 
-    def __init__(self, app=None, use_native_unicode=True, 
+    def __init__(self, app=None, use_native_unicode=True,
                  session_extensions=None):
         self.use_native_unicode = use_native_unicode
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
-        
+
         self.session = _create_scoped_session(self)
 
         self.Model = declarative_base(cls=Model, name='Model')
