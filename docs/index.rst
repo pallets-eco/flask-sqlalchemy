@@ -8,7 +8,7 @@ application.  This module is currently still under development and the
 documentation is lacking.  If you want to get started, have a look at the
 `example sourcecode`_.
 
-.. _SQLAlchemy: http://sqlalchemy.org/
+.. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _Flask: http://flask.pocoo.org/
 .. _example sourcecode:
    http://github.com/mitsuhiko/flask-sqlalchemy/tree/master/examples/
