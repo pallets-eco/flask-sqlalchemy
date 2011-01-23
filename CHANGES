@@ -14,6 +14,7 @@ Version 0.10
   the SQLAlchemy constructor.  Furthermore the property now raises
   an RuntimeError instead of being None.
 - added session options to constructor.
+- fixed a broken `__repr__`
 
 Version 0.9
 ```````````
