@@ -14,7 +14,6 @@ import sys
 import time
 import sqlalchemy
 from math import ceil
-from types import MethodType
 from functools import partial
 from flask import _request_ctx_stack, abort
 from flask.signals import Namespace
@@ -46,8 +45,10 @@ models_committed = _signals.signal('models-committed')
 before_models_committed = _signals.signal('before-models-committed')
 
 
-def _create_scoped_session(db):
-    return orm.scoped_session(partial(_SignallingSession, db))
+def _create_scoped_session(db, options):
+    if options is None:
+        options = {}
+    return orm.scoped_session(partial(_SignallingSession, db, **options))
 
 
 def _include_sqlalchemy(obj):
@@ -162,10 +163,10 @@ class _SignallingSessionExtension(SessionExtension):
 
 class _SignallingSession(Session):
 
-    def __init__(self, db):
-        Session.__init__(self, autocommit=False, autoflush=False,
+    def __init__(self, db, autocommit=False, autoflush=False, **options):
+        Session.__init__(self, autocommit=autocommit, autoflush=autoflush,
                          extension=db.session_extensions,
-                         bind=db.engine)
+                         bind=db.engine, **options)
         self.app = db.app or _request_ctx_stack.top.app
         self._model_changes = {}
 
@@ -466,32 +467,39 @@ class SQLAlchemy(object):
         class User(db.Model):
             username = db.Column(db.String(80), unique=True)
             pw_hash = db.Column(db.String(80))
-            
+
     You may also define your own SessionExtension instances as well when
     defining your SQLAlchemy class instance. You may pass your custom instances
-    to the `session_extensions` keyword. This can be either a single 
+    to the `session_extensions` keyword. This can be either a single
     SessionExtension instance, or a list of SessionExtension instances. In the 
-    following use case we use the VersionedListener from the SQLAlchemy 
+    following use case we use the VersionedListener from the SQLAlchemy
     versioning examples.::
-    
+
         from history_meta import VersionedMeta, VersionedListener
-        
+
         app = Flask(__name__)
         db = SQLAlchemy(app, session_extensions=[VersionedListener()])
-        
+
         class User(db.Model):
             __metaclass__ = VersionedMeta
             username = db.Column(db.String(80), unique=True)
             pw_hash = db.Column(db.String(80))
+
+    The `session_options` parameter can be used to override session
+    options.  If provided it's a dict of parameters passed to the
+    session's constructor.
+
+    .. versionadded:: 0.10
+       The `session_options` parameter was added.
     """
 
-    def __init__(self, app=None, use_native_unicode=True, 
-                 session_extensions=None):
+    def __init__(self, app=None, use_native_unicode=True,
+                 session_extensions=None, session_options=None):
         self.use_native_unicode = use_native_unicode
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
-        
-        self.session = _create_scoped_session(self)
+
+        self.session = _create_scoped_session(self, session_options)
 
         self.Model = declarative_base(cls=Model, name='Model')
         self.Model.query = _QueryProperty(self)
@@ -524,8 +532,6 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
-
-        self.app = app
 
         @app.after_request
         def shutdown_session(response):

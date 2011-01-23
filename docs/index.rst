@@ -8,7 +8,7 @@ application.  This module is currently still under development and the
 documentation is lacking.  If you want to get started, have a look at the
 `example sourcecode`_.
 
-.. _SQLAlchemy: http://sqlalchemy.org/
+.. _SQLAlchemy: http://www.sqlalchemy.org/
 .. _Flask: http://flask.pocoo.org/
 .. _example sourcecode:
    http://github.com/mitsuhiko/flask-sqlalchemy/tree/master/examples/
@@ -81,7 +81,15 @@ But they are not yet in the database, so let's make sure they are:
 >>> db.session.add(guest)
 >>> db.session.commit()
 
-And how do you get the data back?  Easy as pie:
+And how do you get the data back? Firstly, because we are not inside the WSGI
+application, but using the Python shell we are missing the request context
+that is required for accessing the query method for models. So lets set up
+a dummy request context for our shell:
+
+>>> from yourapplication import app
+>>> app.test_request_context().push()
+
+And now, accessing the data in database is easy as a pie:
 
 >>> users = User.query.all()
 [<User u'admin'>, <User u'guest'>]
