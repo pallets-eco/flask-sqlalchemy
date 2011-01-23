@@ -621,5 +621,5 @@ class SQLAlchemy(object):
                 app = ctx.app
         return '<%s engine=%r>' % (
             self.__class__.__name__,
-            app and self.app.config['SQLALCHEMY_DATABASE_URI'] or None
+            app and app.config['SQLALCHEMY_DATABASE_URI'] or None
         )
