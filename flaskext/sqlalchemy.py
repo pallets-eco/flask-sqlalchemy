@@ -51,11 +51,21 @@ def _create_scoped_session(db, options):
     return orm.scoped_session(partial(_SignallingSession, db, **options))
 
 
+def _make_table(db):
+    def _make_table(*args, **kwargs):
+        if len(args) > 1 and isinstance(args[1], db.Column):
+            args = (args[0], db.metadata) + args[2:]
+        return sqlalchemy.Table(*args, **kwargs)
+    return _make_table
+
+
+
 def _include_sqlalchemy(obj):
     for module in sqlalchemy, sqlalchemy.orm:
         for key in module.__all__:
             if not hasattr(obj, key):
                 setattr(obj, key, getattr(module, key))
+    obj.Table = _make_table(obj)
 
 
 class _DebugQueryTuple(tuple):

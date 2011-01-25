@@ -15,6 +15,8 @@ Version 0.10
   an RuntimeError instead of being None.
 - added session options to constructor.
 - fixed a broken `__repr__`
+- `db.Table` is now a factor function that creates table objects.
+  This makes it possible to omit the metadata.
 
 Version 0.9
 ```````````
