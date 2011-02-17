@@ -7,6 +7,8 @@ release.
 Version 0.11
 ````````````
 
+- Fixed a bug introduced in 0.10 with alternative table constructors.
+
 Version 0.10
 ````````````
 

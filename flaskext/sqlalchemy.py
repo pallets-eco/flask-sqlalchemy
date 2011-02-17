@@ -54,7 +54,7 @@ def _create_scoped_session(db, options):
 def _make_table(db):
     def _make_table(*args, **kwargs):
         if len(args) > 1 and isinstance(args[1], db.Column):
-            args = (args[0], db.metadata) + args[2:]
+            args = (args[0], db.metadata) + args[1:]
         return sqlalchemy.Table(*args, **kwargs)
     return _make_table
 
