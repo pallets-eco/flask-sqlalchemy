@@ -558,6 +558,15 @@ class SQLAlchemy(object):
         _setdefault('pool_recycle', 'SQLALCHEMY_POOL_RECYCLE')
 
     def apply_driver_hacks(self, app, info, options):
+        """This method is called before engine creation and used to inject
+        driver specific hacks into the options.  The `options` parameter is
+        a dictionary of keyword arguments that will then be used to call
+        the :func:`sqlalchemy.create_engine` function.
+
+        The default implementation provides some saner defaults for things
+        like pool sizes for MySQL and sqlite.  Also it injects the setting of
+        `SQLALCHEMY_NATIVE_UNICODE`.
+        """
         if info.drivername == 'mysql':
             info.query.setdefault('charset', 'utf8')
             options.setdefault('pool_size', 10)
