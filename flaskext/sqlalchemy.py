@@ -27,7 +27,7 @@ from sqlalchemy.orm.interfaces import MapperExtension, SessionExtension, \
      EXT_CONTINUE
 from sqlalchemy.interfaces import ConnectionProxy
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.util import to_list
 
 # the best timer function for the platform
@@ -55,6 +55,8 @@ def _make_table(db):
     def _make_table(*args, **kwargs):
         if len(args) > 1 and isinstance(args[1], db.Column):
             args = (args[0], db.metadata) + args[1:]
+        info = kwargs.pop('info', None) or {}
+        info.setdefault('bind_key', None)
         return sqlalchemy.Table(*args, **kwargs)
     return _make_table
 
@@ -177,8 +179,15 @@ class _SignallingSession(Session):
         Session.__init__(self, autocommit=autocommit, autoflush=autoflush,
                          extension=db.session_extensions,
                          bind=db.engine, **options)
-        self.app = db.app or _request_ctx_stack.top.app
+        self.app = db.get_app()
         self._model_changes = {}
+
+    def get_bind(self, mapper, clause=None):
+        bind_key = mapper.mapped_table.info.get('bind_key')
+        if bind_key is not None:
+            state = get_state(self.app)
+            return state.db.get_engine(self.app)
+        return Session.get_bind(self, mapper, clause)
 
 
 def get_debug_queries():
@@ -377,16 +386,25 @@ def _record_queries(app):
 
 class _EngineConnector(object):
 
-    def __init__(self, sa, app):
+    def __init__(self, sa, app, bind=None):
         self._sa = sa
         self._app = app
         self._engine = None
         self._connected_for = None
+        self._bind = bind
         self._lock = Lock()
+
+    def get_uri(self):
+        if self._bind is None:
+            return self._app.config['SQLALCHEMY_DATABASE_URI']
+        binds = self._app.config.get('SQLALCHEMY_BINDS') or ()
+        assert self._bind in binds, \
+            'Bind %r is not specified.  Set it in the SQLALCHEMY_BINDS ' \
+            'configuration variable' % self._bind
 
     def get_engine(self):
         with self._lock:
-            uri = self._app.config['SQLALCHEMY_DATABASE_URI']
+            uri = self.get_uri()
             echo = self._app.config['SQLALCHEMY_ECHO']
             if (uri, echo) == self._connected_for:
                 return self._engine
@@ -416,6 +434,32 @@ class _ModelTableNameDescriptor(object):
             tablename = _camelcase_re.sub(_join, type.__name__).lstrip('_')
             setattr(type, '__tablename__', tablename)
         return tablename
+
+
+class _BoundDeclarativeMeta(DeclarativeMeta):
+
+    def __init__(cls, classname, bases, dict_):
+        DeclarativeMeta.__init__(cls, classname, bases, dict_)
+        bind_key = dict_.pop('__bind_key__', None)
+        if bind_key is not None:
+            cls.__table__.info['bind_key'] = bind_key
+
+
+def get_state(app):
+    """Gets the state for the application"""
+    assert 'sqlalchemy' in app.extensions, \
+        'The sqlalchemy extension was not registered to the current ' \
+        'application.  Please make sure to call init_app() first.'
+    return app.extensions['sqlalchemy']
+
+
+class _SQLAlchemyState(object):
+    """Remembers configuration for the (db, app) tuple."""
+
+    def __init__(self, db, app):
+        self.db = db
+        self.app = app
+        self.connectors = {}
 
 
 class Model(object):
@@ -511,7 +555,7 @@ class SQLAlchemy(object):
 
         self.session = _create_scoped_session(self, session_options)
 
-        self.Model = declarative_base(cls=Model, name='Model')
+        self.Model = self.make_declarative_base()
         self.Model.query = _QueryProperty(self)
 
         self._engine_lock = Lock()
@@ -529,6 +573,11 @@ class SQLAlchemy(object):
         """Returns the metadata"""
         return self.Model.metadata
 
+    def make_declarative_base(self):
+        """Creates the declarative base."""
+        return declarative_base(cls=Model, name='Model',
+                                metaclass=_BoundDeclarativeMeta)
+
     def init_app(self, app):
         """This callback can be used to initialize an application for the
         use with this database setup.  Never use a database in the context
@@ -536,12 +585,17 @@ class SQLAlchemy(object):
         leak.
         """
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
+        app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
         app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
+
+        if not hasattr(app, 'extensions'):
+            app.extensions = {}
+        app.extensions['sqlalchemy'] = _SQLAlchemyState(self, app)
 
         @app.after_request
         def shutdown_session(response):
@@ -601,34 +655,65 @@ class SQLAlchemy(object):
         is used this might raise a :exc:`RuntimeError` if no application is
         active at the moment.
         """
+        return self.get_engine(self.get_app())
+
+    def make_connector(self, app, bind=None):
+        """Creates the connector for a given state and bind."""
+        return _EngineConnector(self, app, bind)
+
+    def get_engine(self, app, bind=None):
+        """Returns a specific engine.
+
+        .. versionadded:: 0.12
+        """
         with self._engine_lock:
-            if self.app is not None:
-                app = self.app
-            else:
-                ctx = _request_ctx_stack.top
-                if ctx is not None:
-                    app = ctx.app
-                else:
-                    raise RuntimeError('application not registered on db '
-                                       'instance and no application bound '
-                                       'to current context')
-            connector = getattr(app, '_sqlalchemy_connector', None)
+            state = get_state(app)
+            connector = state.connectors.get(bind)
             if connector is None:
-                connector = _EngineConnector(self, app)
-                app._sqlalchemy_connector = connector
+                connector = self.make_connector(app)
+                state.connectors[bind] = connector
             return connector.get_engine()
 
-    def create_all(self):
+    def get_app(self, reference_app=None):
+        """Helper method that implements the logic to look up an application.
+        """
+        if reference_app is not None:
+            return reference_app
+        if self.app is not None:
+            return self.app
+        ctx = _request_ctx_stack.top
+        if ctx is not None:
+            return ctx.app
+        raise RuntimeError('application not registered on db '
+                           'instance and no application bound '
+                           'to current context')
+
+    def get_tables_for_bind(self, bind=None):
+        """Returns a list of all tables relevant for a bind"""
+        result = []
+        for table in self.Model.metadata.tables.itervalues():
+            if table.info.get('bind_key') == bind:
+                result.append(table)
+        return result
+
+    def _execute_for_all_tables(self, app, operation):
+        app = self.get_app(app)
+        for bind in [None] + list(app.config.get('SQLALCHEMY_BINDS') or ()):
+            tables = self.get_tables_for_bind(bind)
+            op = getattr(self.Model.metadata, operation)
+            op(bind=self.get_engine(app, bind), tables=tables)
+
+    def create_all(self, app=None):
         """Creates all tables."""
-        self.Model.metadata.create_all(bind=self.engine)
+        self._execute_for_all_tables(app, 'create_all')
 
-    def drop_all(self):
+    def drop_all(self, app=None):
         """Drops all tables."""
-        self.Model.metadata.drop_all(bind=self.engine)
+        self._execute_for_all_tables(app, 'drop_all')
 
-    def reflect(self):
+    def reflect(self, app=None):
         """Reflects tables from the database."""
-        self.Model.metadata.reflect(bind=self.engine)
+        self._execute_for_all_tables(app, 'reflect')
 
     def __repr__(self):
         app = None

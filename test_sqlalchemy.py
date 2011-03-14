@@ -187,5 +187,58 @@ class PaginationTestCase(unittest.TestCase):
                          [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
 
 
+class BindsTestCase(unittest.TestCase):
+
+    def test_basic_binds(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_BINDS'] = {
+            'foo':      'sqlite://',
+            'bar':      'sqlite://'
+        }
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Foo(db.Model):
+            __bind_key__ = 'foo'
+            __table_args__ = {"info": {"bind_key": "foo"}}
+            id = db.Column(db.Integer, primary_key=True)
+
+        class Bar(db.Model):
+            __bind_key__ = 'bar'
+            id = db.Column(db.Integer, primary_key=True)
+
+        class Baz(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        db.create_all()
+
+        # simple way to check if the engines are looked up properly
+        self.assertEqual(db.get_engine(app, None), db.engine)
+        for key in 'foo', 'bar':
+            engine = db.get_engine(app, key)
+            connector = app.extensions['sqlalchemy'].connectors[key]
+            self.assertEqual(engine, connector.get_engine())
+
+        # do the models have the correct engines?
+        self.assertEqual(db.metadata.tables['foo'].info['bind_key'], 'foo')
+        self.assertEqual(db.metadata.tables['bar'].info['bind_key'], 'bar')
+        self.assertEqual(db.metadata.tables['baz'].info.get('bind_key'), None)
+
+        # see the tables created in an engine
+        metadata = db.MetaData()
+        metadata.reflect(bind=db.get_engine(app, 'foo'))
+        self.assertEqual(len(metadata.tables), 1)
+        self.assert_('foo' in metadata.tables)
+
+        metadata = db.MetaData()
+        metadata.reflect(bind=db.get_engine(app, 'bar'))
+        self.assertEqual(len(metadata.tables), 1)
+        self.assert_('bar' in metadata.tables)
+
+        metadata = db.MetaData()
+        metadata.reflect(bind=db.get_engine(app))
+        self.assertEqual(len(metadata.tables), 1)
+        self.assert_('baz' in metadata.tables)
+
+
 if __name__ == '__main__':
     unittest.main()
