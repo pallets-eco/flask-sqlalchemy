@@ -12,6 +12,7 @@ from __future__ import with_statement, absolute_import
 import re
 import sys
 import time
+import functools
 import sqlalchemy
 from math import ceil
 from functools import partial
@@ -59,6 +60,23 @@ def _make_table(db):
     return _make_table
 
 
+def _set_default_query_class(d):
+    if 'query_class' not in d:
+        d['query_class'] = BaseQuery
+
+
+def _wrap_with_default_query_class(fn):
+    @functools.wraps(fn)
+    def newfn(*args, **kwargs):
+        _set_default_query_class(kwargs)
+        if "backref" in kwargs:
+            backref = kwargs['backref']
+            if isinstance(backref, basestring):
+                backref = (backref, {})
+            _set_default_query_class(backref[1])
+        return fn(*args, **kwargs)
+    return newfn
+
 
 def _include_sqlalchemy(obj):
     for module in sqlalchemy, sqlalchemy.orm:
@@ -66,6 +84,9 @@ def _include_sqlalchemy(obj):
             if not hasattr(obj, key):
                 setattr(obj, key, getattr(module, key))
     obj.Table = _make_table(obj)
+    obj.relationship = _wrap_with_default_query_class(obj.relationship)
+    obj.relation = _wrap_with_default_query_class(obj.relation)
+    obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader)
 
 
 class _DebugQueryTuple(tuple):

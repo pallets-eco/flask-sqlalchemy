@@ -7,6 +7,8 @@ release.
 Version 0.12
 ````````````
 
+- Set default query_class for `db.relation`, `db.relationship`, and 
+  `db.dynamic_loader` to Flask-SQLAlchemy's BaseQuery.
 
 Version 0.11
 ````````````

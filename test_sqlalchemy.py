@@ -187,5 +187,28 @@ class PaginationTestCase(unittest.TestCase):
                          [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
 
 
+class DefaultQueryClassTestCase(unittest.TestCase):
+
+    def test_default_query_class(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Parent(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            children = db.relationship("Child", backref = db.backref("parents", lazy='dynamic'), lazy='dynamic')
+        class Child(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+        p = Parent()
+        c = Child()
+        c.parent = p
+        self.assertEqual(type(Parent.query), sqlalchemy.BaseQuery)
+        self.assertEqual(type(Child.query), sqlalchemy.BaseQuery)
+        self.assert_(isinstance(p.children, sqlalchemy.BaseQuery))
+        self.assert_(isinstance(c.parents, sqlalchemy.BaseQuery))
+
+
 if __name__ == '__main__':
     unittest.main()
