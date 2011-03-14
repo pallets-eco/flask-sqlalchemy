@@ -240,5 +240,43 @@ class BindsTestCase(unittest.TestCase):
         self.assert_('baz' in metadata.tables)
 
 
+class DefaultQueryClassTestCase(unittest.TestCase):
+
+    def test_default_query_class(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Parent(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            children = db.relationship("Child", backref = db.backref("parents", lazy='dynamic'), lazy='dynamic')
+        class Child(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+        p = Parent()
+        c = Child()
+        c.parent = p
+        self.assertEqual(type(Parent.query), sqlalchemy.BaseQuery)
+        self.assertEqual(type(Child.query), sqlalchemy.BaseQuery)
+        self.assert_(isinstance(p.children, sqlalchemy.BaseQuery))
+        self.assert_(isinstance(c.parents, sqlalchemy.BaseQuery))
+
+
+class SQLAlchemyIncludesTestCase(unittest.TestCase):
+
+    def test(self):
+        """Various SQLAlchemy objects are exposed as attributes.
+        """
+        db = sqlalchemy.SQLAlchemy()
+
+        import sqlalchemy as sqlalchemy_lib
+        self.assertTrue(db.Column == sqlalchemy_lib.Column)
+
+        # The Query object we expose is actually our own subclass.
+        from flaskext.sqlalchemy import BaseQuery
+        self.assertTrue(db.Query == BaseQuery)
+
+
 if __name__ == '__main__':
     unittest.main()
