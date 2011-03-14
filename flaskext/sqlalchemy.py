@@ -689,7 +689,7 @@ class SQLAlchemy(object):
                            'to current context')
 
     def get_tables_for_bind(self, bind=None):
-        """Returns a list of all tables relevant for a bind"""
+        """Returns a list of all tables relevant for a bind."""
         result = []
         for table in self.Model.metadata.tables.itervalues():
             if table.info.get('bind_key') == bind:
