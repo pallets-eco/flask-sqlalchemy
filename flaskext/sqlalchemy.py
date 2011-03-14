@@ -44,12 +44,6 @@ models_committed = _signals.signal('models-committed')
 before_models_committed = _signals.signal('before-models-committed')
 
 
-def _create_scoped_session(db, options):
-    if options is None:
-        options = {}
-    return orm.scoped_session(partial(_SignallingSession, db, **options))
-
-
 def _make_table(db):
     def _make_table(*args, **kwargs):
         if len(args) > 1 and isinstance(args[1], db.Column):
@@ -548,8 +542,7 @@ class SQLAlchemy(object):
         self.use_native_unicode = use_native_unicode
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
-
-        self.session = _create_scoped_session(self, session_options)
+        self.session = self.create_scoped_session(session_options)
 
         self.Model = self.make_declarative_base()
         self.Model.query = _QueryProperty(self)
@@ -568,6 +561,12 @@ class SQLAlchemy(object):
     def metadata(self):
         """Returns the metadata"""
         return self.Model.metadata
+
+    def create_scoped_session(self, options=None):
+        """Helper factory method that creates a scoped session."""
+        if options is None:
+            options = {}
+        return orm.scoped_session(partial(_SignallingSession, self, **options))
 
     def make_declarative_base(self):
         """Creates the declarative base."""
