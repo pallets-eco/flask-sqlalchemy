@@ -21,7 +21,6 @@ from operator import itemgetter
 from threading import Lock
 from sqlalchemy import orm
 from sqlalchemy.orm.exc import UnmappedClassError
-from sqlalchemy.orm.mapper import Mapper
 from sqlalchemy.orm.session import Session
 from sqlalchemy.orm.interfaces import MapperExtension, SessionExtension, \
      EXT_CONTINUE
@@ -68,6 +67,7 @@ def _include_sqlalchemy(obj):
             if not hasattr(obj, key):
                 setattr(obj, key, getattr(module, key))
     obj.Table = _make_table(obj)
+    obj.mapper = signalling_mapper
 
 
 class _DebugQueryTuple(tuple):
@@ -142,15 +142,6 @@ class _SignalTrackingMapperExtension(MapperExtension):
         pk = tuple(mapper.primary_key_from_instance(model))
         orm.object_session(model)._model_changes[pk] = (model, operation)
         return EXT_CONTINUE
-
-
-class _SignalTrackingMapper(Mapper):
-
-    def __init__(self, *args, **kwargs):
-        extensions = to_list(kwargs.pop('extension', None), [])
-        extensions.append(_SignalTrackingMapperExtension())
-        kwargs['extension'] = extensions
-        Mapper.__init__(self, *args, **kwargs)
 
 
 class _SignallingSessionExtension(SessionExtension):
@@ -453,6 +444,14 @@ def get_state(app):
     return app.extensions['sqlalchemy']
 
 
+def signalling_mapper(*args, **kwargs):
+    """Replacement for mapper that injects some extra extensions"""
+    extensions = to_list(kwargs.pop('extension', None), [])
+    extensions.append(_SignalTrackingMapperExtension())
+    kwargs['extension'] = extensions
+    return sqlalchemy.orm.mapper(*args, **kwargs)
+
+
 class _SQLAlchemyState(object):
     """Remembers configuration for the (db, app) tuple."""
 
@@ -472,9 +471,6 @@ class Model(object):
     #: an instance of :attr:`query_class`.  Can be used to query the
     #: database for instances of this model.
     query = None
-
-    #: arguments for the mapper
-    __mapper_cls__ = _SignalTrackingMapper
 
     __tablename__ = _ModelTableNameDescriptor()
 
@@ -576,6 +572,7 @@ class SQLAlchemy(object):
     def make_declarative_base(self):
         """Creates the declarative base."""
         return declarative_base(cls=Model, name='Model',
+                                mapper=signalling_mapper,
                                 metaclass=_BoundDeclarativeMeta)
 
     def init_app(self, app):
