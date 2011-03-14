@@ -83,6 +83,7 @@ def _include_sqlalchemy(obj):
         for key in module.__all__:
             if not hasattr(obj, key):
                 setattr(obj, key, getattr(module, key))
+    # Note: obj.Table does not attempt to be a SQLAlchemy Table class.
     obj.Table = _make_table(obj)
     obj.relationship = _wrap_with_default_query_class(obj.relationship)
     obj.relation = _wrap_with_default_query_class(obj.relation)
@@ -492,18 +493,32 @@ class SQLAlchemy(object):
     key) to `False`.  Note that the configuration key overrides the
     value you pass to the constructor.
 
-    Additionally this class also provides access to all the SQLAlchemy
-    functions from the :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` modules.
-    So you can declare models like this::
+    This class also provides access to all the SQLAlchemy functions and classes
+    from the :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` modules.  So you can
+    declare models like this::
 
         class User(db.Model):
             username = db.Column(db.String(80), unique=True)
             pw_hash = db.Column(db.String(80))
 
+    You can still use :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` directly, but
+    note that Flask-SQLAlchemy customizations are available only through an
+    instance of this :class:`SQLAlchemy` class.  Query classes default to
+    :class:`BaseQuery` for `db.Query`, `db.Model.query_class`, and the default
+    query_class for `db.relationship` and `db.backref`.  If you use these
+    interfaces through :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` directly,
+    the default query class will be that of :mod:`sqlalchemy`.
+
+    .. admonition:: Check types carefully
+
+       Don't perform type or `isinstance` checks against `db.Table`, which
+       emulates `Table` behavior but is not a class. `db.Table` exposes the
+       `Table` interface, but is a function which allows omission of metadata.
+
     You may also define your own SessionExtension instances as well when
     defining your SQLAlchemy class instance. You may pass your custom instances
     to the `session_extensions` keyword. This can be either a single
-    SessionExtension instance, or a list of SessionExtension instances. In the 
+    SessionExtension instance, or a list of SessionExtension instances. In the
     following use case we use the VersionedListener from the SQLAlchemy
     versioning examples.::
 
