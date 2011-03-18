@@ -193,7 +193,7 @@ class _SignallingSession(Session):
         bind_key = mapper and mapper.mapped_table.info.get('bind_key') or None
         if bind_key is not None:
             state = get_state(self.app)
-            return state.db.get_engine(self.app)
+            return state.db.get_engine(self.app, bind=bind_key)
         return Session.get_bind(self, mapper, clause)
 
 
@@ -737,24 +737,44 @@ class SQLAlchemy(object):
                 result.append(table)
         return result
 
-    def _execute_for_all_tables(self, app, operation):
+    def _execute_for_all_tables(self, app, bind, operation):
         app = self.get_app(app)
-        for bind in [None] + list(app.config.get('SQLALCHEMY_BINDS') or ()):
+
+        if bind == '__all__':
+            binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
+        elif isinstance(bind, basestring):
+            binds = [bind]
+        else:
+            binds = bind
+
+        for bind in binds:
             tables = self.get_tables_for_bind(bind)
             op = getattr(self.Model.metadata, operation)
             op(bind=self.get_engine(app, bind), tables=tables)
 
-    def create_all(self, app=None):
-        """Creates all tables."""
-        self._execute_for_all_tables(app, 'create_all')
+    def create_all(self, bind='__all__', app=None):
+        """Creates all tables.
 
-    def drop_all(self, app=None):
-        """Drops all tables."""
-        self._execute_for_all_tables(app, 'drop_all')
+        .. versionchanged:: 0.12
+           Parameters were added
+        """
+        self._execute_for_all_tables(app, bind, 'create_all')
 
-    def reflect(self, app=None):
-        """Reflects tables from the database."""
-        self._execute_for_all_tables(app, 'reflect')
+    def drop_all(self, bind='__all__', app=None):
+        """Drops all tables.
+
+        .. versionchanged:: 0.12
+           Parameters were added
+        """
+        self._execute_for_all_tables(app, bind, 'drop_all')
+
+    def reflect(self, bind='__all__', app=None):
+        """Reflects tables from the database.
+
+        .. versionchanged:: 0.12
+           Parameters were added
+        """
+        self._execute_for_all_tables(app, bind, 'reflect')
 
     def __repr__(self):
         app = None
