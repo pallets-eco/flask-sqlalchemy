@@ -190,7 +190,7 @@ class _SignallingSession(Session):
         self._model_changes = {}
 
     def get_bind(self, mapper, clause=None):
-        # makker is None if someone tries to just get a connection
+        # mapper is None if someone tries to just get a connection
         if mapper is not None:
             info = getattr(mapper.mapped_table, 'info', {})
             bind_key = info.get('bind_key')
