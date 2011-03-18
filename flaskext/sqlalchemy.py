@@ -190,7 +190,12 @@ class _SignallingSession(Session):
         self._model_changes = {}
 
     def get_bind(self, mapper, clause=None):
-        bind_key = mapper and mapper.mapped_table.info.get('bind_key') or None
+        try:
+            bind_key = mapper and mapper.mapped_table.info.get('bind_key') \
+                or None
+        except AttributeError:
+            bind_key = None
+
         if bind_key is not None:
             state = get_state(self.app)
             return state.db.get_engine(self.app)
