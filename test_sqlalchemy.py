@@ -280,7 +280,7 @@ class SQLAlchemyIncludesTestCase(unittest.TestCase):
 
 class RegressionTestCase(unittest.TestCase):
 
-    def test_polymorphic_inheritance(self):
+    def test_joined_inheritance(self):
         app = flask.Flask(__name__)
         db = sqlalchemy.SQLAlchemy(app)
 
@@ -296,6 +296,22 @@ class RegressionTestCase(unittest.TestCase):
 
         self.assertEqual(Base.__tablename__, 'base')
         self.assertEqual(SubBase.__tablename__, 'sub_base')
+        db.create_all()
+
+    def test_single_table_inheritance(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Base(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            type = db.Column(db.Unicode(20))
+            __mapper_args__ = {'polymorphic_on': type}
+
+        class SubBase(Base):
+            __mapper_args__ = {'polymorphic_identity': 'sub'}
+
+        self.assertEqual(Base.__tablename__, 'base')
+        self.assertEqual(SubBase.__tablename__, 'base')
         db.create_all()
 
 

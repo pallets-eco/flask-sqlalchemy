@@ -429,17 +429,31 @@ class _EngineConnector(object):
             return rv
 
 
+def _defines_primary_key(d):
+    """Figures out if the given dictonary defines a primary key column."""
+    return any(v.primary_key for k, v in d.iteritems()
+               if isinstance(v, sqlalchemy.Column))
+
+
 class _BoundDeclarativeMeta(DeclarativeMeta):
 
     def __new__(cls, name, bases, d):
         tablename = d.get('__tablename__')
-        if not tablename:
+
+        # generate a table name automatically if it's missing and the
+        # class dictionary declares a primary key.  We cannot always
+        # attach a primary key to support model inheritance that does
+        # not use joins.  We also don't want a table name if a whole
+        # table is defined
+        if not tablename and not d.get('__table__') and \
+           _defines_primary_key(d):
             def _join(match):
                 word = match.group()
                 if len(word) > 1:
                     return ('_%s_%s' % (word[:-1], word[-1])).lower()
                 return '_' + word.lower()
             d['__tablename__'] = _camelcase_re.sub(_join, name).lstrip('_')
+
         return DeclarativeMeta.__new__(cls, name, bases, d)
 
     def __init__(self, name, bases, d):
