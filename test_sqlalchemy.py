@@ -314,6 +314,38 @@ class RegressionTestCase(unittest.TestCase):
         self.assertEqual(SubBase.__tablename__, 'base')
         db.create_all()
 
+    def test_joined_inheritance_relation(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Relation(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            base_id = db.Column(db.Integer, db.ForeignKey('base.id'))
+            name = db.Column(db.Unicode(20))
+
+            def __init__(self, name):
+                self.name = name
+
+        class Base(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            type = db.Column(db.Unicode(20))
+            __mapper_args__ = {'polymorphic_on': type}
+
+        class SubBase(Base):
+            id = db.Column(db.Integer, db.ForeignKey('base.id'),
+                           primary_key=True)
+            __mapper_args__ = {'polymorphic_identity': u'sub'}
+            relations = db.relationship(Relation)
+
+        db.create_all()
+
+        base = SubBase()
+        base.relations = [Relation(name=u'foo')]
+        db.session.add(base)
+        db.session.commit()
+
+        base = base.query.one()
+
 
 if __name__ == '__main__':
     unittest.main()
