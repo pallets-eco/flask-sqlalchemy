@@ -8,6 +8,11 @@ Flask-SQLAlchemy with Flask.
    :maxdepth: 2
 
    quickstart
+   contexts
+   config
+   models
+   queries
+   binds
    signals
 
 API Reference

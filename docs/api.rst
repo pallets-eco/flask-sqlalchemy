@@ -22,6 +22,11 @@ Models
 .. autoclass:: Model
    :members:
 
+   .. attribute:: __bind_key__
+
+      Optionally declares the bind to use.  `None` refers to the default
+      bind.  For more information see :ref:`binds`.
+
 .. autoclass:: BaseQuery
    :members: get, get_or_404, paginate, first_or_404
 

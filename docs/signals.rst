@@ -1,5 +1,5 @@
 Signalling Support
-------------------
+==================
 
 .. versionadded:: 0.10
 
