@@ -104,7 +104,7 @@ html_theme = 'flask'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'touch_icon':   'touch-icon.png'
+    'index_logo':       'flask-sqlalchemy.png'
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
