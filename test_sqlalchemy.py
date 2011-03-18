@@ -346,6 +346,11 @@ class RegressionTestCase(unittest.TestCase):
 
         base = base.query.one()
 
+    def test_connection_binds(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app)
+        assert db.session.connection()
+
 
 if __name__ == '__main__':
     unittest.main()
