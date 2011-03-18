@@ -278,5 +278,26 @@ class SQLAlchemyIncludesTestCase(unittest.TestCase):
         self.assertTrue(db.Query == BaseQuery)
 
 
+class RegressionTestCase(unittest.TestCase):
+
+    def test_polymorphic_inheritance(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Base(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            type = db.Column(db.Unicode(20))
+            __mapper_args__ = {'polymorphic_on': type}
+
+        class SubBase(Base):
+            id = db.Column(db.Integer, db.ForeignKey('base.id'),
+                           primary_key=True)
+            __mapper_args__ = {'polymorphic_identity': 'sub'}
+
+        self.assertEqual(Base.__tablename__, 'base')
+        self.assertEqual(SubBase.__tablename__, 'sub_base')
+        db.create_all()
+
+
 if __name__ == '__main__':
     unittest.main()

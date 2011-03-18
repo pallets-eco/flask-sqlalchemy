@@ -429,28 +429,24 @@ class _EngineConnector(object):
             return rv
 
 
-class _ModelTableNameDescriptor(object):
+class _BoundDeclarativeMeta(DeclarativeMeta):
 
-    def __get__(self, obj, type):
-        tablename = type.__dict__.get('__tablename__')
+    def __new__(cls, name, bases, d):
+        tablename = d.get('__tablename__')
         if not tablename:
             def _join(match):
                 word = match.group()
                 if len(word) > 1:
                     return ('_%s_%s' % (word[:-1], word[-1])).lower()
                 return '_' + word.lower()
-            tablename = _camelcase_re.sub(_join, type.__name__).lstrip('_')
-            setattr(type, '__tablename__', tablename)
-        return tablename
+            d['__tablename__'] = _camelcase_re.sub(_join, name).lstrip('_')
+        return DeclarativeMeta.__new__(cls, name, bases, d)
 
-
-class _BoundDeclarativeMeta(DeclarativeMeta):
-
-    def __init__(cls, classname, bases, dict_):
-        DeclarativeMeta.__init__(cls, classname, bases, dict_)
-        bind_key = dict_.pop('__bind_key__', None)
+    def __init__(self, name, bases, d):
+        bind_key = d.pop('__bind_key__', None)
+        DeclarativeMeta.__init__(self, name, bases, d)
         if bind_key is not None:
-            cls.__table__.info['bind_key'] = bind_key
+            self.__table__.info['bind_key'] = bind_key
 
 
 def get_state(app):
@@ -488,8 +484,6 @@ class Model(object):
     #: an instance of :attr:`query_class`.  Can be used to query the
     #: database for instances of this model.
     query = None
-
-    __tablename__ = _ModelTableNameDescriptor()
 
 
 class SQLAlchemy(object):
@@ -580,10 +574,7 @@ class SQLAlchemy(object):
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
         self.session = self.create_scoped_session(session_options)
-
         self.Model = self.make_declarative_base()
-        self.Model.query = _QueryProperty(self)
-
         self._engine_lock = Lock()
 
         if app is not None:
@@ -608,9 +599,11 @@ class SQLAlchemy(object):
 
     def make_declarative_base(self):
         """Creates the declarative base."""
-        return declarative_base(cls=Model, name='Model',
+        base = declarative_base(cls=Model, name='Model',
                                 mapper=signalling_mapper,
                                 metaclass=_BoundDeclarativeMeta)
+        base.query = _QueryProperty(self)
+        return base
 
     def init_app(self, app):
         """This callback can be used to initialize an application for the
