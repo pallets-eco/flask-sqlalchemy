@@ -103,7 +103,7 @@ application that uses two tables that have a relationship to each other::
 
     class Category(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        name = db.String(50)
+        name = db.Column(db.String(50))
 
         def __init__(self, name):
             self.name = name
