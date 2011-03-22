@@ -352,5 +352,20 @@ class RegressionTestCase(unittest.TestCase):
         assert db.session.connection()
 
 
+def suite():
+    suite = unittest.TestSuite()
+    suite.addTest(BasicAppTestCase)
+    suite.addTest(TestQueryProperty)
+    suite.addTest(HelperTestCase)
+    suite.addTest(PaginationTestCase)
+    suite.addTest(BindsTestCase)
+    suite.addTest(DefaultQueryClassTestCase)
+    suite.addTest(SQLAlchemyIncludesTestCase)
+    suite.addTest(RegressionTestCase)
+    if flask.signals_available:
+        suite.addTest(unittest.makeSuite(SignallingTestCase))
+    return suite
+
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(defaultTest='suite')
