@@ -33,7 +33,7 @@ setup(
         'Flask',
         'SQLAlchemy'
     ],
-    test_suite='test_sqlalchemy',
+    test_suite='test_sqlalchemy.suite',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',

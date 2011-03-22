@@ -354,14 +354,14 @@ class RegressionTestCase(unittest.TestCase):
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(BasicAppTestCase)
-    suite.addTest(TestQueryProperty)
-    suite.addTest(HelperTestCase)
-    suite.addTest(PaginationTestCase)
-    suite.addTest(BindsTestCase)
-    suite.addTest(DefaultQueryClassTestCase)
-    suite.addTest(SQLAlchemyIncludesTestCase)
-    suite.addTest(RegressionTestCase)
+    suite.addTest(unittest.makeSuite(BasicAppTestCase))
+    suite.addTest(unittest.makeSuite(TestQueryProperty))
+    suite.addTest(unittest.makeSuite(HelperTestCase))
+    suite.addTest(unittest.makeSuite(PaginationTestCase))
+    suite.addTest(unittest.makeSuite(BindsTestCase))
+    suite.addTest(unittest.makeSuite(DefaultQueryClassTestCase))
+    suite.addTest(unittest.makeSuite(SQLAlchemyIncludesTestCase))
+    suite.addTest(unittest.makeSuite(RegressionTestCase))
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
     return suite
