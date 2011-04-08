@@ -124,5 +124,5 @@ This will raise 404 errors instead of returning `None`::
 
     @app.route('/user/<username>')
     def show_user(username):
-        user = User.query.filter_by(username=username).get_or_404()
+        user = User.query.filter_by(username=username).first_or_404()
         return render_template('show_user.html', user=user)
