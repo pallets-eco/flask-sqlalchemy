@@ -412,6 +412,7 @@ class _EngineConnector(object):
         assert self._bind in binds, \
             'Bind %r is not specified.  Set it in the SQLALCHEMY_BINDS ' \
             'configuration variable' % self._bind
+        return binds[self._bind]
 
     def get_engine(self):
         with self._lock:
@@ -714,7 +715,7 @@ class SQLAlchemy(object):
             state = get_state(app)
             connector = state.connectors.get(bind)
             if connector is None:
-                connector = self.make_connector(app)
+                connector = self.make_connector(app, bind)
                 state.connectors[bind] = connector
             return connector.get_engine()
 
