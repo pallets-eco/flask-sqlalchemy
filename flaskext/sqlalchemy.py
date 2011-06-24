@@ -641,7 +641,15 @@ class SQLAlchemy(object):
             app.extensions = {}
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self, app)
 
-        @app.after_request
+        # 0.7 introduced the new `teardown_request` decorator which has better
+        # semantics than the after_request one.  We should use it if
+        # available.
+        if hasattr(app, 'teardown_request'):
+            teardown = app.teardown_request
+        else:
+            teardown = app.after_request
+
+        @teardown
         def shutdown_session(response):
             self.session.remove()
             return response
