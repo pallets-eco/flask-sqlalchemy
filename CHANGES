@@ -7,10 +7,10 @@ release.
 Version 0.12
 ````````````
 - Added support for multiple databases.
-
 - Expose Flask-SQLAlchemy's BaseQuery as `db.Query`.
 - Set default query_class for `db.relation`, `db.relationship`, and
   `db.dynamic_loader` to Flask-SQLAlchemy's BaseQuery.
+- Improved compatibility with Flask 0.7.
 
 Version 0.11
 ````````````
