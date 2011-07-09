@@ -12,7 +12,7 @@ the API documentation on the :class:`SQLAlchemy` class.
 A Minimal Application
 ---------------------
 
-For the common case of having one Flask applciation all you have to do is
+For the common case of having one Flask application all you have to do is
 to create your Flask application, load the configuration of choice and
 then create the :class:`SQLAlchemy` object by passing it the application.
 
