@@ -1,5 +1,7 @@
 from __future__ import with_statement
 
+import os
+import atexit
 import unittest
 from datetime import datetime
 import flask
@@ -190,10 +192,21 @@ class PaginationTestCase(unittest.TestCase):
 class BindsTestCase(unittest.TestCase):
 
     def test_basic_binds(self):
+        import tempfile
+        _, db1 = tempfile.mkstemp()
+        _, db2 = tempfile.mkstemp()
+        def _remove_files():
+            try:
+                os.remove(db1)
+                os.remove(db2)
+            except IOError:
+                pass
+        atexit.register(_remove_files)
+
         app = flask.Flask(__name__)
         app.config['SQLALCHEMY_BINDS'] = {
-            'foo':      'sqlite://',
-            'bar':      'sqlite://'
+            'foo':      'sqlite:///' + db1,
+            'bar':      'sqlite:///' + db2
         }
         db = sqlalchemy.SQLAlchemy(app)
 
@@ -217,6 +230,8 @@ class BindsTestCase(unittest.TestCase):
             engine = db.get_engine(app, key)
             connector = app.extensions['sqlalchemy'].connectors[key]
             self.assertEqual(engine, connector.get_engine())
+            self.assertEqual(str(engine.url),
+                             app.config['SQLALCHEMY_BINDS'][key])
 
         # do the models have the correct engines?
         self.assertEqual(db.metadata.tables['foo'].info['bind_key'], 'foo')

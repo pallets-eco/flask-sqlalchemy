@@ -4,6 +4,11 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
+Version 0.13
+````````````
+
+- Fixed an issue with Flask-SQLAlchemy not selecting the correct binds.
+
 Version 0.12
 ````````````
 - Added support for multiple databases.
