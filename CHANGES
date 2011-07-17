@@ -4,6 +4,11 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
+Version 0.14
+````````````
+
+- Make relative sqlite paths relative to the application root.
+
 Version 0.13
 ````````````
 
