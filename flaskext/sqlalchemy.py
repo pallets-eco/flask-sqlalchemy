@@ -184,11 +184,12 @@ class _SignallingSessionExtension(SessionExtension):
 class _SignallingSession(Session):
 
     def __init__(self, db, autocommit=False, autoflush=False, **options):
-        Session.__init__(self, autocommit=autocommit, autoflush=autoflush,
-                         extension=db.session_extensions,
-                         bind=db.engine, **options)
         self.app = db.get_app()
         self._model_changes = {}
+        Session.__init__(self, autocommit=autocommit, autoflush=autoflush,
+                         extension=db.session_extensions,
+                         bind=db.engine,
+                         binds=db.get_binds(self.app), **options)
 
     def get_bind(self, mapper, clause=None):
         # mapper is None if someone tries to just get a connection
@@ -755,6 +756,20 @@ class SQLAlchemy(object):
             if table.info.get('bind_key') == bind:
                 result.append(table)
         return result
+
+    def get_binds(self, app=None):
+        """Returns a dictionary with a table->engine mapping.
+
+        This is suitable for use of sessionmaker(binds=db.get_binds(app)).
+        """
+        app = self.get_app(app)
+        binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
+        retval = {}
+        for bind in binds:
+            engine = self.get_engine(app, bind)
+            tables = self.get_tables_for_bind(bind)
+            retval.update(dict((table, engine) for table in tables))
+        return retval
 
     def _execute_for_all_tables(self, app, bind, operation):
         app = self.get_app(app)
