@@ -204,6 +204,7 @@ class BindsTestCase(unittest.TestCase):
         atexit.register(_remove_files)
 
         app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['SQLALCHEMY_BINDS'] = {
             'foo':      'sqlite:///' + db1,
             'bar':      'sqlite:///' + db2
@@ -253,6 +254,13 @@ class BindsTestCase(unittest.TestCase):
         metadata.reflect(bind=db.get_engine(app))
         self.assertEqual(len(metadata.tables), 1)
         self.assert_('baz' in metadata.tables)
+
+        # do the session have the right binds set?
+        self.assertEqual(db.get_binds(app), {
+            Foo.__table__: db.get_engine(app, 'foo'),
+            Bar.__table__: db.get_engine(app, 'bar'),
+            Baz.__table__: db.get_engine(app, None)
+        })
 
 
 class DefaultQueryClassTestCase(unittest.TestCase):
