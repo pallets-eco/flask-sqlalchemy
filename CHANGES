@@ -4,11 +4,15 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
+Version 0.15
+````````````
+
+- Added session support for multiple databases
+
 Version 0.14
 ````````````
 
 - Make relative sqlite paths relative to the application root.
-- Added session support for multiple databases
 
 Version 0.13
 ````````````
