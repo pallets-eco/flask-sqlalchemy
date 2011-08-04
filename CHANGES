@@ -8,6 +8,7 @@ Version 0.14
 ````````````
 
 - Make relative sqlite paths relative to the application root.
+- Added session support for multiple databases
 
 Version 0.13
 ````````````

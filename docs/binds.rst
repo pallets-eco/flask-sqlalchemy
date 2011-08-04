@@ -67,3 +67,6 @@ a table object directly you will have to put it in there::
         db.Column('message_id', db.Integer, db.ForeignKey('message.id')),
         info={'bind_key': 'users'}
     )
+
+If you specified the `__bind_key__` on your models you can use them exactly the
+you are used to.  The model connects to the specified database connection itself.
