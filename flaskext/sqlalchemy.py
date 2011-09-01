@@ -614,7 +614,7 @@ class SQLAlchemy(object):
     def create_scoped_session(self, options=None, scopefunc=None):
         """Helper factory method that creates a scoped session.
 
-        .. versionadded:: 0.10
+        .. versionadded:: 0.16
             The `scopefunc` parameter was added.
 
         """
