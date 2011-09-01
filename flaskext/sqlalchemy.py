@@ -611,11 +611,20 @@ class SQLAlchemy(object):
         """Returns the metadata"""
         return self.Model.metadata
 
-    def create_scoped_session(self, options=None):
-        """Helper factory method that creates a scoped session."""
+    def create_scoped_session(self, options=None, scopefunc=None):
+        """Helper factory method that creates a scoped session.
+
+        .. versionadded:: 0.16
+            The `scopefunc` parameter was added.
+
+        """
         if options is None:
             options = {}
-        return orm.scoped_session(partial(_SignallingSession, self, **options))
+        if scopefunc is None:
+            scopefunc = _request_ctx_stack.__ident_func__
+        return orm.scoped_session(
+            partial(_SignallingSession, self, **options), scopefunc=scopefunc
+        )
 
     def make_declarative_base(self):
         """Creates the declarative base."""
