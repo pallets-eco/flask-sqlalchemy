@@ -620,6 +620,8 @@ class SQLAlchemy(object):
         """
         if options is None:
             options = {}
+        if scopefunc is None:
+            scopefunc = _request_ctx_stack.__ident_func__
         return orm.scoped_session(
             partial(_SignallingSession, self, **options), scopefunc=scopefunc
         )
