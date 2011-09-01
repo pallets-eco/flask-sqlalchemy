@@ -612,7 +612,12 @@ class SQLAlchemy(object):
         return self.Model.metadata
 
     def create_scoped_session(self, options=None, scopefunc=None):
-        """Helper factory method that creates a scoped session."""
+        """Helper factory method that creates a scoped session.
+
+        .. versionadded:: 0.10
+            The `scopefunc` parameter was added.
+
+        """
         if options is None:
             options = {}
         return orm.scoped_session(
