@@ -598,7 +598,10 @@ class SQLAlchemy(object):
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
 
-        session_options.set_default(
+        if session_options is None:
+            session_options = {}
+
+        session_options.setdefault(
             'scopefunc', _request_ctx_stack.__ident_func__
         )
 
