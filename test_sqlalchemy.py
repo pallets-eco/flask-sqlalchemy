@@ -195,7 +195,9 @@ class BindsTestCase(unittest.TestCase):
         import tempfile
         _, db1 = tempfile.mkstemp()
         _, db2 = tempfile.mkstemp()
+
         def _remove_files():
+            import os
             try:
                 os.remove(db1)
                 os.remove(db2)
