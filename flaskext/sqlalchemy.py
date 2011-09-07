@@ -586,6 +586,10 @@ class SQLAlchemy(object):
 
     .. versionadded:: 0.10
        The `session_options` parameter was added.
+
+    .. versionadded:: 0.16
+       `scopefunc` is now accepted on `session_options`. It allows specifying
+        a custom function which will define the SQLAlchemy session's scoping.
     """
 
     def __init__(self, app=None, use_native_unicode=True,
@@ -593,6 +597,14 @@ class SQLAlchemy(object):
         self.use_native_unicode = use_native_unicode
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
+
+        if session_options is None:
+            session_options = {}
+
+        session_options.setdefault(
+            'scopefunc', _request_ctx_stack.__ident_func__
+        )
+
         self.session = self.create_scoped_session(session_options)
         self.Model = self.make_declarative_base()
         self._engine_lock = Lock()
@@ -615,7 +627,10 @@ class SQLAlchemy(object):
         """Helper factory method that creates a scoped session."""
         if options is None:
             options = {}
-        return orm.scoped_session(partial(_SignallingSession, self, **options))
+        scopefunc=options.pop('scopefunc', None)
+        return orm.scoped_session(
+            partial(_SignallingSession, self, **options), scopefunc=scopefunc
+        )
 
     def make_declarative_base(self):
         """Creates the declarative base."""
