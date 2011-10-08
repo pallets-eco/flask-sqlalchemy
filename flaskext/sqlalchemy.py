@@ -52,6 +52,7 @@ def _make_table(db):
             args = (args[0], db.metadata) + args[1:]
         info = kwargs.pop('info', None) or {}
         info.setdefault('bind_key', None)
+        kwargs['info'] = info
         return sqlalchemy.Table(*args, **kwargs)
     return _make_table
 
