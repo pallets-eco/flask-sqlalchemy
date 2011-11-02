@@ -451,7 +451,7 @@ class _BoundDeclarativeMeta(DeclarativeMeta):
         # attach a primary key to support model inheritance that does
         # not use joins.  We also don't want a table name if a whole
         # table is defined
-        if not tablename and not d.get('__table__') is None and \
+        if not tablename and d.get('__table__') is None and \
            _defines_primary_key(d):
             def _join(match):
                 word = match.group()
