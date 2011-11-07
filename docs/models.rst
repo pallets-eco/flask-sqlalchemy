@@ -103,7 +103,7 @@ when SQLAlchemy will load the data from the database:
     query as the parent using a `JOIN` statement.
 -   ``'subquery'`` works like ``'joined'`` but instead SQLAlchemy will
     use a subquery.
--   ``'dynamic'`` is special and useful if you have may items.  Instead of
+-   ``'dynamic'`` is special and useful if you have many items.  Instead of
     loading the items SQLAlchemy will return another query object which
     you can further refine before loading them items.  This is usually
     what you want if you expect more than a handful of items for this
