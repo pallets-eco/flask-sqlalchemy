@@ -593,7 +593,8 @@ class SQLAlchemy(object):
     """
 
     def __init__(self, app=None, use_native_unicode=True,
-                 session_extensions=None, session_options=None):
+                 session_extensions=None, session_options=None,
+                 metadata=None):
         self.use_native_unicode = use_native_unicode
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
@@ -606,7 +607,7 @@ class SQLAlchemy(object):
         )
 
         self.session = self.create_scoped_session(session_options)
-        self.Model = self.make_declarative_base()
+        self.Model = self.make_declarative_base(metadata)
         self._engine_lock = Lock()
 
         if app is not None:
@@ -632,9 +633,12 @@ class SQLAlchemy(object):
             partial(_SignallingSession, self, **options), scopefunc=scopefunc
         )
 
-    def make_declarative_base(self):
+    def make_declarative_base(self, metadata=None):
         """Creates the declarative base."""
+        if not metadata:
+            metadata = sqlalchemy.MetaData()
         base = declarative_base(cls=Model, name='Model',
+                                metadata=metadata,
                                 mapper=signalling_mapper,
                                 metaclass=_BoundDeclarativeMeta)
         base.query = _QueryProperty(self)
