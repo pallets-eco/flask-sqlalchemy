@@ -58,6 +58,10 @@ A list of configuration keys currently understood by the extension:
 .. versionadded:: 0.12
    The ``SQLALCHEMY_BINDS`` configuration key was added.
 
+.. versionadded:: 0.16
+   The ``SQLALCHEMY_DATABASE_URI`` defaults to the ``DATABASE_URL`` environment
+   variable, if available.
+
 Connection URI Format
 ---------------------
 
