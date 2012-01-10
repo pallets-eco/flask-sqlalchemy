@@ -79,6 +79,16 @@ class BasicAppTestCase(unittest.TestCase):
     def test_helper_api(self):
         self.assertEqual(self.db.metadata, self.db.Model.metadata)
 
+    def test_engine_options_echo(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app, engine_options={'echo': True})
+        self.assertEqual(True, db.engine.echo)
+
+    def test_engine_options_no_echo(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app, engine_options={'echo': False})
+        self.assertEqual(False, db.engine.echo)
+
 
 class TestQueryProperty(unittest.TestCase):
 
