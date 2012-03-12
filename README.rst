@@ -14,7 +14,7 @@ Install the package::
 In your Flask app, import the extension and initialize the DB::
 
     from flaskext.sqlalchemy import SQLAlchemy
-    app.config['SQLALCHEMY_ENGINE'] = 'sqlite:////code/apicurious/db.sqlite'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////code/apicurious/db.sqlite'
     app.config['SQLALCHEMY_ECHO'] = True
     db = SQLAlchemy(app)
 
