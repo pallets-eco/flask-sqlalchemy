@@ -92,12 +92,12 @@ True
 
 Selecting a bunch of users by a more complex expression:
 
->>> User.query.filter_by(User.email.endswith('@example.com')).all()
+>>> User.query.filter(User.email.endswith('@example.com')).all()
 [<User u'admin'>, <User u'guest'>]
 
 Ordering users by something:
 
->>> User.query.order_by('username')
+>>> User.query.order_by(User.username)
 [<User u'admin'>, <User u'guest'>, <User u'peter'>]
 
 Limiting users:
