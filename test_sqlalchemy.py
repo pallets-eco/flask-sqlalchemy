@@ -415,6 +415,44 @@ class SessionScopingTestCase(unittest.TestCase):
             assert fb not in db.session  # because a new scope is generated on each call
 
 
+class ModelBaseClassTestCase(unittest.TestCase):
+    """Tests for providing a different model base class to the
+    :class:`flaskext.SQLAlchemy` object.
+
+    """
+
+    def setUp(self):
+        # create a new base class for models
+        class MyBaseModel(sqlalchemy.Model):
+            myattribute = 'Test'
+            def return_hello(self):
+                return 'Hello'
+
+        self.app = flask.Flask(__name__)
+        self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        self.app.config['TESTING'] = True
+        self.db = sqlalchemy.SQLAlchemy(self.app, modelclass=MyBaseModel)
+        self.db.create_all()
+
+    def test_provided_base_class(self):
+        # create two different model subclasses which should inherit the func
+        class User(self.db.Model):
+            name = self.db.Column(self.db.String(10), primary_key=True)
+        class House(self.db.Model):
+            address = self.db.Column(self.db.String(10), primary_key=True)
+
+        assert hasattr(User, 'myattribute')
+        assert hasattr(House, 'myattribute')
+        assert User.myattribute == 'Test'
+        assert House.myattribute == 'Test'
+
+        # create instances of the model
+        user = User(name='John')
+        assert user.return_hello() == 'Hello'
+        house = House(address='foo')
+        assert house.return_hello() == 'Hello'
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BasicAppTestCase))
@@ -426,6 +464,7 @@ def suite():
     suite.addTest(unittest.makeSuite(SQLAlchemyIncludesTestCase))
     suite.addTest(unittest.makeSuite(RegressionTestCase))
     suite.addTest(unittest.makeSuite(SessionScopingTestCase))
+    suite.addTest(unittest.makeSuite(ModelBaseClassTestCase))
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
     return suite
