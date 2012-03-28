@@ -594,10 +594,13 @@ class SQLAlchemy(object):
     """
 
     def __init__(self, app=None, use_native_unicode=True,
-                 session_extensions=None, session_options=None):
+                 session_extensions=None, session_options=None,
+                 engine_options=None):
         self.use_native_unicode = use_native_unicode
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
+
+        self.engine_options = engine_options
 
         if session_options is None:
             session_options = {}
@@ -723,6 +726,9 @@ class SQLAlchemy(object):
             unu = self.use_native_unicode
         if not unu:
             options['use_native_unicode'] = False
+
+        if self.engine_options:
+            options.update(self.engine_options)
 
     @property
     def engine(self):
