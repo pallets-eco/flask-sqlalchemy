@@ -773,13 +773,22 @@ class SQLAlchemy(object):
                 result.append(table)
         return result
 
+    def _get_binds(self, app, bind='__all__'):
+        if bind == '__all__':
+            binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
+        elif isinstance(bind, basestring):
+            binds = [bind]
+        else:
+            binds = bind
+        return binds
+
     def get_binds(self, app=None):
         """Returns a dictionary with a table->engine mapping.
 
         This is suitable for use of sessionmaker(binds=db.get_binds(app)).
         """
         app = self.get_app(app)
-        binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
+        binds = self._get_binds(app)
         retval = {}
         for bind in binds:
             engine = self.get_engine(app, bind)
@@ -789,13 +798,7 @@ class SQLAlchemy(object):
 
     def _execute_for_all_tables(self, app, bind, operation):
         app = self.get_app(app)
-
-        if bind == '__all__':
-            binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
-        elif isinstance(bind, basestring):
-            binds = [bind]
-        else:
-            binds = bind
+        binds = self._get_binds(app, bind)
 
         for bind in binds:
             tables = self.get_tables_for_bind(bind)
@@ -818,13 +821,18 @@ class SQLAlchemy(object):
         """
         self._execute_for_all_tables(app, bind, 'drop_all')
 
-    def reflect(self, bind='__all__', app=None):
+    def reflect(self, bind='__all__', app=None, only=None):
         """Reflects tables from the database.
 
         .. versionchanged:: 0.12
            Parameters were added
         """
-        self._execute_for_all_tables(app, bind, 'reflect')
+        app = self.get_app(app)
+        binds = self._get_binds(app)
+
+        for bind in binds:
+            self.Model.metadata.reflect(bind=self.get_engine(app, bind),
+                only=only)
 
     def __repr__(self):
         app = None
