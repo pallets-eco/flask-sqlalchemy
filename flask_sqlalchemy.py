@@ -5,7 +5,7 @@
 
     Adds basic SQLAlchemy support to your application.
 
-    :copyright: (c) 2010 by Armin Ronacher.
+    :copyright: (c) 2012 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement, absolute_import
@@ -36,6 +36,15 @@ if sys.platform == 'win32':
     _timer = time.clock
 else:
     _timer = time.time
+
+try:
+    from flask import _app_ctx_stack
+except ImportError:
+    _app_ctx_stack = None
+
+
+# Which stack should we use?  _app_ctx_stack is new in 0.9
+connection_stack = _app_ctx_stack or _request_ctx_stack
 
 
 _camelcase_re = re.compile(r'([A-Z]+)(?=[a-z0-9])')
@@ -134,7 +143,7 @@ class _ConnectionDebugProxy(ConnectionProxy):
         try:
             return execute(cursor, statement, parameters, context)
         finally:
-            ctx = _request_ctx_stack.top
+            ctx = connection_stack.top
             if ctx is not None:
                 queries = getattr(ctx, 'sqlalchemy_queries', None)
                 if queries is None:
@@ -235,7 +244,7 @@ def get_debug_queries():
         query was issued.  The exact format is undefined so don't try
         to reconstruct filename or function name.
     """
-    return getattr(_request_ctx_stack.top, 'sqlalchemy_queries', [])
+    return getattr(connection_stack.top, 'sqlalchemy_queries', [])
 
 
 class Pagination(object):
@@ -603,7 +612,7 @@ class SQLAlchemy(object):
             session_options = {}
 
         session_options.setdefault(
-            'scopefunc', _request_ctx_stack.__ident_func__
+            'scopefunc', connection_stack.__ident_func__
         )
 
         self.session = self.create_scoped_session(session_options)
@@ -660,11 +669,13 @@ class SQLAlchemy(object):
             app.extensions = {}
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self, app)
 
-        # 0.7 introduced the new `teardown_request` decorator which has better
-        # semantics than the after_request one.  We should use it if
-        # available.
-        if hasattr(app, 'teardown_request'):
+        # 0.9 and later
+        if hasattr(app, 'teardown_appcontext'):
+            teardown = app.teardown_appcontext
+        # 0.7 to 0.8
+        elif hasattr(app, 'teardown_request'):
             teardown = app.teardown_request
+        # Older Flask versions
         else:
             teardown = app.after_request
 
@@ -758,7 +769,7 @@ class SQLAlchemy(object):
             return reference_app
         if self.app is not None:
             return self.app
-        ctx = _request_ctx_stack.top
+        ctx = connection_stack.top
         if ctx is not None:
             return ctx.app
         raise RuntimeError('application not registered on db '
@@ -831,7 +842,7 @@ class SQLAlchemy(object):
         if self.app is not None:
             app = self.app
         else:
-            ctx = _request_ctx_stack.top
+            ctx = connection_stack.top
             if ctx is not None:
                 app = ctx.app
         return '<%s engine=%r>' % (

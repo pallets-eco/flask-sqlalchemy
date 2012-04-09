@@ -5,7 +5,7 @@ import atexit
 import unittest
 from datetime import datetime
 import flask
-from flaskext import sqlalchemy
+from flask.ext import sqlalchemy
 
 
 def make_todo_model(db):
@@ -299,7 +299,7 @@ class SQLAlchemyIncludesTestCase(unittest.TestCase):
         self.assertTrue(db.Column == sqlalchemy_lib.Column)
 
         # The Query object we expose is actually our own subclass.
-        from flaskext.sqlalchemy import BaseQuery
+        from flask.ext.sqlalchemy import BaseQuery
         self.assertTrue(db.Query == BaseQuery)
 
 
