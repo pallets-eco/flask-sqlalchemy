@@ -3,7 +3,7 @@
 Quickstart
 ==========
 
-.. currentmodule:: flaskext.sqlalchemy
+.. currentmodule:: flask.ext.sqlalchemy
 
 Flask-SQLAlchemy is fun to use, incredibly easy for basic applications, and
 readily extends for larger applications.  For the complete guide, checkout out
@@ -22,7 +22,7 @@ provides a class called `Model` that is a declarative base which can be
 used to declare models::
 
     from flask import Flask
-    from flaskext.sqlalchemy import SQLAlchemy
+    from flask.ext.sqlalchemy import SQLAlchemy
 
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'

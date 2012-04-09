@@ -3,7 +3,7 @@
 Flask-SQLAlchemy
 ================
 
-.. module:: flaskext.sqlalchemy
+.. module:: flask.ext.sqlalchemy
 
 Flask-SQLAlchemy is an extension for `Flask`_ that adds support for
 `SQLAlchemy`_ to your application.  It requires SQLAlchemy 0.6 or

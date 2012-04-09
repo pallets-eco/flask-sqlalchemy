@@ -1,7 +1,7 @@
 API
 ---
 
-.. module:: flaskext.sqlalchemy
+.. module:: flask.ext.sqlalchemy
 
 This part of the documentation documents all the public classes and
 functions in Flask-SQLAlchemy.

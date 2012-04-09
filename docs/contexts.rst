@@ -1,6 +1,6 @@
 .. _contexts:
 
-.. currentmodule:: flaskext.sqlalchemy
+.. currentmodule:: flask.ext.sqlalchemy
 
 Introduction into Contexts
 ==========================
@@ -16,7 +16,7 @@ object globally, how does the latter learn about the former?  The answer
 is the :meth:`~SQLAlchemy.init_app` function::
 
     from flask import Flask
-    from flaskext.sqlalchemy import SQLAlchemy
+    from flask.ext.sqlalchemy import SQLAlchemy
 
     db = SQLAlchemy()
 

@@ -1,4 +1,4 @@
-.. currentmodule:: flaskext.sqlalchemy
+.. currentmodule:: flask.ext.sqlalchemy
 
 Select, Insert, Delete
 ======================
