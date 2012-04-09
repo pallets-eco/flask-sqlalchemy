@@ -4,6 +4,12 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
+Version 0.16
+````````````
+
+- New distribution format (flask_sqlalchemy)
+- Added support for Flask 0.9 specifics.
+
 Version 0.15
 ````````````
 
