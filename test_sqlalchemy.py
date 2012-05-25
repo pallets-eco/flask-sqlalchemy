@@ -129,31 +129,40 @@ class SignallingTestCase(unittest.TestCase):
         self.db.drop_all()
 
     def test_model_signals(self):
-        recorded = []
+        recorded = {}
         def committed(sender, changes):
             self.assert_(isinstance(changes, list))
-            recorded.extend(changes)
+            for change in changes:
+                recorded[change[0]] = change[1]
+
+        class FOOBar(self.db.Model):
+            id = self.db.Column(self.db.Integer, primary_key=True)
+
+        self.db.create_all()
+
         with sqlalchemy.models_committed.connected_to(committed,
                                                       sender=self.app):
             todo = self.Todo('Awesome', 'the text')
+            foobar = FOOBar()
             self.db.session.add(todo)
+            self.db.session.add(foobar)
             self.assertEqual(len(recorded), 0)
             self.db.session.commit()
-            self.assertEqual(len(recorded), 1)
-            self.assertEqual(recorded[0][0], todo)
-            self.assertEqual(recorded[0][1], 'insert')
-            del recorded[:]
+            self.assertEqual(len(recorded), 2)
+
+            # not sure if recorded will be consistently ordered, so let's 
+            self.assertEqual(recorded[todo], 'insert')
+            self.assertEqual(recorded[foobar], 'insert')
+            recorded.clear()
             todo.text = 'aha'
             self.db.session.commit()
             self.assertEqual(len(recorded), 1)
-            self.assertEqual(recorded[0][0], todo)
-            self.assertEqual(recorded[0][1], 'update')
-            del recorded[:]
+            self.assertEqual(recorded[todo], 'update')
+            recorded.clear()
             self.db.session.delete(todo)
             self.db.session.commit()
             self.assertEqual(len(recorded), 1)
-            self.assertEqual(recorded[0][0], todo)
-            self.assertEqual(recorded[0][1], 'delete')
+            self.assertEqual(recorded[todo], 'delete')
 
 
 class HelperTestCase(unittest.TestCase):

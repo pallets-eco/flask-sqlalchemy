@@ -167,23 +167,28 @@ class _SignalTrackingMapperExtension(MapperExtension):
 
     def _record(self, mapper, model, operation):
         pk = tuple(mapper.primary_key_from_instance(model))
-        orm.object_session(model)._model_changes[pk] = (model, operation)
+        orm.object_session(model)._model_changes.setdefault(
+                model.__class__, {})[pk] = (model, operation)
+
         return EXT_CONTINUE
 
 
 class _SignallingSessionExtension(SessionExtension):
+    def _get_changes(self, session):
+        return reduce(list.__add__, (x.values() for x in
+            session._model_changes.itervalues()), [])
 
     def before_commit(self, session):
-        d = session._model_changes
-        if d:
-            before_models_committed.send(session.app, changes=d.values())
+        values = self._get_changes(session)
+        if values:
+            before_models_committed.send(session.app, changes=values)
         return EXT_CONTINUE
 
     def after_commit(self, session):
-        d = session._model_changes
-        if d:
-            models_committed.send(session.app, changes=d.values())
-            d.clear()
+        values = self._get_changes(session)
+        if values:
+            models_committed.send(session.app, changes=values)
+            session._model_changes.clear()
         return EXT_CONTINUE
 
     def after_rollback(self, session):
