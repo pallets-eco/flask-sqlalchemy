@@ -10,11 +10,10 @@ The following two signals exist:
 
 .. data:: models_committed
 
-   This signal is sent when changed models where committed to the
-   database.  The sender is the application that emitted the changes
-   and the models and an operation identifier are passed as list of tuples
-   in the form ``(model, operation)`` to the receiver in the `changes`
-   parameter.
+   This signal is sent when changed models are committed to the database.
+   The `sender` parameter is the application that emitted the changes,
+   and the `changes` parameter is a list of tuples in the form
+   ``(model, operation identifier)``.
 
    The model is the instance of the model that was sent to the database
    and the operation is ``'insert'`` when a model was inserted,
