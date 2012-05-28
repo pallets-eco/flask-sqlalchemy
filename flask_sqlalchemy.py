@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    flaskext.sqlalchemy
+    flask.ext.sqlalchemy
     ~~~~~~~~~~~~~~~~~~~
 
     Adds basic SQLAlchemy support to your application.
@@ -26,7 +26,6 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session
 from sqlalchemy.orm.interfaces import MapperExtension, SessionExtension, \
      EXT_CONTINUE
-from sqlalchemy.interfaces import ConnectionProxy
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.util import to_list
@@ -129,29 +128,6 @@ def _calling_context(app_path):
             )
         frm = frm.f_back
     return '<unknown>'
-
-
-class _ConnectionDebugProxy(ConnectionProxy):
-    """Helps debugging the database."""
-
-    def __init__(self, import_name):
-        self.app_package = import_name
-
-    def cursor_execute(self, execute, cursor, statement, parameters,
-                       context, executemany):
-        start = _timer()
-        try:
-            return execute(cursor, statement, parameters, context)
-        finally:
-            ctx = connection_stack.top
-            if ctx is not None:
-                queries = getattr(ctx, 'sqlalchemy_queries', None)
-                if queries is None:
-                    queries = []
-                    setattr(ctx, 'sqlalchemy_queries', queries)
-                queries.append(_DebugQueryTuple((
-                    statement, parameters, start, _timer(),
-                    _calling_context(self.app_package))))
 
 
 class _SignalTrackingMapperExtension(MapperExtension):
@@ -426,6 +402,26 @@ class _EngineConnector(object):
             'configuration variable' % self._bind
         return binds[self._bind]
 
+    def _before_cursor_execute(self, connection, cursor, statement,
+                               parameters, context, executemany):
+        ctx = connection_stack.top
+        if ctx is not None:
+            setattr(ctx, 'sqlalchemy_query_start', _timer())
+
+    def _after_cursor_execute(self, connection, cursor, statement,
+                               parameters, context, executemany):
+        ctx = connection_stack.top
+        if ctx is not None:
+            end = _timer()
+            start = getattr(ctx, 'sqlalchemy_query_start', _timer())
+            queries = getattr(ctx, 'sqlalcehmy_queries', None)
+            if queries is None:
+                queries = []
+                setattr(ctx, 'sqlalchemy_queries', queries)
+            queries.append(_DebugQueryTuple((
+                statement, parameters, start, end,
+                _calling_context(self._app.import_name))))
+
     def get_engine(self):
         with self._lock:
             uri = self.get_uri()
@@ -436,12 +432,15 @@ class _EngineConnector(object):
             options = {'convert_unicode': True}
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
-            if _record_queries(self._app):
-                options['proxy'] = _ConnectionDebugProxy(self._app.import_name)
             if echo:
                 options['echo'] = True
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             self._connected_for = (uri, echo)
+            if _record_queries(self._app):
+                sqlalchemy.event.listen(rv, 'before_cursor_execute', 
+                        self._before_cursor_execute)
+                sqlalchemy.event.listen(rv, 'after_cursor_execute',
+                        self._after_cursor_execute)
             return rv
 
 
