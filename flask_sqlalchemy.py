@@ -351,22 +351,22 @@ class BaseQuery(orm.Query):
     standard query as well.
     """
 
-    def get_or_404(self, ident):
+    def get_or_404(self, ident, description=None):
         """Like :meth:`get` but aborts with 404 if not found instead of
         returning `None`.
         """
         rv = self.get(ident)
         if rv is None:
-            abort(404)
+            abort(404, description=description)
         return rv
 
-    def first_or_404(self):
+    def first_or_404(self, description=None):
         """Like :meth:`first` but aborts with 404 if not found instead of
         returning `None`.
         """
         rv = self.first()
         if rv is None:
-            abort(404)
+            abort(404, description=description)
         return rv
 
     def paginate(self, page, per_page=20, error_out=True):
