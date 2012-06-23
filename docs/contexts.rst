@@ -47,7 +47,7 @@ In a nutshell, do something like this:
 Inside scripts it makes also sense to use the with-statement::
 
     def my_function():
-        with app():
+        with app.test_request_context():
             user = db.User(...)
             db.session.add(user)
             db.session.commit()
