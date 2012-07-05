@@ -71,7 +71,7 @@ Accessing the data in database is easy as a pie:
 Simple Relationships
 --------------------
 
-SQLAlchemy collects to relational databases and what relational databases
+SQLAlchemy connects to relational databases and what relational databases
 are really good at are relations.  As such, we shall have an example of an
 application that uses two tables that have a relationship to each other::
 
