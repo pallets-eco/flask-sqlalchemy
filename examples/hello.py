@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Flask, request, flash, url_for, redirect, \
      render_template, abort
-from flaskext.sqlalchemy import SQLAlchemy
+from flask.ext.sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)
@@ -57,4 +57,5 @@ def update_done():
 
 
 if __name__ == '__main__':
+    db.create_all()     
     app.run()
