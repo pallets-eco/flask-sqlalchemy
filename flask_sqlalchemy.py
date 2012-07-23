@@ -167,6 +167,11 @@ class _SignalTrackingMapperExtension(MapperExtension):
 
     def _record(self, mapper, model, operation):
         pk = tuple(mapper.primary_key_from_instance(model))
+        # FIXME: Some hack just to prevent from crashing when trying to look
+        # for _model_changes attribute. Happens when loading fixutres with
+        # the fixture library.
+        if not hasattr(orm.object_session(model), '_model_changes'):
+            orm.object_session(model)._model_changes = dict()
         orm.object_session(model)._model_changes[pk] = (model, operation)
         return EXT_CONTINUE
 
