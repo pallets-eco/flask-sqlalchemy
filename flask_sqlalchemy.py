@@ -103,16 +103,18 @@ class _DebugQueryTuple(tuple):
     start_time = property(itemgetter(2))
     end_time = property(itemgetter(3))
     context = property(itemgetter(4))
+    bind = property(itemgetter(5))
 
     @property
     def duration(self):
         return self.end_time - self.start_time
 
     def __repr__(self):
-        return '<query statement="%s" parameters=%r duration=%.03f>' % (
+        return '<query statement="%s" parameters=%r duration=%.03f bind=%r>' % (
             self.statement,
             self.parameters,
-            self.duration
+            self.duration,
+            self.bind
         )
 
 
@@ -134,8 +136,9 @@ def _calling_context(app_path):
 class _ConnectionDebugProxy(ConnectionProxy):
     """Helps debugging the database."""
 
-    def __init__(self, import_name):
+    def __init__(self, import_name, bind):
         self.app_package = import_name
+        self.bind = bind
 
     def cursor_execute(self, execute, cursor, statement, parameters,
                        context, executemany):
@@ -151,7 +154,7 @@ class _ConnectionDebugProxy(ConnectionProxy):
                     setattr(ctx, 'sqlalchemy_queries', queries)
                 queries.append(_DebugQueryTuple((
                     statement, parameters, start, _timer(),
-                    _calling_context(self.app_package))))
+                    _calling_context(self.app_package), self.bind)))
 
 
 class _SignalTrackingMapperExtension(MapperExtension):
@@ -437,7 +440,8 @@ class _EngineConnector(object):
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
             if _record_queries(self._app):
-                options['proxy'] = _ConnectionDebugProxy(self._app.import_name)
+                options['proxy'] = _ConnectionDebugProxy(self._app.import_name,
+                    self._bind)
             if echo:
                 options['echo'] = True
             self._engine = rv = sqlalchemy.create_engine(info, **options)
