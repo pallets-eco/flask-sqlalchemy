@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement, absolute_import
+from distutils.version import StrictVersion
 import os
 import re
 import sys
@@ -103,16 +104,18 @@ class _DebugQueryTuple(tuple):
     start_time = property(itemgetter(2))
     end_time = property(itemgetter(3))
     context = property(itemgetter(4))
+    bind = property(itemgetter(5))
 
     @property
     def duration(self):
         return self.end_time - self.start_time
 
     def __repr__(self):
-        return '<query statement="%s" parameters=%r duration=%.03f>' % (
+        return '<query statement="%s" parameters=%r duration=%.03f bind=%r>' % (
             self.statement,
             self.parameters,
-            self.duration
+            self.duration,
+            self.bind
         )
 
 
@@ -131,11 +134,25 @@ def _calling_context(app_path):
     return '<unknown>'
 
 
+def _add_debug_query(statement, parameters, start, app_package, bind):
+    """Remember query debug information"""
+    ctx = connection_stack.top
+    if ctx is not None:
+        queries = getattr(ctx, 'sqlalchemy_queries', None)
+        if queries is None:
+            queries = []
+            setattr(ctx, 'sqlalchemy_queries', queries)
+        queries.append(_DebugQueryTuple((
+            statement, parameters, start, _timer(),
+            _calling_context(app_package), bind)))
+
+
 class _ConnectionDebugProxy(ConnectionProxy):
     """Helps debugging the database."""
 
-    def __init__(self, import_name):
+    def __init__(self, import_name, bind):
         self.app_package = import_name
+        self.bind = bind
 
     def cursor_execute(self, execute, cursor, statement, parameters,
                        context, executemany):
@@ -143,15 +160,44 @@ class _ConnectionDebugProxy(ConnectionProxy):
         try:
             return execute(cursor, statement, parameters, context)
         finally:
-            ctx = connection_stack.top
-            if ctx is not None:
-                queries = getattr(ctx, 'sqlalchemy_queries', None)
-                if queries is None:
-                    queries = []
-                    setattr(ctx, 'sqlalchemy_queries', queries)
-                queries.append(_DebugQueryTuple((
-                    statement, parameters, start, _timer(),
-                    _calling_context(self.app_package))))
+            _add_debug_query(statement, parameters, start,
+                self.app_package, self.bind)
+
+
+class _QueryDebugger(ConnectionProxy):
+    """Helps debugging the database."""
+
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """Use singleton to make sure that handlers are attached only once"""
+        if not cls._instance:
+            cls._instance = super(_QueryDebugger, cls).__new__(
+                cls, *args, **kwargs)
+
+            from sqlalchemy import event
+            from sqlalchemy.engine import Engine
+
+            @event.listens_for(Engine, "before_cursor_execute")
+            def before_cursor_execute(conn, cursor, statement,
+                                      parameters, context, executemany):
+                context._query_start_time = _timer()
+
+            @event.listens_for(Engine, "after_cursor_execute")
+            def after_cursor_execute(conn, cursor, statement,
+                                     parameters, context, executemany):
+                app_packege = cls._instance.engines[conn.engine]['app_package']
+                bind = cls._instance.engines[conn.engine]['bind']
+                _add_debug_query(statement, parameters,
+                    context._query_start_time, app_packege, bind)
+
+        return cls._instance
+
+    engines = {}
+
+    def __init__(self, engine, import_name, bind):
+        """Remember import name and bind for an engine"""
+        self.engines[engine] = {'app_package': import_name, 'bind': bind}
 
 
 class _SignalTrackingMapperExtension(MapperExtension):
@@ -436,12 +482,19 @@ class _EngineConnector(object):
             options = {'convert_unicode': True}
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
-            if _record_queries(self._app):
-                options['proxy'] = _ConnectionDebugProxy(self._app.import_name)
+            if (_record_queries(self._app) and
+                    StrictVersion(sqlalchemy.__version__) <
+                        StrictVersion('0.7.0')):
+                options['proxy'] = _ConnectionDebugProxy(self._app.import_name,
+                    self._bind)
             if echo:
                 options['echo'] = True
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             self._connected_for = (uri, echo)
+            if (_record_queries(self._app) and
+                    StrictVersion(sqlalchemy.__version__) >=
+                        StrictVersion('0.7.0')):
+                _QueryDebugger(rv, self._app.import_name, self._bind)
             return rv
 
 
