@@ -174,9 +174,15 @@ class _SignalTrackingMapperExtension(MapperExtension):
 class _SignallingSessionExtension(SessionExtension):
 
     def before_commit(self, session):
-        d = session._model_changes
-        if d:
-            before_models_committed.send(session.app, changes=d.values())
+        if session._new or session._deleted or session.identity_map:
+            s = []
+            for new in session._new:
+                s.append((new.obj(), 'insert'))
+            for delete in session._deleted:
+                s.append((delete.obj(), 'delete'))
+            for mod in session.identity_map._modified:
+                s.append((mod.obj(), 'update'))
+            before_models_committed.send(session.app, changes=s)
         return EXT_CONTINUE
 
     def after_commit(self, session):
