@@ -381,7 +381,7 @@ class BaseQuery(orm.Query):
         items = self.limit(per_page).offset((page - 1) * per_page).all()
         if not items and page != 1 and error_out:
             abort(404)
-        return Pagination(self, page, per_page, self.count(), items)
+        return Pagination(self, page, per_page, self.order_by(None).count(), items)
 
 
 class _QueryProperty(object):
