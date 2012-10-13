@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import time
+import random
 import functools
 import sqlalchemy
 from math import ceil
@@ -203,12 +204,18 @@ class _SignallingSession(Session):
 
     def get_bind(self, mapper, clause=None):
         # mapper is None if someone tries to just get a connection
+
         if mapper is not None:
             info = getattr(mapper.mapped_table, 'info', {})
             bind_key = info.get('bind_key')
             if bind_key is not None:
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
+
+        if isinstance(clause, sqlalchemy.sql.expression.Select):
+            state = get_state(self.app)
+            return state.db.get_engine(self.app, bind='__slave__') 
+
         return Session.get_bind(self, mapper, clause)
 
 
@@ -418,6 +425,13 @@ class _EngineConnector(object):
         self._lock = Lock()
 
     def get_uri(self):
+        if self._bind == '__slave__':
+            slaves = self._app.config.get( \
+                'SQLALCHEMY_DATABASE_SLAVE_URIS') or ()
+            if slaves:
+                return random.choice(slaves)
+            else:
+                self._bind = None
         if self._bind is None:
             return self._app.config['SQLALCHEMY_DATABASE_URI']
         binds = self._app.config.get('SQLALCHEMY_BINDS') or ()
@@ -657,6 +671,7 @@ class SQLAlchemy(object):
         leak.
         """
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
+        app.config.setdefault('SQLALCHEMY_DATABASE_SLAVE_URIS', None)
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
@@ -664,6 +679,10 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
+
+        config_binds = app.config.get('SQLALCHEMY_BINDS')
+        if config_binds and '__slave__' in config_binds:
+            raise KeyError('__slave__ is a reserved word.')
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
