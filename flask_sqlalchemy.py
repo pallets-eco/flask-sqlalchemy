@@ -166,8 +166,12 @@ class _SignalTrackingMapperExtension(MapperExtension):
         return self._record(mapper, instance, 'update')
 
     def _record(self, mapper, model, operation):
-        pk = tuple(mapper.primary_key_from_instance(model))
-        orm.object_session(model)._model_changes[pk] = (model, operation)
+        s = orm.object_session(model)
+        # Skip the operation tracking when a non signalling session
+        # is used.
+        if isinstance(s, _SignallingSessionExtension):
+            pk = tuple(mapper.primary_key_from_instance(model))
+            s._model_changes[pk] = (model, operation)
         return EXT_CONTINUE
 
 
