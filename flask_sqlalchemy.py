@@ -604,6 +604,7 @@ class SQLAlchemy(object):
 
     def __init__(self, app=None, use_native_unicode=True,
                  session_extensions=None, session_options=None):
+        self.app = app
         self.use_native_unicode = use_native_unicode
         self.session_extensions = to_list(session_extensions, []) + \
                                   [_SignallingSessionExtension()]
@@ -621,8 +622,6 @@ class SQLAlchemy(object):
 
         if app is not None:
             self.init_app(app)
-        else:
-            self.app = None
 
         _include_sqlalchemy(self)
         self.Query = BaseQuery
@@ -649,7 +648,7 @@ class SQLAlchemy(object):
         base.query = _QueryProperty(self)
         return base
 
-    def init_app(self, app):
+    def init_app(self, app, bind_app=False):
         """This callback can be used to initialize an application for the
         use with this database setup.  Never use a database in the context
         of an application not initialized that way or connections will
@@ -664,7 +663,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
 
-        if self.app is None:
+        if self.app is None and bind_app is True:
             # Store a reference to the application object
             self.app = app
 
