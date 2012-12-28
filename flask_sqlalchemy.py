@@ -620,7 +620,6 @@ class SQLAlchemy(object):
         self._engine_lock = Lock()
 
         if app is not None:
-            self.app = app
             self.init_app(app)
         else:
             self.app = None
@@ -664,6 +663,10 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
+
+        if self.app is None:
+            # Store a reference to the application object
+            self.app = app
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
