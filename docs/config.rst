@@ -48,6 +48,8 @@ A list of configuration keys currently understood by the extension:
                                   default.  Note that Flask-SQLAlchemy
                                   automatically sets this to 2 hours if
                                   MySQL is used.
+``SQLALCHEMY_COMMIT_ON_TEARDOWN`` Commit session when the app context is
+                                  torn down, unless there was an exception.
 ================================= =========================================
 
 .. versionadded:: 0.8
