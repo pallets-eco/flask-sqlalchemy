@@ -14,41 +14,41 @@ A list of configuration keys currently understood by the extension:
 
 .. tabularcolumns:: |p{6.5cm}|p{8.5cm}|
 
-=============================== =========================================
-``SQLALCHEMY_DATABASE_URI``     The database URI that should be used for
-                                the connection.  Examples:
+================================= =========================================
+``SQLALCHEMY_DATABASE_URI``       The database URI that should be used for
+                                  the connection.  Examples:
 
-                                - ``sqlite:////tmp/test.db``
-                                - ``mysql://username:password@server/db``
-``SQLALCHEMY_BINDS``            A dictionary that maps bind keys to
-                                SQLAlchemy connection URIs.  For more
-                                information about binds see :ref:`binds`.
-``SQLALCHEMY_ECHO``             If set to `True` SQLAlchemy will log all
-                                the statements issued to stderr which can
-                                be useful for debugging.
-``SQLALCHEMY_RECORD_QUERIES``   Can be used to explicitly disable or
-                                enable query recording.  Query recording
-                                automatically happens in debug or testing
-                                mode.  See :func:`get_debug_queries` for
-                                more information.
-``SQLALCHEMY_NATIVE_UNICODE``   Can be used to explicitly disable native
-                                unicode support.  This is required for
-                                some database adapters (like PostgreSQL
-                                on some Ubuntu versions) when used with
-                                inproper database defaults that specify
-                                encoding-less databases.
-``SQLALCHEMY_POOL_SIZE``        The size of the database pool.  Defaults
-                                to the engine's default (usually 5)
-``SQLALCHEMY_POOL_TIMEOUT``     Specifies the connection timeout for the
-                                pool.  Defaults to 10.
-``SQLALCHEMY_POOL_RECYCLE``     Number of seconds after which a
-                                connection is automatically recycled.
-                                This is required for MySQL, which removes
-                                connections after 8 hours idle by
-                                default.  Note that Flask-SQLAlchemy
-                                automatically sets this to 2 hours if
-                                MySQL is used.
-=============================== =========================================
+                                  - ``sqlite:////tmp/test.db``
+                                  - ``mysql://username:password@server/db``
+``SQLALCHEMY_BINDS``              A dictionary that maps bind keys to
+                                  SQLAlchemy connection URIs.  For more
+                                  information about binds see :ref:`binds`.
+``SQLALCHEMY_ECHO``               If set to `True` SQLAlchemy will log all
+                                  the statements issued to stderr which can
+                                  be useful for debugging.
+``SQLALCHEMY_RECORD_QUERIES``     Can be used to explicitly disable or
+                                  enable query recording.  Query recording
+                                  automatically happens in debug or testing
+                                  mode.  See :func:`get_debug_queries` for
+                                  more information.
+``SQLALCHEMY_NATIVE_UNICODE``     Can be used to explicitly disable native
+                                  unicode support.  This is required for
+                                  some database adapters (like PostgreSQL
+                                  on some Ubuntu versions) when used with
+                                  inproper database defaults that specify
+                                  encoding-less databases.
+``SQLALCHEMY_POOL_SIZE``          The size of the database pool.  Defaults
+                                  to the engine's default (usually 5)
+``SQLALCHEMY_POOL_TIMEOUT``       Specifies the connection timeout for the
+                                  pool.  Defaults to 10.
+``SQLALCHEMY_POOL_RECYCLE``       Number of seconds after which a
+                                  connection is automatically recycled.
+                                  This is required for MySQL, which removes
+                                  connections after 8 hours idle by
+                                  default.  Note that Flask-SQLAlchemy
+                                  automatically sets this to 2 hours if
+                                  MySQL is used.
+================================= =========================================
 
 .. versionadded:: 0.8
    The ``SQLALCHEMY_NATIVE_UNICODE``, ``SQLALCHEMY_POOL_SIZE``,
