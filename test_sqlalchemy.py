@@ -415,6 +415,40 @@ class SessionScopingTestCase(unittest.TestCase):
             assert fb not in db.session  # because a new scope is generated on each call
 
 
+class CommitOnTeardownTestCase(unittest.TestCase):
+
+    def setUp(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+        Todo = make_todo_model(db)
+        db.create_all()
+
+        @app.route('/')
+        def index():
+            return '\n'.join(x.title for x in Todo.query.all())
+
+        @app.route('/create', methods=['POST'])
+        def create():
+            db.session.add(Todo('Test one', 'test'))
+            if flask.request.form.get('fail'):
+                raise RuntimeError("Failing as requested")
+            return 'ok'
+
+        self.client = app.test_client()
+
+    def test_commit_on_success(self):
+        resp = self.client.post('/create')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self.client.get('/').data, 'Test one')
+
+    def test_roll_back_on_failure(self):
+        resp = self.client.post('/create', data={'fail': 'on'})
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(self.client.get('/').data, '')
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BasicAppTestCase))
@@ -426,6 +460,7 @@ def suite():
     suite.addTest(unittest.makeSuite(SQLAlchemyIncludesTestCase))
     suite.addTest(unittest.makeSuite(RegressionTestCase))
     suite.addTest(unittest.makeSuite(SessionScopingTestCase))
+    suite.addTest(unittest.makeSuite(CommitOnTeardownTestCase))
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
     return suite
