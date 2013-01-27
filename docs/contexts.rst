@@ -35,8 +35,8 @@ So how does :class:`SQLAlchemy` now really know about your application?
 You will have to setup a request context.  If you are working inside a
 Flask view function, that automatically happens.  However if you are
 working inside the interactive shell, you will have to do that yourself
-(see `Diving into context locals
-<http://flask.pocoo.org/docs/shell/#diving-into-context-locals>`_).
+(see `Creating a Request Context
+<http://flask.pocoo.org/docs/shell/#creating-a-request-context>`_).
 
 In a nutshell, do something like this:
 
