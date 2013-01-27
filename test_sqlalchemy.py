@@ -156,6 +156,41 @@ class SignallingTestCase(unittest.TestCase):
             self.assertEqual(recorded[0][0], todo)
             self.assertEqual(recorded[0][1], 'delete')
 
+    def test_before_committed(self):
+        recorded = []
+        called = []
+        def committed(sender, changes):
+            called.append(1)
+            if changes[0][1] != 'delete':
+                self.assertFalse('text' in changes[0][0]._sa_instance_state.unmodified)
+            self.assert_(isinstance(changes, list))
+            recorded.extend(changes)
+        with sqlalchemy.before_models_committed.connected_to(committed,
+                                                      sender=self.app):
+            todo = self.Todo('Awesome', 'the text')
+            self.db.session.add(todo)
+            self.db.session.commit()
+            self.assertTrue(called, 'Before commit not called')
+            del called[:]
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(recorded[0][0], todo)
+            self.assertEqual(recorded[0][1], 'insert')
+            del recorded[:]
+            todo.text = 'aha'
+            self.db.session.commit()
+            self.assertTrue(called, 'Before commit not called')
+            del called[:]
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(recorded[0][0], todo)
+            self.assertEqual(recorded[0][1], 'update')
+            del recorded[:]
+            self.db.session.delete(todo)
+            self.db.session.commit()
+            self.assertTrue(called, 'Before commit not called')
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(recorded[0][0], todo)
+            self.assertEqual(recorded[0][1], 'delete')
+
 
 class HelperTestCase(unittest.TestCase):
 
