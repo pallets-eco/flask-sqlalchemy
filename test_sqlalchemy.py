@@ -79,6 +79,20 @@ class BasicAppTestCase(unittest.TestCase):
     def test_helper_api(self):
         self.assertEqual(self.db.metadata, self.db.Model.metadata)
 
+    def test_app_reference(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy()
+        self.assertTrue(db.app is None)
+        db.init_app(app)
+        self.assertTrue(db.app is None)
+        db.init_app(app, bind_app=True)
+        self.assertTrue(db.app is not None)
+        db = sqlalchemy.SQLAlchemy(app)
+        self.assertTrue(db.app is not None)
+
+
 
 class TestQueryProperty(unittest.TestCase):
 
