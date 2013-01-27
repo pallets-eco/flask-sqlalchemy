@@ -721,7 +721,7 @@ class SQLAlchemy(object):
         like pool sizes for MySQL and sqlite.  Also it injects the setting of
         `SQLALCHEMY_NATIVE_UNICODE`.
         """
-        if info.drivername == 'mysql':
+        if info.drivername.startswith('mysql'):
             info.query.setdefault('charset', 'utf8')
             options.setdefault('pool_size', 10)
             options.setdefault('pool_recycle', 7200)
