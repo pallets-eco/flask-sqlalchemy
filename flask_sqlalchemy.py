@@ -664,6 +664,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
+        app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
@@ -677,12 +678,17 @@ class SQLAlchemy(object):
             teardown = app.teardown_request
         # Older Flask versions
         else:
+            if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
+                raise RuntimeError("Commit on teardown requires Flask >= 0.7")
             teardown = app.after_request
 
         @teardown
-        def shutdown_session(response):
+        def shutdown_session(response_or_exc):
+            if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
+                if response_or_exc is None:
+                    self.session.commit()
             self.session.remove()
-            return response
+            return response_or_exc
 
     def apply_pool_defaults(self, app, options):
         def _setdefault(optionkey, configkey):
