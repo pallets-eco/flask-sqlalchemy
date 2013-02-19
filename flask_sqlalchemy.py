@@ -51,6 +51,8 @@ _camelcase_re = re.compile(r'([A-Z]+)(?=[a-z0-9])')
 _signals = Namespace()
 
 
+models_flushed = _signals.signal('models-flushed')
+before_models_flushed = _signals.signal('before-models-flushed')
 models_committed = _signals.signal('models-committed')
 before_models_committed = _signals.signal('before-models-committed')
 
@@ -188,6 +190,34 @@ class _SignallingSessionExtension(SessionExtension):
         if d:
             models_committed.send(session.app, changes=d.values())
             d.clear()
+        return EXT_CONTINUE
+
+    def before_flush(self, session, flush_context, instances):
+        sess_collection_to_op = {'new': 'insert',
+                                 'dirty': 'update',
+                                 'deleted': 'delete'}
+        def op_from_instance(instance):
+            sess = instance.query.session
+            for col, op in sess_collection_to_op.items():
+                if getattr(sess, col):
+                    return op
+
+        if instances:
+            # if instances were specified, the flush is only restricted to them
+            d = map(lambda x: (x, op_from_instance(x)), instances)
+        else:
+            # session._model_changes doesn't work here, fake the returned list
+            d = map(lambda x: (x, op_from_instance(x)),
+                    list(session.new) + list(session.dirty) +
+                    list(session.deleted))
+        if d:
+            before_models_flushed.send(session.app, changes=d)
+        return EXT_CONTINUE
+
+    def after_flush(self, session, flush_context):
+        d = session._model_changes
+        if d:
+            models_flushed.send(session.app, changes=d.values())
         return EXT_CONTINUE
 
     def after_rollback(self, session):
