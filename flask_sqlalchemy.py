@@ -169,7 +169,7 @@ class _SignalTrackingMapperExtension(MapperExtension):
         s = orm.object_session(model)
         # Skip the operation tracking when a non signalling session
         # is used.
-        if isinstance(s, _SignallingSessionExtension):
+        if isinstance(s, _SignallingSession):
             pk = tuple(mapper.primary_key_from_instance(model))
             s._model_changes[pk] = (model, operation)
         return EXT_CONTINUE
