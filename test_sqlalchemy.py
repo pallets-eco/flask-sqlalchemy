@@ -129,7 +129,7 @@ class SignallingTestCase(unittest.TestCase):
     def tearDown(self):
         self.db.drop_all()
 
-    def test_model_signals(self):
+    def test_models_committed(self):
         recorded = []
         def committed(sender, changes):
             self.assert_(isinstance(changes, list))
@@ -155,6 +155,46 @@ class SignallingTestCase(unittest.TestCase):
             self.assertEqual(len(recorded), 1)
             self.assertEqual(recorded[0][0], todo)
             self.assertEqual(recorded[0][1], 'delete')
+
+    def test_models_flushed(self):
+        recorded = []
+        def flushed(sender, changes):
+            self.assert_(isinstance(changes, list))
+            recorded.extend(changes)
+        # models_flushed is nothing special, basically the same
+        # as models_committed, but before_models_flushed is interesting
+        # so lets test it
+        with sqlalchemy.before_models_flushed.connected_to(flushed,
+                                                           sender=self.app):
+            todo = self.Todo('Awesome', 'the text')
+            self.db.session.add(todo)
+            self.assertEqual(len(recorded), 0)
+            self.db.session.flush()
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(todo.title, 'Awesome')
+            self.assertEqual(recorded[0][0], todo)
+            self.assertEqual(recorded[0][1], 'insert')
+            del recorded[:]
+            # commit so that we empty the flush sequence
+            self.db.session.commit()
+            todo.text = 'aha'
+            todo2 = self.Todo('Second', 'another text')
+            self.db.session.add(todo2)
+            self.db.session.flush([todo2]) # only flush todo2
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(recorded[0][0], todo2)
+            self.assertEqual(recorded[0][1], 'insert')
+            del recorded[:]
+            # commit so that we empty the flush sequence
+            self.db.session.commit()
+            self.db.session.delete(todo)
+            self.db.session.commit()
+            self.assertEqual(len(recorded), 2)
+            # the todo.text = 'aha' update is still pending
+            self.assertEqual(recorded[0][0], todo)
+            self.assertEqual(recorded[0][1], 'update')
+            self.assertEqual(recorded[1][0], todo)
+            self.assertEqual(recorded[1][1], 'delete')
 
 
 class HelperTestCase(unittest.TestCase):
