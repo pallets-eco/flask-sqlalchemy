@@ -275,7 +275,11 @@ class Pagination(object):
     @property
     def pages(self):
         """The total number of pages"""
-        return int(ceil(self.total / float(self.per_page)))
+        if self.per_page == 0:
+            pages = 0
+        else:
+            pages = int(ceil(self.total / float(self.per_page)))
+        return pages
 
     def prev(self, error_out=False):
         """Returns a :class:`Pagination` object for the previous page."""
