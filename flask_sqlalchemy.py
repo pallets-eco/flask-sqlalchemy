@@ -466,7 +466,8 @@ def _defines_primary_key(d):
 class _BoundDeclarativeMeta(DeclarativeMeta):
 
     def __new__(cls, name, bases, d):
-        tablename = d.get('__tablename__')
+        tablename = d.get('__tablename__') or \
+                    reduce(lambda x, y: x or y, [hasattr(base, '__tablename__') and base.__tablename__ for base in bases])
 
         # generate a table name automatically if it's missing and the
         # class dictionary declares a primary key.  We cannot always
