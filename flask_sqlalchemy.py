@@ -24,8 +24,7 @@ from threading import Lock
 from sqlalchemy import orm, event
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session
-from sqlalchemy.orm.interfaces import MapperExtension, SessionExtension, \
-     EXT_CONTINUE
+from sqlalchemy.event import listen
 from sqlalchemy.interfaces import ConnectionProxy
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
@@ -91,7 +90,6 @@ def _include_sqlalchemy(obj):
                 setattr(obj, key, getattr(module, key))
     # Note: obj.Table does not attempt to be a SQLAlchemy Table class.
     obj.Table = _make_table(obj)
-    obj.mapper = signalling_mapper
     obj.relationship = _wrap_with_default_query_class(obj.relationship)
     obj.relation = _wrap_with_default_query_class(obj.relation)
     obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader)
@@ -155,54 +153,12 @@ class _ConnectionDebugProxy(ConnectionProxy):
                     _calling_context(self.app_package))))
 
 
-class _SignalTrackingMapperExtension(MapperExtension):
-
-    def after_delete(self, mapper, connection, instance):
-        return self._record(mapper, instance, 'delete')
-
-    def after_insert(self, mapper, connection, instance):
-        return self._record(mapper, instance, 'insert')
-
-    def after_update(self, mapper, connection, instance):
-        return self._record(mapper, instance, 'update')
-
-    def _record(self, mapper, model, operation):
-        s = orm.object_session(model)
-        # Skip the operation tracking when a non signalling session
-        # is used.
-        if isinstance(s, _SignallingSessionExtension):
-            pk = tuple(mapper.primary_key_from_instance(model))
-            s._model_changes[pk] = (model, operation)
-        return EXT_CONTINUE
-
-
-class _SignallingSessionExtension(SessionExtension):
-
-    def before_commit(self, session):
-        d = session._model_changes
-        if d:
-            before_models_committed.send(session.app, changes=d.values())
-        return EXT_CONTINUE
-
-    def after_commit(self, session):
-        d = session._model_changes
-        if d:
-            models_committed.send(session.app, changes=d.values())
-            d.clear()
-        return EXT_CONTINUE
-
-    def after_rollback(self, session):
-        session._model_changes.clear()
-        return EXT_CONTINUE
-
-
 class _SignallingSession(Session):
 
     def __init__(self, db, autocommit=False, autoflush=False, **options):
         self.app = db.get_app()
         self._model_changes = {}
         Session.__init__(self, autocommit=autocommit, autoflush=autoflush,
-                         extension=db.session_extensions,
                          bind=db.engine,
                          binds=db.get_binds(self.app), **options)
 
@@ -216,6 +172,55 @@ class _SignallingSession(Session):
                 return state.db.get_engine(self.app, bind=bind_key)
         return Session.get_bind(self, mapper, clause)
 
+
+class _SessionSignalEvents(object):
+
+    def register(self):
+        listen(Session, 'before_commit', self.session_signal_before_commit)
+        listen(Session, 'after_commit', self.session_signal_after_commit)
+        listen(Session, 'after_rollback', self.session_signal_after_rollback)
+
+    @staticmethod
+    def session_signal_before_commit(session):
+        d = session._model_changes
+        if d:
+            before_models_committed.send(session.app, changes=d.values())
+
+    @staticmethod
+    def session_signal_after_commit(session):
+        d = session._model_changes
+        if d:
+            models_committed.send(session.app, changes=d.values())
+            d.clear()
+
+    @staticmethod
+    def session_signal_after_rollback(session):
+        session._model_changes.clear()
+
+
+class _MapperSignalEvents(object):
+
+    def __init__(self, mapper):
+        self.mapper = mapper
+
+    def register(self):
+        listen(self.mapper, 'after_delete', self.mapper_signal_after_delete)
+        listen(self.mapper, 'after_insert', self.mapper_signal_after_insert)
+        listen(self.mapper, 'after_update', self.mapper_signal_after_update)
+
+    def mapper_signal_after_delete(self, mapper, connection, target):
+        self._record(mapper, target, 'delete')
+
+    def mapper_signal_after_insert(self, mapper, connection, target):
+        self._record(mapper, target, 'insert')
+
+    def mapper_signal_after_update(self, mapper, connection, target):
+        self._record(mapper, target, 'update')
+
+    @staticmethod
+    def _record(mapper, target, operation):
+        pk = tuple(mapper.primary_key_from_instance(target))
+        orm.object_session(target)._model_changes[pk] = (target, operation)
 
 def get_debug_queries():
     """In debug mode Flask-SQLAlchemy will log all the SQL queries sent
@@ -504,14 +509,6 @@ def get_state(app):
     return app.extensions['sqlalchemy']
 
 
-def signalling_mapper(*args, **kwargs):
-    """Replacement for mapper that injects some extra extensions"""
-    extensions = to_list(kwargs.pop('extension', None), [])
-    extensions.append(_SignalTrackingMapperExtension())
-    kwargs['extension'] = extensions
-    return sqlalchemy.orm.mapper(*args, **kwargs)
-
-
 class _SQLAlchemyState(object):
     """Remembers configuration for the (db, app) tuple."""
 
@@ -619,11 +616,10 @@ class SQLAlchemy(object):
         a custom function which will define the SQLAlchemy session's scoping.
     """
 
-    def __init__(self, app=None, use_native_unicode=True,
-                 session_extensions=None, session_options=None):
+    def __init__(self, app=None,
+                 use_native_unicode=True,
+                 session_options=None):
         self.use_native_unicode = use_native_unicode
-        self.session_extensions = to_list(session_extensions, []) + \
-                                  [_SignallingSessionExtension()]
 
         if session_options is None:
             session_options = {}
@@ -643,6 +639,8 @@ class SQLAlchemy(object):
             self.app = None
 
         _include_sqlalchemy(self)
+        _MapperSignalEvents(self.mapper).register()
+        _SessionSignalEvents().register()
         self.Query = BaseQuery
 
     @property
@@ -662,7 +660,6 @@ class SQLAlchemy(object):
     def make_declarative_base(self):
         """Creates the declarative base."""
         base = declarative_base(cls=Model, name='Model',
-                                mapper=signalling_mapper,
                                 metaclass=_BoundDeclarativeMeta)
         base.query = _QueryProperty(self)
         return base
