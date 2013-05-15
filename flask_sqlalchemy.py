@@ -21,7 +21,7 @@ from flask import _request_ctx_stack, abort
 from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
-from sqlalchemy import orm
+from sqlalchemy import orm, event
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session
 from sqlalchemy.orm.interfaces import MapperExtension, SessionExtension, \
@@ -95,6 +95,7 @@ def _include_sqlalchemy(obj):
     obj.relationship = _wrap_with_default_query_class(obj.relationship)
     obj.relation = _wrap_with_default_query_class(obj.relation)
     obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader)
+    obj.event = event
 
 
 class _DebugQueryTuple(tuple):
