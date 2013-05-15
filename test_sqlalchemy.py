@@ -189,6 +189,10 @@ class PaginationTestCase(unittest.TestCase):
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
 
+    def test_pagination_pages_when_0_items_per_page(self):
+        p = sqlalchemy.Pagination(None, 1, 0, 500, [])
+        self.assertEqual(p.pages, 0)
+
 
 class BindsTestCase(unittest.TestCase):
 
