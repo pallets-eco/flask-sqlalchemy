@@ -170,6 +170,14 @@ class _SignallingSession(Session):
             if bind_key is not None:
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
+        # if reayonly use the slave engine 
+        # see http://docs.sqlalchemy.org/en/rel_0_8/orm/session.html#custom-vertical-partitioning
+        if not self._flushing:
+            state = get_state(self.app)
+            try:
+                return state.db.get_engine(self.app, bind='slave')
+            except Exception, e:
+                pass
         return Session.get_bind(self, mapper, clause)
 
 
