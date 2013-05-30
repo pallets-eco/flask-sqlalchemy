@@ -76,7 +76,7 @@ def _wrap_with_default_query_class(fn):
         _set_default_query_class(kwargs)
         if "backref" in kwargs:
             backref = kwargs['backref']
-            if isinstance(backref, basestring):
+            if isinstance(backref, str):
                 backref = (backref, {})
             _set_default_query_class(backref[1])
         return fn(*args, **kwargs)
@@ -345,7 +345,7 @@ class Pagination(object):
             {% endmacro %}
         """
         last = 0
-        for num in xrange(1, self.pages + 1):
+        for num in range(1, self.pages + 1):
             if num <= left_edge or \
                (num > self.page - left_current - 1 and \
                 num < self.page + right_current) or \
@@ -469,7 +469,7 @@ class _EngineConnector(object):
 
 def _defines_primary_key(d):
     """Figures out if the given dictonary defines a primary key column."""
-    return any(v.primary_key for k, v in d.iteritems()
+    return any(v.primary_key for k, v in d.items()
                if isinstance(v, sqlalchemy.Column))
 
 
@@ -801,7 +801,7 @@ class SQLAlchemy(object):
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
-        for table in self.Model.metadata.tables.itervalues():
+        for table in self.Model.metadata.tables.values():
             if table.info.get('bind_key') == bind:
                 result.append(table)
         return result
@@ -825,7 +825,7 @@ class SQLAlchemy(object):
 
         if bind == '__all__':
             binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
-        elif isinstance(bind, basestring) or bind is None:
+        elif isinstance(bind, str) or bind is None:
             binds = [bind]
         else:
             binds = bind
