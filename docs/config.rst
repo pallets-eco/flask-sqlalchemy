@@ -48,6 +48,11 @@ A list of configuration keys currently understood by the extension:
                                   default.  Note that Flask-SQLAlchemy
                                   automatically sets this to 2 hours if
                                   MySQL is used.
+``SQLALCHEMY_MAX_OVERFLOW``       Controls the number of connections that
+                                  can be created after the pool reached
+                                  its maximum size.  When those additional
+                                  connections are returned to the pool,
+                                  they are disconnected and discarded.
 ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` Commit session when the app context is
                                   torn down, unless there was an exception.
 ================================= =========================================
@@ -59,6 +64,9 @@ A list of configuration keys currently understood by the extension:
 
 .. versionadded:: 0.12
    The ``SQLALCHEMY_BINDS`` configuration key was added.
+
+.. versionadded:: 0.17
+   The ``SQLALCHEMY_MAX_OVERFLOW`` configuration key was added.
 
 Connection URI Format
 ---------------------
