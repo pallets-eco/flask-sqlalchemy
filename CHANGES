@@ -9,6 +9,9 @@ Version 0.17
 
 *In development*
 
+- Added Python 3.3 support.
+- Dropped 2.5 compatibility.
+
 Version 0.16
 ````````````
 

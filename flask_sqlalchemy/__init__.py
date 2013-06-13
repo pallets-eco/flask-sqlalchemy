@@ -5,7 +5,7 @@
 
     Adds basic SQLAlchemy support to your application.
 
-    :copyright: (c) 2012 by Armin Ronacher.
+    :copyright: (c) 2012 by Armin Ronacher, Daniel Neuhäuser.
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement, absolute_import
@@ -29,6 +29,8 @@ from sqlalchemy.interfaces import ConnectionProxy
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.util import to_list
+from flask.ext.sqlalchemy._compat import iteritems, itervalues, xrange, \
+     string_types
 
 # the best timer function for the platform
 if sys.platform == 'win32':
@@ -76,7 +78,7 @@ def _wrap_with_default_query_class(fn):
         _set_default_query_class(kwargs)
         if "backref" in kwargs:
             backref = kwargs['backref']
-            if isinstance(backref, basestring):
+            if isinstance(backref, string_types):
                 backref = (backref, {})
             _set_default_query_class(backref[1])
         return fn(*args, **kwargs)
@@ -469,7 +471,7 @@ class _EngineConnector(object):
 
 def _defines_primary_key(d):
     """Figures out if the given dictonary defines a primary key column."""
-    return any(v.primary_key for k, v in d.iteritems()
+    return any(v.primary_key for k, v in iteritems(d)
                if isinstance(v, sqlalchemy.Column))
 
 
@@ -801,7 +803,7 @@ class SQLAlchemy(object):
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
-        for table in self.Model.metadata.tables.itervalues():
+        for table in itervalues(self.Model.metadata.tables):
             if table.info.get('bind_key') == bind:
                 result.append(table)
         return result

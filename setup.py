@@ -24,12 +24,12 @@ setup(
     author_email='armin.ronacher@active-4.com',
     description='Adds SQLAlchemy support to your Flask application',
     long_description=__doc__,
-    py_modules=['flask_sqlalchemy'],
+    packages=['flask_sqlalchemy'],
     zip_safe=False,
     platforms='any',
     install_requires=[
         'setuptools',
-        'Flask',
+        'Flask>=0.10',
         'SQLAlchemy'
     ],
     test_suite='test_sqlalchemy.suite',
