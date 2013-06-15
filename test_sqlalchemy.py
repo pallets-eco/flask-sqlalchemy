@@ -6,6 +6,7 @@ import unittest
 from datetime import datetime
 import flask
 from flask.ext import sqlalchemy
+from sqlalchemy.orm import sessionmaker
 
 
 def make_todo_model(db):
@@ -454,6 +455,39 @@ class CommitOnTeardownTestCase(unittest.TestCase):
         self.assertEqual(self.client.get('/').data, '')
 
 
+class StandardSessionTestCase(unittest.TestCase):
+    def test_insert_update_delete(self):
+        # Ensure _SignalTrackingMapperExtension doesn't croak when
+        # faced with a vanilla SQLAlchemy session.
+        #
+        # Verifies that "AttributeError: 'SessionMaker' object has no attribute '_model_changes'"
+        # is not thrown.
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+        Session = sessionmaker(bind=db.engine)
+
+        class QazWsx(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            x = db.Column(db.String, default='')
+
+        db.create_all()
+        session = Session()
+        session.add(QazWsx())
+        session.flush() # issues an INSERT.
+        session.expunge_all()
+        qaz_wsx = session.query(QazWsx).first()
+        assert qaz_wsx.x == ''
+        qaz_wsx.x = 'test'
+        session.flush() # issues an UPDATE.
+        session.expunge_all()
+        qaz_wsx = session.query(QazWsx).first()
+        assert qaz_wsx.x == 'test'
+        session.delete(qaz_wsx) # issues a DELETE.
+        assert session.query(QazWsx).first() is None
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BasicAppTestCase))
@@ -468,6 +502,7 @@ def suite():
     suite.addTest(unittest.makeSuite(CommitOnTeardownTestCase))
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
+    suite.addTest(unittest.makeSuite(StandardSessionTestCase))
     return suite
 
 
