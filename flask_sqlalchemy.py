@@ -76,7 +76,7 @@ def _wrap_with_default_query_class(fn):
         _set_default_query_class(kwargs)
         if "backref" in kwargs:
             backref = kwargs['backref']
-            if isinstance(backref, basestring):
+            if isinstance(backref, str):
                 backref = (backref, {})
             _set_default_query_class(backref[1])
         return fn(*args, **kwargs)
@@ -108,7 +108,7 @@ class _DebugQueryTuple(tuple):
         return self.end_time - self.start_time
 
     def __repr__(self):
-        return '<query statement="%s" parameters=%r duration=%.03f>' % (
+        return '<query statement="{!s}" parameters={!r} duration={:.3f}>'.format(
             self.statement,
             self.parameters,
             self.duration
@@ -121,7 +121,7 @@ def _calling_context(app_path):
         name = frm.f_globals.get('__name__')
         if name and (name == app_path or name.startswith(app_path + '.')):
             funcname = frm.f_code.co_name
-            return '%s:%s (%s)' % (
+            return '{!s}:{!s} ({!s})'.format(
                 frm.f_code.co_filename,
                 frm.f_lineno,
                 funcname
@@ -345,7 +345,7 @@ class Pagination(object):
             {% endmacro %}
         """
         last = 0
-        for num in xrange(1, self.pages + 1):
+        for num in range(1, self.pages + 1):
             if num <= left_edge or \
                (num > self.page - left_current - 1 and \
                 num < self.page + right_current) or \
@@ -444,8 +444,8 @@ class _EngineConnector(object):
             return self._app.config['SQLALCHEMY_DATABASE_URI']
         binds = self._app.config.get('SQLALCHEMY_BINDS') or ()
         assert self._bind in binds, \
-            'Bind %r is not specified.  Set it in the SQLALCHEMY_BINDS ' \
-            'configuration variable' % self._bind
+            'Bind {!r} is not specified.  Set it in the SQLALCHEMY_BINDS ' \
+            'configuration variable'.format(self._bind)
         return binds[self._bind]
 
     def get_engine(self):
@@ -469,7 +469,7 @@ class _EngineConnector(object):
 
 def _defines_primary_key(d):
     """Figures out if the given dictonary defines a primary key column."""
-    return any(v.primary_key for k, v in d.iteritems()
+    return any(v.primary_key for k, v in iter(d.items())
                if isinstance(v, sqlalchemy.Column))
 
 
@@ -488,8 +488,8 @@ class _BoundDeclarativeMeta(DeclarativeMeta):
             def _join(match):
                 word = match.group()
                 if len(word) > 1:
-                    return ('_%s_%s' % (word[:-1], word[-1])).lower()
-                return '_' + word.lower()
+                    return ('_{!s}_{!s}'.format(word[:-1], word[-1])).lower()
+                return '_{}'.format(word.lower())
             d['__tablename__'] = _camelcase_re.sub(_join, name).lstrip('_')
 
         return DeclarativeMeta.__new__(cls, name, bases, d)
@@ -801,7 +801,7 @@ class SQLAlchemy(object):
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
-        for table in self.Model.metadata.tables.itervalues():
+        for table in iter(self.Model.metadata.tables.values()):
             if table.info.get('bind_key') == bind:
                 result.append(table)
         return result
@@ -867,7 +867,7 @@ class SQLAlchemy(object):
             ctx = connection_stack.top
             if ctx is not None:
                 app = ctx.app
-        return '<%s engine=%r>' % (
+        return '<{!s} engine={!r}>'.format(
             self.__class__.__name__,
             app and app.config['SQLALCHEMY_DATABASE_URI'] or None
         )
