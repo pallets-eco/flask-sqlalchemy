@@ -469,7 +469,7 @@ class _EngineConnector(object):
 
 def _defines_primary_key(d):
     """Figures out if the given dictonary defines a primary key column."""
-    return any(v.primary_key for k, v in d.items()
+    return any(v.primary_key for k, v in iter(d.items())
                if isinstance(v, sqlalchemy.Column))
 
 
@@ -801,7 +801,7 @@ class SQLAlchemy(object):
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
-        for table in self.Model.metadata.tables.values():
+        for table in iter(self.Model.metadata.tables.values()):
             if table.info.get('bind_key') == bind:
                 result.append(table)
         return result
