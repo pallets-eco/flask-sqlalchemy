@@ -25,7 +25,6 @@ from sqlalchemy import orm, event
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session
 from sqlalchemy.event import listen
-from sqlalchemy.interfaces import ConnectionProxy
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.util import to_list
@@ -130,29 +129,6 @@ def _calling_context(app_path):
     return '<unknown>'
 
 
-class _ConnectionDebugProxy(ConnectionProxy):
-    """Helps debugging the database."""
-
-    def __init__(self, import_name):
-        self.app_package = import_name
-
-    def cursor_execute(self, execute, cursor, statement, parameters,
-                       context, executemany):
-        start = _timer()
-        try:
-            return execute(cursor, statement, parameters, context)
-        finally:
-            ctx = connection_stack.top
-            if ctx is not None:
-                queries = getattr(ctx, 'sqlalchemy_queries', None)
-                if queries is None:
-                    queries = []
-                    setattr(ctx, 'sqlalchemy_queries', queries)
-                queries.append(_DebugQueryTuple((
-                    statement, parameters, start, _timer(),
-                    _calling_context(self.app_package))))
-
-
 class _SignallingSession(Session):
 
     def __init__(self, db, autocommit=False, autoflush=False, **options):
@@ -221,6 +197,36 @@ class _MapperSignalEvents(object):
     def _record(mapper, target, operation):
         pk = tuple(mapper.primary_key_from_instance(target))
         orm.object_session(target)._model_changes[pk] = (target, operation)
+
+
+class _EngineDebuggingSignalEvents(object):
+    """Sets up handlers for two events that let us track the execution time of queries."""
+
+    def __init__(self, engine, import_name):
+        self.engine = engine
+        self.app_package = import_name
+
+    def register(self):
+        listen(self.engine, 'before_cursor_execute', self.before_cursor_execute)
+        listen(self.engine, 'after_cursor_execute', self.after_cursor_execute)
+
+    def before_cursor_execute(self, conn, cursor, statement,
+                              parameters, context, executemany):
+        if connection_stack.top is not None:
+            context._query_start_time = _timer()
+
+    def after_cursor_execute(self, conn, cursor, statement,
+                             parameters, context, executemany):
+        ctx = connection_stack.top
+        if ctx is not None:
+            queries = getattr(ctx, 'sqlalchemy_queries', None)
+            if queries is None:
+                queries = []
+                setattr(ctx, 'sqlalchemy_queries', queries)
+            queries.append( _DebugQueryTuple( (
+                statement, parameters, context._query_start_time, _timer(),
+                _calling_context(self.app_package) ) ) )
+
 
 def get_debug_queries():
     """In debug mode Flask-SQLAlchemy will log all the SQL queries sent
@@ -458,11 +464,12 @@ class _EngineConnector(object):
             options = {'convert_unicode': True}
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
-            if _record_queries(self._app):
-                options['proxy'] = _ConnectionDebugProxy(self._app.import_name)
             if echo:
                 options['echo'] = True
             self._engine = rv = sqlalchemy.create_engine(info, **options)
+            if _record_queries(self._app):
+                _EngineDebuggingSignalEvents(self._engine,
+                                             self._app.import_name).register()
             self._connected_for = (uri, echo)
             return rv
 
