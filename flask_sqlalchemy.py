@@ -153,7 +153,9 @@ class _ConnectionDebugProxy(ConnectionProxy):
                     _calling_context(self.app_package))))
 
 
-class _SignallingSession(Session):
+class SignallingSessionMixin(object):
+    """This is used by the internal _SignallingSession, and is here for cases
+    where the user supplies a custom session."""
 
     def __init__(self, db, autocommit=False, autoflush=False, **options):
         self.app = db.get_app()
@@ -171,6 +173,9 @@ class _SignallingSession(Session):
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
         return Session.get_bind(self, mapper, clause)
+
+class _SignallingSession(SignallingSessionMixin, Session):
+    pass
 
 
 class _SessionSignalEvents(object):
