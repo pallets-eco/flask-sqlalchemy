@@ -291,6 +291,35 @@ class DefaultQueryClassTestCase(unittest.TestCase):
         self.assertTrue(isinstance(p.children, sqlalchemy.BaseQuery))
         #self.assertTrue(isinstance(c.parents, sqlalchemy.BaseQuery))
 
+class CustomQueryClassTestCase(unittest.TestCase):
+
+    def test_custom_query_class(self):
+
+        from sqlalchemy import orm
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+
+        class CustomBaseQuery(sqlalchemy.FlaskQueryMixin, orm.Query):
+            pass
+        class SQLAlchemy2(sqlalchemy.SQLAlchemy):
+            query_class = CustomBaseQuery
+
+        db = SQLAlchemy2(app)
+        self.assertEqual(CustomBaseQuery, db.Query)
+
+        class Parent(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            children = db.relationship("Child", backref = "parents", lazy='dynamic')
+        class Child(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+        p = Parent()
+        c = Child()
+        c.parent = p
+        self.assertTrue(isinstance(p.children, CustomBaseQuery))
+        self.assertEqual(type(Parent.query), CustomBaseQuery)
+        self.assertEqual(type(Child.query), CustomBaseQuery)
 
 class SQLAlchemyIncludesTestCase(unittest.TestCase):
 
@@ -462,6 +491,7 @@ def suite():
     suite.addTest(unittest.makeSuite(PaginationTestCase))
     suite.addTest(unittest.makeSuite(BindsTestCase))
     suite.addTest(unittest.makeSuite(DefaultQueryClassTestCase))
+    suite.addTest(unittest.makeSuite(CustomQueryClassTestCase))
     suite.addTest(unittest.makeSuite(SQLAlchemyIncludesTestCase))
     suite.addTest(unittest.makeSuite(RegressionTestCase))
     suite.addTest(unittest.makeSuite(SessionScopingTestCase))
