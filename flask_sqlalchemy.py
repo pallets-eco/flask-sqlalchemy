@@ -356,14 +356,10 @@ class Pagination(object):
                 last = num
 
 
-class BaseQuery(orm.Query):
-    """The default query object used for models, and exposed as
-    :attr:`~SQLAlchemy.Query`. This can be subclassed and
-    replaced for individual models by setting the :attr:`~Model.query_class`
-    attribute.  This is a subclass of a standard SQLAlchemy
-    :class:`~sqlalchemy.orm.query.Query` class and has all the methods of a
-    standard query as well.
-    """
+class FlaskQueryMixin(object):
+    """This mixin contains some flask-specific utility functions. By default,
+    these are included in :class:`BaseQuery`, but can also be used with a
+    custom `Query` class."""
 
     def get_or_404(self, ident):
         """Like :meth:`get` but aborts with 404 if not found instead of
@@ -405,6 +401,16 @@ class BaseQuery(orm.Query):
 
         return Pagination(self, page, per_page, total, items)
 
+
+class BaseQuery(FlaskQueryMixin, orm.Query):
+    """The default query object used for models, and exposed as
+    :attr:`~SQLAlchemy.Query`. This can be replaced for individual models by
+    setting the :attr:`~Model.query_class` attribute. This is a subclass of a
+    standard SQLAlchemy :class:`~sqlalchemy.orm.query.Query` class and has all
+    the methods of a standard query as well. If you want relationships to
+    return
+    """
+    pass
 
 class _QueryProperty(object):
 
