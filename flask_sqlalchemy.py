@@ -528,7 +528,8 @@ class Model(object):
     """Baseclass for custom user models."""
 
     #: the query class used.  The :attr:`query` attribute is an instance
-    #: of this class.  By default a :class:`BaseQuery` is used.
+    #: of this class.  By default a :class:`BaseQuery` is used. This can be
+    #: changed by overriding :attr:`SQLAlchemy.query_class`
     query_class = BaseQuery
 
     #: an instance of :attr:`query_class`.  Can be used to query the
@@ -674,6 +675,7 @@ class SQLAlchemy(object):
 
     def make_declarative_base(self):
         """Creates the declarative base."""
+        Model.query_class = self.query_class
         base = declarative_base(cls=Model, name='Model',
                                 metaclass=_BoundDeclarativeMeta)
         base.query = _QueryProperty(self)
