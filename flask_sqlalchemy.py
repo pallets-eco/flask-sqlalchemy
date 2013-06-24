@@ -65,20 +65,20 @@ def _make_table(db):
     return _make_table
 
 
-def _set_default_query_class(d):
+def _set_default_query_class(obj, d):
     if 'query_class' not in d:
-        d['query_class'] = BaseQuery
+        d['query_class'] = obj.query_class
 
 
-def _wrap_with_default_query_class(fn):
+def _wrap_with_default_query_class(obj, fn):
     @functools.wraps(fn)
     def newfn(*args, **kwargs):
-        _set_default_query_class(kwargs)
+        _set_default_query_class(obj, kwargs)
         if "backref" in kwargs:
             backref = kwargs['backref']
             if isinstance(backref, basestring):
                 backref = (backref, {})
-            _set_default_query_class(backref[1])
+            _set_default_query_class(obj, backref[1])
         return fn(*args, **kwargs)
     return newfn
 
@@ -90,9 +90,9 @@ def _include_sqlalchemy(obj):
                 setattr(obj, key, getattr(module, key))
     # Note: obj.Table does not attempt to be a SQLAlchemy Table class.
     obj.Table = _make_table(obj)
-    obj.relationship = _wrap_with_default_query_class(obj.relationship)
-    obj.relation = _wrap_with_default_query_class(obj.relation)
-    obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader)
+    obj.relationship = _wrap_with_default_query_class(obj, obj.relationship)
+    obj.relation = _wrap_with_default_query_class(obj, obj.relation)
+    obj.dynamic_loader = _wrap_with_default_query_class(obj, obj.dynamic_loader)
     obj.event = event
 
 
@@ -617,6 +617,7 @@ class SQLAlchemy(object):
     """
 
     session_class = _SignallingSession
+    query_class   = BaseQuery
 
     def __init__(self, app=None,
                  use_native_unicode=True,
@@ -643,7 +644,7 @@ class SQLAlchemy(object):
         _include_sqlalchemy(self)
         _MapperSignalEvents(self.mapper).register()
         _SessionSignalEvents().register()
-        self.Query = BaseQuery
+        self.Query = self.query_class
 
     @property
     def metadata(self):
