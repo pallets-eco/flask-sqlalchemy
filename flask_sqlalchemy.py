@@ -616,6 +616,8 @@ class SQLAlchemy(object):
         a custom function which will define the SQLAlchemy session's scoping.
     """
 
+    session_class = _SignallingSession
+
     def __init__(self, app=None,
                  use_native_unicode=True,
                  session_options=None):
@@ -654,7 +656,7 @@ class SQLAlchemy(object):
             options = {}
         scopefunc=options.pop('scopefunc', None)
         return orm.scoped_session(
-            partial(_SignallingSession, self, **options), scopefunc=scopefunc
+            partial(self.session_class, self, **options), scopefunc=scopefunc
         )
 
     def make_declarative_base(self):
