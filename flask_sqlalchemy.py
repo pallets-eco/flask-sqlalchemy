@@ -633,14 +633,8 @@ class SQLAlchemy(object):
 
     def __init__(self, app=None,
                  use_native_unicode=True,
-                 session_options=None,
-                 session_class=None):
+                 session_options=None):
         self.use_native_unicode = use_native_unicode
-
-        if session_class is not None:
-            self.session_class = session_class
-        else:
-            self.session_class = _SignallingSession
 
         if session_options is None:
             session_options = {}
