@@ -65,20 +65,20 @@ def _make_table(db):
     return _make_table
 
 
-def _set_default_query_class(d):
+def _set_default_query_class(obj, d):
     if 'query_class' not in d:
-        d['query_class'] = BaseQuery
+        d['query_class'] = obj.query_class
 
 
-def _wrap_with_default_query_class(fn):
+def _wrap_with_default_query_class(obj, fn):
     @functools.wraps(fn)
     def newfn(*args, **kwargs):
-        _set_default_query_class(kwargs)
+        _set_default_query_class(obj, kwargs)
         if "backref" in kwargs:
             backref = kwargs['backref']
             if isinstance(backref, basestring):
                 backref = (backref, {})
-            _set_default_query_class(backref[1])
+            _set_default_query_class(obj, backref[1])
         return fn(*args, **kwargs)
     return newfn
 
@@ -90,9 +90,9 @@ def _include_sqlalchemy(obj):
                 setattr(obj, key, getattr(module, key))
     # Note: obj.Table does not attempt to be a SQLAlchemy Table class.
     obj.Table = _make_table(obj)
-    obj.relationship = _wrap_with_default_query_class(obj.relationship)
-    obj.relation = _wrap_with_default_query_class(obj.relation)
-    obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader)
+    obj.relationship = _wrap_with_default_query_class(obj, obj.relationship)
+    obj.relation = _wrap_with_default_query_class(obj, obj.relation)
+    obj.dynamic_loader = _wrap_with_default_query_class(obj, obj.dynamic_loader)
     obj.event = event
 
 
@@ -153,7 +153,9 @@ class _ConnectionDebugProxy(ConnectionProxy):
                     _calling_context(self.app_package))))
 
 
-class _SignallingSession(Session):
+class SignallingSessionMixin(object):
+    """This is used by the internal _SignallingSession, and is here for cases
+    where the user supplies a custom session."""
 
     def __init__(self, db, autocommit=False, autoflush=False, **options):
         self.app = db.get_app()
@@ -171,6 +173,9 @@ class _SignallingSession(Session):
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
         return Session.get_bind(self, mapper, clause)
+
+class _SignallingSession(SignallingSessionMixin, Session):
+    pass
 
 
 class _SessionSignalEvents(object):
@@ -356,14 +361,10 @@ class Pagination(object):
                 last = num
 
 
-class BaseQuery(orm.Query):
-    """The default query object used for models, and exposed as
-    :attr:`~SQLAlchemy.Query`. This can be subclassed and
-    replaced for individual models by setting the :attr:`~Model.query_class`
-    attribute.  This is a subclass of a standard SQLAlchemy
-    :class:`~sqlalchemy.orm.query.Query` class and has all the methods of a
-    standard query as well.
-    """
+class FlaskQueryMixin(object):
+    """This mixin contains some flask-specific utility functions. By default,
+    these are included in :class:`BaseQuery`, but can also be used with a
+    custom `Query` class."""
 
     def get_or_404(self, ident):
         """Like :meth:`get` but aborts with 404 if not found instead of
@@ -405,6 +406,16 @@ class BaseQuery(orm.Query):
 
         return Pagination(self, page, per_page, total, items)
 
+
+class BaseQuery(FlaskQueryMixin, orm.Query):
+    """The default query object used for models, and exposed as
+    :attr:`~SQLAlchemy.Query`. This can be replaced for individual models by
+    setting the :attr:`~Model.query_class` attribute. This is a subclass of a
+    standard SQLAlchemy :class:`~sqlalchemy.orm.query.Query` class and has all
+    the methods of a standard query as well. If you want relationships to
+    return
+    """
+    pass
 
 class _QueryProperty(object):
 
@@ -522,7 +533,8 @@ class Model(object):
     """Baseclass for custom user models."""
 
     #: the query class used.  The :attr:`query` attribute is an instance
-    #: of this class.  By default a :class:`BaseQuery` is used.
+    #: of this class.  By default a :class:`BaseQuery` is used. This can be
+    #: changed by overriding :attr:`SQLAlchemy.query_class`
     query_class = BaseQuery
 
     #: an instance of :attr:`query_class`.  Can be used to query the
@@ -616,6 +628,9 @@ class SQLAlchemy(object):
         a custom function which will define the SQLAlchemy session's scoping.
     """
 
+    session_class = _SignallingSession
+    query_class   = BaseQuery
+
     def __init__(self, app=None,
                  use_native_unicode=True,
                  session_options=None):
@@ -641,7 +656,7 @@ class SQLAlchemy(object):
         _include_sqlalchemy(self)
         _MapperSignalEvents(self.mapper).register()
         _SessionSignalEvents().register()
-        self.Query = BaseQuery
+        self.Query = self.query_class
 
     @property
     def metadata(self):
@@ -654,11 +669,12 @@ class SQLAlchemy(object):
             options = {}
         scopefunc=options.pop('scopefunc', None)
         return orm.scoped_session(
-            partial(_SignallingSession, self, **options), scopefunc=scopefunc
+            partial(self.session_class, self, **options), scopefunc=scopefunc
         )
 
     def make_declarative_base(self):
         """Creates the declarative base."""
+        Model.query_class = self.query_class
         base = declarative_base(cls=Model, name='Model',
                                 metaclass=_BoundDeclarativeMeta)
         base.query = _QueryProperty(self)
