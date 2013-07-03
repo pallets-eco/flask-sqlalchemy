@@ -728,8 +728,9 @@ class SQLAlchemy(object):
         """
         if info.drivername.startswith('mysql'):
             info.query.setdefault('charset', 'utf8')
-            options.setdefault('pool_size', 10)
-            options.setdefault('pool_recycle', 7200)
+            if info.drivername != 'mysql+gaerdbms':
+                options.setdefault('pool_size', 10)
+                options.setdefault('pool_recycle', 7200)
         elif info.drivername == 'sqlite':
             pool_size = options.get('pool_size')
             detected_in_memory = False
