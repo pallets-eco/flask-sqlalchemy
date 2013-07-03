@@ -28,7 +28,6 @@ from sqlalchemy.event import listen
 from sqlalchemy.interfaces import ConnectionProxy
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from sqlalchemy.util import to_list
 from flask.ext.sqlalchemy._compat import iteritems, itervalues, xrange, \
      string_types
 
