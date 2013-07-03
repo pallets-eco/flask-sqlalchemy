@@ -59,7 +59,7 @@ class BasicAppTestCase(unittest.TestCase):
         c.post('/add', data=dict(title='First Item', text='The text'))
         c.post('/add', data=dict(title='2nd Item', text='The text'))
         rv = c.get('/')
-        assert rv.data == 'First Item\n2nd Item'
+        self.assertEqual(rv.data, b'First Item\n2nd Item')
 
     def test_query_recording(self):
         with self.app.test_request_context():
@@ -446,12 +446,12 @@ class CommitOnTeardownTestCase(unittest.TestCase):
     def test_commit_on_success(self):
         resp = self.client.post('/create')
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(self.client.get('/').data, 'Test one')
+        self.assertEqual(self.client.get('/').data, b'Test one')
 
     def test_roll_back_on_failure(self):
         resp = self.client.post('/create', data={'fail': 'on'})
         self.assertEqual(resp.status_code, 500)
-        self.assertEqual(self.client.get('/').data, '')
+        self.assertEqual(self.client.get('/').data, b'')
 
 
 def suite():
