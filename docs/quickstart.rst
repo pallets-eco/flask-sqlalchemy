@@ -30,6 +30,8 @@ used to declare models::
 
 
     class User(db.Model):
+        __tablename__ = 'user'
+        
         id = db.Column(db.Integer, primary_key=True)
         username = db.Column(db.String(80), unique=True)
         email = db.Column(db.String(120), unique=True)
@@ -80,6 +82,8 @@ application that uses two tables that have a relationship to each other::
 
 
     class Post(db.Model):
+        __tablename__ = 'post'
+        
         id = db.Column(db.Integer, primary_key=True)
         title = db.Column(db.String(80))
         body = db.Column(db.Text)
@@ -102,6 +106,8 @@ application that uses two tables that have a relationship to each other::
 
 
     class Category(db.Model):
+        __tablename__ = 'category'
+        
         id = db.Column(db.Integer, primary_key=True)
         name = db.Column(db.String(50))
 
