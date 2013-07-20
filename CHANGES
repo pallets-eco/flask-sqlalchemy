@@ -4,13 +4,13 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
-Version 0.17
-````````````
-
-*In development*
+Version 1.0
+```````````
 
 - Added Python 3.3 support.
 - Dropped 2.5 compatibility.
+- Various bugfixes
+- Changed versioning format to do major releases for each update now.
 
 Version 0.16
 ````````````
