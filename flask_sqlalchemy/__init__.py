@@ -196,8 +196,11 @@ class _MapperSignalEvents(object):
 
     @staticmethod
     def _record(mapper, target, operation):
-        pk = tuple(mapper.primary_key_from_instance(target))
-        orm.object_session(target)._model_changes[pk] = (target, operation)
+        s = orm.object_session(target)
+        if isinstance(s, _SignallingSession):
+            pk = tuple(mapper.primary_key_from_instance(target))
+            s._model_changes[pk] = (target, operation)
+
 
 
 class _EngineDebuggingSignalEvents(object):
