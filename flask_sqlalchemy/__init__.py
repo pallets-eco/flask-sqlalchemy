@@ -159,13 +159,13 @@ class _SessionSignalEvents(object):
 
     @staticmethod
     def session_signal_before_commit(session):
-        d = session._model_changes
+        d = getattr(session, '_model_changes', None)
         if d:
             before_models_committed.send(session.app, changes=d.values())
 
     @staticmethod
     def session_signal_after_commit(session):
-        d = session._model_changes
+        d = getattr(session, '_model_changes', None)
         if d:
             models_committed.send(session.app, changes=d.values())
             d.clear()
