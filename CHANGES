@@ -4,10 +4,14 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
-Version 1.1
+Version 2.0
 -----------
 
 (Release date to be decided, codename to be selected)
+
+- Changed how the builtin signals are subscribed to skip non Flask-SQLAlchemy
+  sessions.  This will also fix the attribute error about model changes
+  not existing.
 
 Version 1.0
 -----------
