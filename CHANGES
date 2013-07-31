@@ -12,6 +12,9 @@ Version 2.0
 - Changed how the builtin signals are subscribed to skip non Flask-SQLAlchemy
   sessions.  This will also fix the attribute error about model changes
   not existing.
+- Added a way to control how signals for model modifications are tracked.
+- Made the ``SignallingSession`` a public interface and added a hook
+  for customizing session creation.
 
 Version 1.0
 -----------

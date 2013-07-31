@@ -23,7 +23,7 @@ from operator import itemgetter
 from threading import Lock
 from sqlalchemy import orm, event
 from sqlalchemy.orm.exc import UnmappedClassError
-from sqlalchemy.orm.session import Session
+from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.event import listen
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
@@ -133,14 +133,30 @@ def _calling_context(app_path):
     return '<unknown>'
 
 
-class _SignallingSession(Session):
+class SignallingSession(SessionBase):
+    """The signalling session is the default session that Flask-SQLAlchemy
+    uses.  It extends the default session system with bind selection and
+    modification tracking.
+
+    If you want to use a different session you can override the
+    :meth:`SQLAlchemy.create_session` function.
+
+    .. versionadded:: 2.0
+    """
 
     def __init__(self, db, autocommit=False, autoflush=False, **options):
+        #: The application that this session belongs to.
         self.app = db.get_app()
         self._model_changes = {}
-        Session.__init__(self, autocommit=autocommit, autoflush=autoflush,
-                         bind=db.engine,
-                         binds=db.get_binds(self.app), **options)
+        #: A flag that controls weather this session should keep track of
+        #: model modifications.  The default value for this attribute
+        #: is set from the ``SQLALCHEMY_TRACK_MODIFICATIONS`` config
+        #: key.
+        self.emit_modification_signals = \
+            self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
+        SessionBase.__init__(self, autocommit=autocommit, autoflush=autoflush,
+                             bind=db.engine,
+                             binds=db.get_binds(self.app), **options)
 
     def get_bind(self, mapper, clause=None):
         # mapper is None if someone tries to just get a connection
@@ -150,19 +166,19 @@ class _SignallingSession(Session):
             if bind_key is not None:
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
-        return Session.get_bind(self, mapper, clause)
+        return SessionBase.get_bind(self, mapper, clause)
 
 
 class _SessionSignalEvents(object):
 
     def register(self):
-        listen(Session, 'before_commit', self.session_signal_before_commit)
-        listen(Session, 'after_commit', self.session_signal_after_commit)
-        listen(Session, 'after_rollback', self.session_signal_after_rollback)
+        listen(SessionBase, 'before_commit', self.session_signal_before_commit)
+        listen(SessionBase, 'after_commit', self.session_signal_after_commit)
+        listen(SessionBase, 'after_rollback', self.session_signal_after_rollback)
 
     @staticmethod
     def session_signal_before_commit(session):
-        if not isinstance(session, _SignallingSession):
+        if not isinstance(session, SignallingSession):
             return
         d = session._model_changes
         if d:
@@ -170,7 +186,7 @@ class _SessionSignalEvents(object):
 
     @staticmethod
     def session_signal_after_commit(session):
-        if not isinstance(session, _SignallingSession):
+        if not isinstance(session, SignallingSession):
             return
         d = session._model_changes
         if d:
@@ -179,7 +195,7 @@ class _SessionSignalEvents(object):
 
     @staticmethod
     def session_signal_after_rollback(session):
-        if not isinstance(session, _SignallingSession):
+        if not isinstance(session, SignallingSession):
             return
         session._model_changes.clear()
 
@@ -206,7 +222,7 @@ class _MapperSignalEvents(object):
     @staticmethod
     def _record(mapper, target, operation):
         s = orm.object_session(target)
-        if isinstance(s, _SignallingSession):
+        if isinstance(s, SignallingSession) and s.emit_modification_signals:
             pk = tuple(mapper.primary_key_from_instance(target))
             s._model_changes[pk] = (target, operation)
 
@@ -236,9 +252,9 @@ class _EngineDebuggingSignalEvents(object):
             if queries is None:
                 queries = []
                 setattr(ctx, 'sqlalchemy_queries', queries)
-            queries.append( _DebugQueryTuple( (
+            queries.append(_DebugQueryTuple((
                 statement, parameters, context._query_start_time, _timer(),
-                _calling_context(self.app_package) ) ) )
+                _calling_context(self.app_package))))
 
 
 def get_debug_queries():
@@ -669,13 +685,22 @@ class SQLAlchemy(object):
         return self.Model.metadata
 
     def create_scoped_session(self, options=None):
-        """Helper factory method that creates a scoped session."""
+        """Helper factory method that creates a scoped session.  It
+        internally calls :meth:`create_session`.
+        """
         if options is None:
             options = {}
-        scopefunc=options.pop('scopefunc', None)
-        return orm.scoped_session(
-            partial(_SignallingSession, self, **options), scopefunc=scopefunc
-        )
+        scopefunc = options.pop('scopefunc', None)
+        return orm.scoped_session(partial(self.create_session, options),
+                                  scopefunc=scopefunc)
+
+    def create_session(self, options):
+        """Creates the session.  The default implementation returns a
+        :class:`SignallingSession`.
+
+        .. versionadded:: 2.0
+        """
+        return SignallingSession(self, **options)
 
     def make_declarative_base(self):
         """Creates the declarative base."""
@@ -700,6 +725,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
+        app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', True)
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
