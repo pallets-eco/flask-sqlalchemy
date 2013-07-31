@@ -144,7 +144,7 @@ class SignallingSession(SessionBase):
     .. versionadded:: 2.0
     """
 
-    def __init__(self, db, autocommit=False, autoflush=False, **options):
+    def __init__(self, db, autocommit=False, autoflush=True, **options):
         #: The application that this session belongs to.
         self.app = db.get_app()
         self._model_changes = {}
