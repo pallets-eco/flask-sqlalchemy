@@ -6,7 +6,10 @@ python:
   - "pypy"
   - "3.3"
 
-script: python setup.py test
+install:
+  - pip install --editable .
+
+script: make test
 
 notifications:
   email: false

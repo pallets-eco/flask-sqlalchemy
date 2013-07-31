@@ -42,6 +42,9 @@ except ImportError:
     _app_ctx_stack = None
 
 
+__version__ = '1.1-dev'
+
+
 # Which stack should we use?  _app_ctx_stack is new in 0.9
 connection_stack = _app_ctx_stack or _request_ctx_stack
 
