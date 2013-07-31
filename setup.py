@@ -28,7 +28,6 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=[
-        'setuptools',
         'Flask>=0.10',
         'SQLAlchemy'
     ],
