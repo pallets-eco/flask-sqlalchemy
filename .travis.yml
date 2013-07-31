@@ -8,6 +8,7 @@ python:
 
 install:
   - pip install --editable .
+  - pip install blinker
 
 script: make test
 
