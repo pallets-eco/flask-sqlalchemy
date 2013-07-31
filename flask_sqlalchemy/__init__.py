@@ -154,8 +154,9 @@ class SignallingSession(SessionBase):
         #: key.
         self.emit_modification_signals = \
             self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
+        bind = options.pop('bind', None) or db.engine
         SessionBase.__init__(self, autocommit=autocommit, autoflush=autoflush,
-                             bind=db.engine,
+                             bind=bind,
                              binds=db.get_binds(self.app), **options)
 
     def get_bind(self, mapper, clause=None):

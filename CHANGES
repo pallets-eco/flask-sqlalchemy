@@ -15,6 +15,8 @@ Version 2.0
 - Added a way to control how signals for model modifications are tracked.
 - Made the ``SignallingSession`` a public interface and added a hook
   for customizing session creation.
+- If the ``bind`` parameter is given to the signalling session it will no
+  longer cause an error that a parameter is given twice.
 
 Version 1.0
 -----------
