@@ -456,6 +456,7 @@ class CommitOnTeardownTestCase(unittest.TestCase):
 
 
 class StandardSessionTestCase(unittest.TestCase):
+
     def test_insert_update_delete(self):
         # Ensure _SignalTrackingMapperExtension doesn't croak when
         # faced with a vanilla SQLAlchemy session.
