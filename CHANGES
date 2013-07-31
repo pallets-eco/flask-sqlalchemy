@@ -17,6 +17,7 @@ Version 2.0
   for customizing session creation.
 - If the ``bind`` parameter is given to the signalling session it will no
   longer cause an error that a parameter is given twice.
+- Added working table reflection support.
 
 Version 1.0
 -----------

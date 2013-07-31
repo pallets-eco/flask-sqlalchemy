@@ -868,7 +868,7 @@ class SQLAlchemy(object):
             retval.update(dict((table, engine) for table in tables))
         return retval
 
-    def _execute_for_all_tables(self, app, bind, operation):
+    def _execute_for_all_tables(self, app, bind, operation, skip_tables=False):
         app = self.get_app(app)
 
         if bind == '__all__':
@@ -879,9 +879,12 @@ class SQLAlchemy(object):
             binds = bind
 
         for bind in binds:
-            tables = self.get_tables_for_bind(bind)
+            extra = {}
+            if not skip_tables:
+                tables = self.get_tables_for_bind(bind)
+                extra['tables'] = tables
             op = getattr(self.Model.metadata, operation)
-            op(bind=self.get_engine(app, bind), tables=tables)
+            op(bind=self.get_engine(app, bind), **extra)
 
     def create_all(self, bind='__all__', app=None):
         """Creates all tables.
@@ -905,7 +908,7 @@ class SQLAlchemy(object):
         .. versionchanged:: 0.12
            Parameters were added
         """
-        self._execute_for_all_tables(app, bind, 'reflect')
+        self._execute_for_all_tables(app, bind, 'reflect', skip_tables=True)
 
     def __repr__(self):
         app = None
