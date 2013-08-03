@@ -488,6 +488,7 @@ class _EngineConnector(object):
         with self._lock:
             uri = self.get_uri()
             echo = self._app.config['SQLALCHEMY_ECHO']
+            encoding = self._app.config['SQLALCHEMY_ENCODING']            
             if (uri, echo) == self._connected_for:
                 return self._engine
             info = make_url(uri)
@@ -496,6 +497,8 @@ class _EngineConnector(object):
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
                 options['echo'] = True
+            if encoding:
+                options['encoding'] = encoding
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
@@ -720,6 +723,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
+        app.config.setdefault('SQLALCHEMY_ENCODING', None)
         app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
