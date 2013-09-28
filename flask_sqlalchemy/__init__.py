@@ -591,7 +591,7 @@ class SQLAlchemy(object):
 
     The difference between the two is that in the first case methods like
     :meth:`create_all` and :meth:`drop_all` will work all the time but in
-    the second case a :meth:`flask.Flask.request_context` has to exist.
+    the second case a :meth:`flask.Flask.app_context` has to exist.
 
     By default Flask-SQLAlchemy will apply some backend-specific settings
     to improve your experience with them.  As of SQLAlchemy 0.6 SQLAlchemy
