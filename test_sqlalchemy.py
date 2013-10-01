@@ -25,6 +25,18 @@ def make_todo_model(db):
     return Todo
 
 
+def make_memo_model(db):
+    class Memo(db.Model):
+        __tablename__ = 'memos'
+        id = db.Column('memo_id', db.Integer, primary_key=True)
+        title = db.Column(db.String(60))
+        text = db.Column(db.String)
+        def __init__(self, name, text):
+            self.name = name
+            self.text = text
+    return Memo
+
+
 class BasicAppTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -123,6 +135,8 @@ class SignallingTestCase(unittest.TestCase):
         app.config['TESTING'] = True
         self.db = sqlalchemy.SQLAlchemy(app)
         self.Todo = make_todo_model(self.db)
+        self.Memo = make_memo_model(self.db)
+
         self.db.create_all()
 
     def tearDown(self):
@@ -154,6 +168,16 @@ class SignallingTestCase(unittest.TestCase):
             self.assertEqual(len(recorded), 1)
             self.assertEqual(recorded[0][0], todo)
             self.assertEqual(recorded[0][1], 'delete')
+            del recorded[:]
+            memo = self.Memo('my note', 'some text')
+            self.db.session.add(memo)
+            todo = self.Todo('Awesome', 'the text')
+            self.db.session.add(todo)
+            self.db.session.commit()
+            self.assertEqual(len(recorded), 2)
+            change_models = sorted(recorded, key=lambda r: r[0].__tablename__)
+            self.assertEqual(change_models[0], (memo, 'insert'))
+            self.assertEqual(change_models[1], (todo, 'insert'))
 
 
 class HelperTestCase(unittest.TestCase):
