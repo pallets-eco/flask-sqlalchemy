@@ -5,7 +5,7 @@
 
     Adds basic SQLAlchemy support to your application.
 
-    :copyright: (c) 2012 by Armin Ronacher.
+    :copyright: (c) 2012 by Armin Ronacher, Daniel Neuhäuser.
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement, absolute_import
@@ -21,15 +21,14 @@ from flask import _request_ctx_stack, abort
 from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
-from sqlalchemy import orm
+from sqlalchemy import orm, event
 from sqlalchemy.orm.exc import UnmappedClassError
-from sqlalchemy.orm.session import Session
-from sqlalchemy.orm.interfaces import MapperExtension, SessionExtension, \
-     EXT_CONTINUE
-from sqlalchemy.interfaces import ConnectionProxy
+from sqlalchemy.orm.session import Session as SessionBase
+from sqlalchemy.event import listen
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from sqlalchemy.util import to_list
+from flask.ext.sqlalchemy._compat import iteritems, itervalues, xrange, \
+     string_types
 
 # the best timer function for the platform
 if sys.platform == 'win32':
@@ -41,6 +40,9 @@ try:
     from flask import _app_ctx_stack
 except ImportError:
     _app_ctx_stack = None
+
+
+__version__ = '2.0-dev'
 
 
 # Which stack should we use?  _app_ctx_stack is new in 0.9
@@ -77,7 +79,7 @@ def _wrap_with_default_query_class(fn):
         _set_default_query_class(kwargs)
         if "backref" in kwargs:
             backref = kwargs['backref']
-            if isinstance(backref, basestring):
+            if isinstance(backref, string_types):
                 backref = (backref, {})
             _set_default_query_class(backref[1])
         return fn(*args, **kwargs)
@@ -91,10 +93,10 @@ def _include_sqlalchemy(obj):
                 setattr(obj, key, getattr(module, key))
     # Note: obj.Table does not attempt to be a SQLAlchemy Table class.
     obj.Table = _make_table(obj)
-    obj.mapper = signalling_mapper
     obj.relationship = _wrap_with_default_query_class(obj.relationship)
     obj.relation = _wrap_with_default_query_class(obj.relation)
     obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader)
+    obj.event = event
 
 
 class _DebugQueryTuple(tuple):
@@ -131,79 +133,31 @@ def _calling_context(app_path):
     return '<unknown>'
 
 
-class _ConnectionDebugProxy(ConnectionProxy):
-    """Helps debugging the database."""
+class SignallingSession(SessionBase):
+    """The signalling session is the default session that Flask-SQLAlchemy
+    uses.  It extends the default session system with bind selection and
+    modification tracking.
 
-    def __init__(self, import_name):
-        self.app_package = import_name
+    If you want to use a different session you can override the
+    :meth:`SQLAlchemy.create_session` function.
 
-    def cursor_execute(self, execute, cursor, statement, parameters,
-                       context, executemany):
-        start = _timer()
-        try:
-            return execute(cursor, statement, parameters, context)
-        finally:
-            ctx = connection_stack.top
-            if ctx is not None:
-                queries = getattr(ctx, 'sqlalchemy_queries', None)
-                if queries is None:
-                    queries = []
-                    setattr(ctx, 'sqlalchemy_queries', queries)
-                queries.append(_DebugQueryTuple((
-                    statement, parameters, start, _timer(),
-                    _calling_context(self.app_package))))
+    .. versionadded:: 2.0
+    """
 
-
-class _SignalTrackingMapperExtension(MapperExtension):
-
-    def after_delete(self, mapper, connection, instance):
-        return self._record(mapper, instance, 'delete')
-
-    def after_insert(self, mapper, connection, instance):
-        return self._record(mapper, instance, 'insert')
-
-    def after_update(self, mapper, connection, instance):
-        return self._record(mapper, instance, 'update')
-
-    def _record(self, mapper, model, operation):
-        s = orm.object_session(model)
-        # Skip the operation tracking when a non signalling session
-        # is used.
-        if isinstance(s, _SignallingSessionExtension):
-            pk = tuple(mapper.primary_key_from_instance(model))
-            s._model_changes[pk] = (model, operation)
-        return EXT_CONTINUE
-
-
-class _SignallingSessionExtension(SessionExtension):
-
-    def before_commit(self, session):
-        d = session._model_changes
-        if d:
-            before_models_committed.send(session.app, changes=d.values())
-        return EXT_CONTINUE
-
-    def after_commit(self, session):
-        d = session._model_changes
-        if d:
-            models_committed.send(session.app, changes=d.values())
-            d.clear()
-        return EXT_CONTINUE
-
-    def after_rollback(self, session):
-        session._model_changes.clear()
-        return EXT_CONTINUE
-
-
-class _SignallingSession(Session):
-
-    def __init__(self, db, autocommit=False, autoflush=False, **options):
+    def __init__(self, db, autocommit=False, autoflush=True, **options):
+        #: The application that this session belongs to.
         self.app = db.get_app()
         self._model_changes = {}
-        Session.__init__(self, autocommit=autocommit, autoflush=autoflush,
-                         extension=db.session_extensions,
-                         bind=db.engine,
-                         binds=db.get_binds(self.app), **options)
+        #: A flag that controls weather this session should keep track of
+        #: model modifications.  The default value for this attribute
+        #: is set from the ``SQLALCHEMY_TRACK_MODIFICATIONS`` config
+        #: key.
+        self.emit_modification_signals = \
+            self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
+        bind = options.pop('bind', None) or db.engine
+        SessionBase.__init__(self, autocommit=autocommit, autoflush=autoflush,
+                             bind=bind,
+                             binds=db.get_binds(self.app), **options)
 
     def get_bind(self, mapper, clause=None):
         # mapper is None if someone tries to just get a connection
@@ -213,7 +167,95 @@ class _SignallingSession(Session):
             if bind_key is not None:
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
-        return Session.get_bind(self, mapper, clause)
+        return SessionBase.get_bind(self, mapper, clause)
+
+
+class _SessionSignalEvents(object):
+
+    def register(self):
+        listen(SessionBase, 'before_commit', self.session_signal_before_commit)
+        listen(SessionBase, 'after_commit', self.session_signal_after_commit)
+        listen(SessionBase, 'after_rollback', self.session_signal_after_rollback)
+
+    @staticmethod
+    def session_signal_before_commit(session):
+        if not isinstance(session, SignallingSession):
+            return
+        d = session._model_changes
+        if d:
+            before_models_committed.send(session.app, changes=d.values())
+
+    @staticmethod
+    def session_signal_after_commit(session):
+        if not isinstance(session, SignallingSession):
+            return
+        d = session._model_changes
+        if d:
+            models_committed.send(session.app, changes=d.values())
+            d.clear()
+
+    @staticmethod
+    def session_signal_after_rollback(session):
+        if not isinstance(session, SignallingSession):
+            return
+        session._model_changes.clear()
+
+
+class _MapperSignalEvents(object):
+
+    def __init__(self, mapper):
+        self.mapper = mapper
+
+    def register(self):
+        listen(self.mapper, 'after_delete', self.mapper_signal_after_delete)
+        listen(self.mapper, 'after_insert', self.mapper_signal_after_insert)
+        listen(self.mapper, 'after_update', self.mapper_signal_after_update)
+
+    def mapper_signal_after_delete(self, mapper, connection, target):
+        self._record(mapper, target, 'delete')
+
+    def mapper_signal_after_insert(self, mapper, connection, target):
+        self._record(mapper, target, 'insert')
+
+    def mapper_signal_after_update(self, mapper, connection, target):
+        self._record(mapper, target, 'update')
+
+    @staticmethod
+    def _record(mapper, target, operation):
+        s = orm.object_session(target)
+        if isinstance(s, SignallingSession) and s.emit_modification_signals:
+            pk = tuple(mapper.primary_key_from_instance(target))
+            s._model_changes[pk] = (target, operation)
+
+
+
+class _EngineDebuggingSignalEvents(object):
+    """Sets up handlers for two events that let us track the execution time of queries."""
+
+    def __init__(self, engine, import_name):
+        self.engine = engine
+        self.app_package = import_name
+
+    def register(self):
+        listen(self.engine, 'before_cursor_execute', self.before_cursor_execute)
+        listen(self.engine, 'after_cursor_execute', self.after_cursor_execute)
+
+    def before_cursor_execute(self, conn, cursor, statement,
+                              parameters, context, executemany):
+        if connection_stack.top is not None:
+            context._query_start_time = _timer()
+
+    def after_cursor_execute(self, conn, cursor, statement,
+                             parameters, context, executemany):
+        ctx = connection_stack.top
+        if ctx is not None:
+            queries = getattr(ctx, 'sqlalchemy_queries', None)
+            if queries is None:
+                queries = []
+                setattr(ctx, 'sqlalchemy_queries', queries)
+            queries.append(_DebugQueryTuple((
+                statement, parameters, context._query_start_time, _timer(),
+                _calling_context(self.app_package))))
 
 
 def get_debug_queries():
@@ -275,7 +317,11 @@ class Pagination(object):
     @property
     def pages(self):
         """The total number of pages"""
-        return int(ceil(self.total / float(self.per_page)))
+        if self.per_page == 0:
+            pages = 0
+        else:
+            pages = int(ceil(self.total / float(self.per_page)))
+        return pages
 
     def prev(self, error_out=False):
         """Returns a :class:`Pagination` object for the previous page."""
@@ -448,18 +494,19 @@ class _EngineConnector(object):
             options = {'convert_unicode': True}
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
-            if _record_queries(self._app):
-                options['proxy'] = _ConnectionDebugProxy(self._app.import_name)
             if echo:
                 options['echo'] = True
             self._engine = rv = sqlalchemy.create_engine(info, **options)
+            if _record_queries(self._app):
+                _EngineDebuggingSignalEvents(self._engine,
+                                             self._app.import_name).register()
             self._connected_for = (uri, echo)
             return rv
 
 
 def _defines_primary_key(d):
     """Figures out if the given dictonary defines a primary key column."""
-    return any(v.primary_key for k, v in d.iteritems()
+    return any(v.primary_key for k, v in iteritems(d)
                if isinstance(v, sqlalchemy.Column))
 
 
@@ -498,14 +545,6 @@ def get_state(app):
         'The sqlalchemy extension was not registered to the current ' \
         'application.  Please make sure to call init_app() first.'
     return app.extensions['sqlalchemy']
-
-
-def signalling_mapper(*args, **kwargs):
-    """Replacement for mapper that injects some extra extensions"""
-    extensions = to_list(kwargs.pop('extension', None), [])
-    extensions.append(_SignalTrackingMapperExtension())
-    kwargs['extension'] = extensions
-    return sqlalchemy.orm.mapper(*args, **kwargs)
 
 
 class _SQLAlchemyState(object):
@@ -615,11 +654,10 @@ class SQLAlchemy(object):
         a custom function which will define the SQLAlchemy session's scoping.
     """
 
-    def __init__(self, app=None, use_native_unicode=True,
-                 session_extensions=None, session_options=None):
+    def __init__(self, app=None,
+                 use_native_unicode=True,
+                 session_options=None):
         self.use_native_unicode = use_native_unicode
-        self.session_extensions = to_list(session_extensions, []) + \
-                                  [_SignallingSessionExtension()]
 
         if session_options is None:
             session_options = {}
@@ -639,6 +677,8 @@ class SQLAlchemy(object):
             self.app = None
 
         _include_sqlalchemy(self)
+        _MapperSignalEvents(self.mapper).register()
+        _SessionSignalEvents().register()
         self.Query = BaseQuery
 
     @property
@@ -647,18 +687,26 @@ class SQLAlchemy(object):
         return self.Model.metadata
 
     def create_scoped_session(self, options=None):
-        """Helper factory method that creates a scoped session."""
+        """Helper factory method that creates a scoped session.  It
+        internally calls :meth:`create_session`.
+        """
         if options is None:
             options = {}
-        scopefunc=options.pop('scopefunc', None)
-        return orm.scoped_session(
-            partial(_SignallingSession, self, **options), scopefunc=scopefunc
-        )
+        scopefunc = options.pop('scopefunc', None)
+        return orm.scoped_session(partial(self.create_session, options),
+                                  scopefunc=scopefunc)
+
+    def create_session(self, options):
+        """Creates the session.  The default implementation returns a
+        :class:`SignallingSession`.
+
+        .. versionadded:: 2.0
+        """
+        return SignallingSession(self, **options)
 
     def make_declarative_base(self):
         """Creates the declarative base."""
         base = declarative_base(cls=Model, name='Model',
-                                mapper=signalling_mapper,
                                 metaclass=_BoundDeclarativeMeta)
         base.query = _QueryProperty(self)
         return base
@@ -677,7 +725,9 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
+        app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
+        app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', True)
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
@@ -711,6 +761,7 @@ class SQLAlchemy(object):
         _setdefault('pool_size', 'SQLALCHEMY_POOL_SIZE')
         _setdefault('pool_timeout', 'SQLALCHEMY_POOL_TIMEOUT')
         _setdefault('pool_recycle', 'SQLALCHEMY_POOL_RECYCLE')
+        _setdefault('max_overflow', 'SQLALCHEMY_MAX_OVERFLOW')
 
     def apply_driver_hacks(self, app, info, options):
         """This method is called before engine creation and used to inject
@@ -724,8 +775,9 @@ class SQLAlchemy(object):
         """
         if info.drivername.startswith('mysql'):
             info.query.setdefault('charset', 'utf8')
-            options.setdefault('pool_size', 10)
-            options.setdefault('pool_recycle', 7200)
+            if info.drivername != 'mysql+gaerdbms':
+                options.setdefault('pool_size', 10)
+                options.setdefault('pool_recycle', 7200)
         elif info.drivername == 'sqlite':
             pool_size = options.get('pool_size')
             detected_in_memory = False
@@ -798,7 +850,7 @@ class SQLAlchemy(object):
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
-        for table in self.Model.metadata.tables.itervalues():
+        for table in itervalues(self.Model.metadata.tables):
             if table.info.get('bind_key') == bind:
                 result.append(table)
         return result
@@ -817,7 +869,7 @@ class SQLAlchemy(object):
             retval.update(dict((table, engine) for table in tables))
         return retval
 
-    def _execute_for_all_tables(self, app, bind, operation):
+    def _execute_for_all_tables(self, app, bind, operation, skip_tables=False):
         app = self.get_app(app)
 
         if bind == '__all__':
@@ -828,9 +880,12 @@ class SQLAlchemy(object):
             binds = bind
 
         for bind in binds:
-            tables = self.get_tables_for_bind(bind)
+            extra = {}
+            if not skip_tables:
+                tables = self.get_tables_for_bind(bind)
+                extra['tables'] = tables
             op = getattr(self.Model.metadata, operation)
-            op(bind=self.get_engine(app, bind), tables=tables)
+            op(bind=self.get_engine(app, bind), **extra)
 
     def create_all(self, bind='__all__', app=None):
         """Creates all tables.
@@ -854,7 +909,7 @@ class SQLAlchemy(object):
         .. versionchanged:: 0.12
            Parameters were added
         """
-        self._execute_for_all_tables(app, bind, 'reflect')
+        self._execute_for_all_tables(app, bind, 'reflect', skip_tables=True)
 
     def __repr__(self):
         app = None

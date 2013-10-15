@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Flask, request, flash, url_for, redirect, \
      render_template, abort
-from flaskext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)

@@ -32,22 +32,22 @@ What it does it preparing the application to work with
 Because there might be more than one application created.
 
 So how does :class:`SQLAlchemy` now really know about your application?
-You will have to setup a request context.  If you are working inside a
-Flask view function, that automatically happens.  However if you are
+You will have to setup an application context.  If you are working inside
+a Flask view function, that automatically happens.  However if you are
 working inside the interactive shell, you will have to do that yourself
-(see `Creating a Request Context
-<http://flask.pocoo.org/docs/shell/#creating-a-request-context>`_).
+(see `Creating an Application Context
+<http://flask.pocoo.org/docs/appcontext/#creating-an-application-context>`_).
 
 In a nutshell, do something like this:
 
 >>> from yourapp import create_app
 >>> app = create_app()
->>> app.test_request_context().push()
+>>> app.app_context().push()
 
 Inside scripts it makes also sense to use the with-statement::
 
     def my_function():
-        with app():
+        with app.app_context():
             user = db.User(...)
             db.session.add(user)
             db.session.commit()

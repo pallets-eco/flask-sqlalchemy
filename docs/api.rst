@@ -54,6 +54,12 @@ Models
       Return the first result of this query or `None` if the result
       doesn’t contain any rows.  This results in an execution of the
       underlying query.
+    
+Sessions
+````````
+
+.. autoclass:: SignallingSession
+   :members:
 
 Utilities
 `````````

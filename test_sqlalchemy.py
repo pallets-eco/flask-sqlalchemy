@@ -60,7 +60,7 @@ class BasicAppTestCase(unittest.TestCase):
         c.post('/add', data=dict(title='First Item', text='The text'))
         c.post('/add', data=dict(title='2nd Item', text='The text'))
         rv = c.get('/')
-        assert rv.data == 'First Item\n2nd Item'
+        self.assertEqual(rv.data, b'First Item\n2nd Item')
 
     def test_query_recording(self):
         with self.app.test_request_context():
@@ -71,11 +71,11 @@ class BasicAppTestCase(unittest.TestCase):
             queries = sqlalchemy.get_debug_queries()
             self.assertEqual(len(queries), 1)
             query = queries[0]
-            self.assert_('insert into' in query.statement.lower())
+            self.assertTrue('insert into' in query.statement.lower())
             self.assertEqual(query.parameters[0], 'Test 1')
             self.assertEqual(query.parameters[1], 'test')
-            self.assert_('test_sqlalchemy.py' in query.context)
-            self.assert_('test_query_recording' in query.context)
+            self.assertTrue('test_sqlalchemy.py' in query.context)
+            self.assertTrue('test_query_recording' in query.context)
 
     def test_helper_api(self):
         self.assertEqual(self.db.metadata, self.db.Model.metadata)
@@ -132,7 +132,7 @@ class SignallingTestCase(unittest.TestCase):
     def test_model_signals(self):
         recorded = []
         def committed(sender, changes):
-            self.assert_(isinstance(changes, list))
+            self.assertTrue(isinstance(changes, list))
             recorded.extend(changes)
         with sqlalchemy.models_committed.connected_to(committed,
                                                       sender=self.app):
@@ -179,7 +179,7 @@ class PaginationTestCase(unittest.TestCase):
         p = sqlalchemy.Pagination(None, 1, 20, 500, [])
         self.assertEqual(p.page, 1)
         self.assertFalse(p.has_prev)
-        self.assert_(p.has_next)
+        self.assertTrue(p.has_next)
         self.assertEqual(p.total, 500)
         self.assertEqual(p.pages, 25)
         self.assertEqual(p.next_num, 2)
@@ -188,6 +188,10 @@ class PaginationTestCase(unittest.TestCase):
         p.page = 10
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
+
+    def test_pagination_pages_when_0_items_per_page(self):
+        p = sqlalchemy.Pagination(None, 1, 0, 500, [])
+        self.assertEqual(p.pages, 0)
 
 
 class BindsTestCase(unittest.TestCase):
@@ -246,17 +250,17 @@ class BindsTestCase(unittest.TestCase):
         metadata = db.MetaData()
         metadata.reflect(bind=db.get_engine(app, 'foo'))
         self.assertEqual(len(metadata.tables), 1)
-        self.assert_('foo' in metadata.tables)
+        self.assertTrue('foo' in metadata.tables)
 
         metadata = db.MetaData()
         metadata.reflect(bind=db.get_engine(app, 'bar'))
         self.assertEqual(len(metadata.tables), 1)
-        self.assert_('bar' in metadata.tables)
+        self.assertTrue('bar' in metadata.tables)
 
         metadata = db.MetaData()
         metadata.reflect(bind=db.get_engine(app))
         self.assertEqual(len(metadata.tables), 1)
-        self.assert_('baz' in metadata.tables)
+        self.assertTrue('baz' in metadata.tables)
 
         # do the session have the right binds set?
         self.assertEqual(db.get_binds(app), {
@@ -276,7 +280,7 @@ class DefaultQueryClassTestCase(unittest.TestCase):
 
         class Parent(db.Model):
             id = db.Column(db.Integer, primary_key=True)
-            children = db.relationship("Child", backref = db.backref("parents", lazy='dynamic'), lazy='dynamic')
+            children = db.relationship("Child", backref = "parents", lazy='dynamic')
         class Child(db.Model):
             id = db.Column(db.Integer, primary_key=True)
             parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
@@ -285,8 +289,8 @@ class DefaultQueryClassTestCase(unittest.TestCase):
         c.parent = p
         self.assertEqual(type(Parent.query), sqlalchemy.BaseQuery)
         self.assertEqual(type(Child.query), sqlalchemy.BaseQuery)
-        self.assert_(isinstance(p.children, sqlalchemy.BaseQuery))
-        self.assert_(isinstance(c.parents, sqlalchemy.BaseQuery))
+        self.assertTrue(isinstance(p.children, sqlalchemy.BaseQuery))
+        #self.assertTrue(isinstance(c.parents, sqlalchemy.BaseQuery))
 
 
 class SQLAlchemyIncludesTestCase(unittest.TestCase):
@@ -415,7 +419,44 @@ class SessionScopingTestCase(unittest.TestCase):
             db.session.add(fb)
             assert fb not in db.session  # because a new scope is generated on each call
 
+
+
+class CommitOnTeardownTestCase(unittest.TestCase):
+
+    def setUp(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+        Todo = make_todo_model(db)
+        db.create_all()
+
+        @app.route('/')
+        def index():
+            return '\n'.join(x.title for x in Todo.query.all())
+
+        @app.route('/create', methods=['POST'])
+        def create():
+            db.session.add(Todo('Test one', 'test'))
+            if flask.request.form.get('fail'):
+                raise RuntimeError("Failing as requested")
+            return 'ok'
+
+        self.client = app.test_client()
+
+    def test_commit_on_success(self):
+        resp = self.client.post('/create')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self.client.get('/').data, b'Test one')
+
+    def test_roll_back_on_failure(self):
+        resp = self.client.post('/create', data={'fail': 'on'})
+        self.assertEqual(resp.status_code, 500)
+        self.assertEqual(self.client.get('/').data, b'')
+
+
 class StandardSessionTestCase(unittest.TestCase):
+
     def test_insert_update_delete(self):
         # Ensure _SignalTrackingMapperExtension doesn't croak when
         # faced with a vanilla SQLAlchemy session.
@@ -446,40 +487,6 @@ class StandardSessionTestCase(unittest.TestCase):
         assert qaz_wsx.x == 'test'
         session.delete(qaz_wsx) # issues a DELETE.
         assert session.query(QazWsx).first() is None
-
-
-class CommitOnTeardownTestCase(unittest.TestCase):
-
-    def setUp(self):
-        app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
-        app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
-        db = sqlalchemy.SQLAlchemy(app)
-        Todo = make_todo_model(db)
-        db.create_all()
-
-        @app.route('/')
-        def index():
-            return '\n'.join(x.title for x in Todo.query.all())
-
-        @app.route('/create', methods=['POST'])
-        def create():
-            db.session.add(Todo('Test one', 'test'))
-            if flask.request.form.get('fail'):
-                raise RuntimeError("Failing as requested")
-            return 'ok'
-
-        self.client = app.test_client()
-
-    def test_commit_on_success(self):
-        resp = self.client.post('/create')
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(self.client.get('/').data, 'Test one')
-
-    def test_roll_back_on_failure(self):
-        resp = self.client.post('/create', data={'fail': 'on'})
-        self.assertEqual(resp.status_code, 500)
-        self.assertEqual(self.client.get('/').data, '')
 
 
 def suite():

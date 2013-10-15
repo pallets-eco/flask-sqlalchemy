@@ -1,32 +1,58 @@
 Changelog
----------
+=========
 
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
+Version 2.0
+-----------
+
+(Release date to be decided, codename to be selected)
+
+- Changed how the builtin signals are subscribed to skip non Flask-SQLAlchemy
+  sessions.  This will also fix the attribute error about model changes
+  not existing.
+- Added a way to control how signals for model modifications are tracked.
+- Made the ``SignallingSession`` a public interface and added a hook
+  for customizing session creation.
+- If the ``bind`` parameter is given to the signalling session it will no
+  longer cause an error that a parameter is given twice.
+- Added working table reflection support.
+- Enabled autoflush by default.
+
+Version 1.0
+-----------
+
+(Released on July 20th 2013, no codename)
+
+- Added Python 3.3 support.
+- Dropped 2.5 compatibility.
+- Various bugfixes
+- Changed versioning format to do major releases for each update now.
+
 Version 0.16
-````````````
+------------
 
 - New distribution format (flask_sqlalchemy)
 - Added support for Flask 0.9 specifics.
 
 Version 0.15
-````````````
+------------
 
 - Added session support for multiple databases
 
 Version 0.14
-````````````
+------------
 
 - Make relative sqlite paths relative to the application root.
 
 Version 0.13
-````````````
+------------
 
 - Fixed an issue with Flask-SQLAlchemy not selecting the correct binds.
 
 Version 0.12
-````````````
+------------
 - Added support for multiple databases.
 - Expose Flask-SQLAlchemy's BaseQuery as `db.Query`.
 - Set default query_class for `db.relation`, `db.relationship`, and
@@ -34,12 +60,12 @@ Version 0.12
 - Improved compatibility with Flask 0.7.
 
 Version 0.11
-````````````
+------------
 
 - Fixed a bug introduced in 0.10 with alternative table constructors.
 
 Version 0.10
-````````````
+------------
 
 - Added support for signals.
 - Table names are now automatically set from the class name unless
@@ -53,18 +79,18 @@ Version 0.10
   This makes it possible to omit the metadata.
 
 Version 0.9
-```````````
+-----------
 
 - applied changes to pass the Flask extension approval process.
 
 Version 0.8
-```````````
+-----------
 
 - added a few configuration keys for creating connections.
 - automatically activate connection recycling for MySQL connections.
 - added support for the Flask testing mode.
 
 Version 0.7
-```````````
+-----------
 
 - Initial public release

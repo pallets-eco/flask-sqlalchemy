@@ -17,24 +17,22 @@ from setuptools import setup
 
 setup(
     name='Flask-SQLAlchemy',
-    version='0.16',
+    version='2.0-dev',
     url='http://github.com/mitsuhiko/flask-sqlalchemy',
     license='BSD',
     author='Armin Ronacher',
     author_email='armin.ronacher@active-4.com',
     description='Adds SQLAlchemy support to your Flask application',
     long_description=__doc__,
-    py_modules=['flask_sqlalchemy'],
+    packages=['flask_sqlalchemy'],
     zip_safe=False,
     platforms='any',
     install_requires=[
-        'setuptools',
-        'Flask',
+        'Flask>=0.10',
         'SQLAlchemy'
     ],
     test_suite='test_sqlalchemy.suite',
     classifiers=[
-        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
