@@ -26,7 +26,7 @@ is the :meth:`~SQLAlchemy.init_app` function::
         return app
 
 
-What it does it preparing the application to work with
+What it does is prepare the application to work with
 :class:`SQLAlchemy`.  However that does not now bind the
 :class:`SQLAlchemy` object to your application.  Why doesn't it do that?
 Because there might be more than one application created.
