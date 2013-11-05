@@ -7,6 +7,7 @@ Flask-SQLAlchemy with Flask.
 .. toctree::
    :maxdepth: 2
 
+   install
    quickstart
    contexts
    config
