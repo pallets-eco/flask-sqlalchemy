@@ -30,6 +30,7 @@ used to declare models::
 
 
     class User(db.Model):
+        __tablename__ = 'MyUser'
         id = db.Column(db.Integer, primary_key=True)
         username = db.Column(db.String(80), unique=True)
         email = db.Column(db.String(120), unique=True)
@@ -41,6 +42,7 @@ used to declare models::
         def __repr__(self):
             return '<User %r>' % self.username
 
+WARNING: We used the __tablename__ parameter to ensure that we are not creating a table named 'user' because that is default convention by databases and could create conflicts. Hence, it is better to override the name with your own OR alternatively, name the class something different.
 To create the initial database, just import the `db` object from a
 interactive Python shell and run the
 :meth:`SQLAlchemy.create_all` method to create the
