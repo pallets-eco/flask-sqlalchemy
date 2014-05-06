@@ -135,8 +135,8 @@ class SignallingTestCase(unittest.TestCase):
             #self.assertTrue(isinstance(changes, list))
             for c in changes:
                 self.assertEqual(len(c), 2)
-                self.assertIsInstance(c[0], self.Todo)
-                self.assertIn(c[1], ['insert', 'update', 'delete'])
+                self.assertTrue(isinstance(c[0], self.Todo))
+                self.assertTrue(c[1] in ['insert', 'update', 'delete'])
             recorded.extend(changes)
 
         with sqlalchemy.models_committed.connected_to(committed,
