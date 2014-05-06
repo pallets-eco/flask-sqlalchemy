@@ -250,8 +250,6 @@ class _EngineDebuggingSignalEvents(object):
 
     def after_cursor_execute(self, conn, cursor, statement,
                              parameters, context, executemany):
-        print conn.__dict__
-        print self.engine.__dict__
         ctx = connection_stack.top
         if ctx is not None:
             queries = getattr(ctx, 'sqlalchemy_queries', None)
