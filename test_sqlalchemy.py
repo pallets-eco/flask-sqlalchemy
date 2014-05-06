@@ -132,8 +132,13 @@ class SignallingTestCase(unittest.TestCase):
     def test_model_signals(self):
         recorded = []
         def committed(sender, changes):
-            self.assertTrue(isinstance(changes, list))
+            #self.assertTrue(isinstance(changes, list))
+            for c in changes:
+                self.assertEqual(len(c), 2)
+                self.assertIsInstance(c[0], self.Todo)
+                self.assertIn(c[1], ['insert', 'update', 'delete'])
             recorded.extend(changes)
+
         with sqlalchemy.models_committed.connected_to(committed,
                                                       sender=self.app):
             todo = self.Todo('Awesome', 'the text')
