@@ -191,7 +191,7 @@ class _SessionSignalEvents(object):
             return
         d = session._model_changes
         if d:
-            models_committed.send(session.app, changes=d.values())
+            models_committed.send(session.app, changes=list(d.values()))
             d.clear()
 
     @staticmethod
