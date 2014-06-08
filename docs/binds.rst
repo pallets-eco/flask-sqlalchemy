@@ -69,4 +69,5 @@ a table object directly you will have to put it in there::
     )
 
 If you specified the `__bind_key__` on your models you can use them exactly the
-you are used to.  The model connects to the specified database connection itself.
+way you are used to.  The model connects to the specified database connection 
+itself.
