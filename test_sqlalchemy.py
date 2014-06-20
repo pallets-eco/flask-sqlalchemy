@@ -8,7 +8,6 @@ import flask
 from flask.ext import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 
-
 def make_todo_model(db):
     class Todo(db.Model):
         __tablename__ = 'todos'
@@ -155,6 +154,21 @@ class SignallingTestCase(unittest.TestCase):
             self.assertEqual(len(recorded), 1)
             self.assertEqual(recorded[0][0], todo)
             self.assertEqual(recorded[0][1], 'delete')
+
+    def test_session_events(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+
+        from sqlalchemy.event import listens_for
+
+        seen = []
+        register = listens_for(db.session, 'after_commit')
+        register(seen.append)
+
+        db.session.commit()
+        self.assertEqual(seen, [db.session()])
 
 
 class HelperTestCase(unittest.TestCase):
@@ -418,7 +432,6 @@ class SessionScopingTestCase(unittest.TestCase):
             fb = FOOBar()
             db.session.add(fb)
             assert fb not in db.session  # because a new scope is generated on each call
-
 
 
 class CommitOnTeardownTestCase(unittest.TestCase):
