@@ -777,6 +777,12 @@ class SQLAlchemy(object):
             if info.drivername != 'mysql+gaerdbms':
                 options.setdefault('pool_size', 10)
                 options.setdefault('pool_recycle', 7200)
+            pool_size = options.get('pool_size')
+            if not pool_size:
+                from sqlalchemy.pool import NullPool
+                options['poolclass'] = NullPool
+                options.pop('pool_size', None)
+
         elif info.drivername == 'sqlite':
             pool_size = options.get('pool_size')
             detected_in_memory = False
