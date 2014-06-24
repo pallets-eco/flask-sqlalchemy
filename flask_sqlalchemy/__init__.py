@@ -873,7 +873,7 @@ class SQLAlchemy(object):
 
         if bind == '__all__':
             binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
-        elif isinstance(bind, basestring) or bind is None:
+        elif isinstance(bind, string_types) or bind is None:
             binds = [bind]
         else:
             binds = bind
