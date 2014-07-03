@@ -148,7 +148,7 @@ class SignallingSession(SessionBase):
         #: The application that this session belongs to.
         self.app = db.get_app()
         self._model_changes = {}
-        #: A flag that controls weather this session should keep track of
+        #: A flag that controls whether this session should keep track of
         #: model modifications.  The default value for this attribute
         #: is set from the ``SQLALCHEMY_TRACK_MODIFICATIONS`` config
         #: key.
