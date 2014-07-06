@@ -26,6 +26,9 @@ A list of configuration keys currently understood by the extension:
 ``SQLALCHEMY_ECHO``                If set to `True` SQLAlchemy will log all
                                    the statements issued to stderr which can
                                    be useful for debugging.
+``SQLALCHEMY_ECHO_POOL``           If set to `True`, the connection pool will
+                                   log all checkouts/checkins to the logging
+                                   stream, which defaults to sys.stdout
 ``SQLALCHEMY_RECORD_QUERIES``      Can be used to explicitly disable or
                                    enable query recording.  Query recording
                                    automatically happens in debug or testing
