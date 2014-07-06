@@ -723,6 +723,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
+        app.config.setdefault('SQLALCHEMY_ECHO_POOL', False)
         app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
