@@ -488,6 +488,7 @@ class _EngineConnector(object):
         with self._lock:
             uri = self.get_uri()
             echo = self._app.config['SQLALCHEMY_ECHO']
+            echo_pool = self._app.config['SQLALCHEMY_ECHO_POOL']
             if (uri, echo) == self._connected_for:
                 return self._engine
             info = make_url(uri)
@@ -496,6 +497,8 @@ class _EngineConnector(object):
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
                 options['echo'] = True
+            if echo_pool:
+                options['echo_pool'] = True
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
