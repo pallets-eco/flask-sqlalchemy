@@ -505,7 +505,7 @@ class _EngineConnector(object):
 
 
 def _defines_primary_key(d):
-    """Figures out if the given dictonary defines a primary key column."""
+    """Figures out if the given dictionary defines a primary key column."""
     return any(v.primary_key for k, v in iteritems(d)
                if isinstance(v, sqlalchemy.Column))
 
