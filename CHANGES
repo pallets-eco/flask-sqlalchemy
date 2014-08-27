@@ -4,10 +4,10 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
-Version 2.0
+Version 2.0 (Bohrium)
 -----------
 
-(Release date to be decided, codename to be selected)
+(Release date to be decided)
 
 - Changed how the builtin signals are subscribed to skip non Flask-SQLAlchemy
   sessions.  This will also fix the attribute error about model changes
@@ -20,10 +20,10 @@ Version 2.0
 - Added working table reflection support.
 - Enabled autoflush by default.
 
-Version 1.0
+Version 1.0 (Aurum)
 -----------
 
-(Released on July 20th 2013, no codename)
+(Released on July 20th 2013)
 
 - Added Python 3.3 support.
 - Dropped 2.5 compatibility.
