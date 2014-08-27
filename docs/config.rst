@@ -53,8 +53,6 @@ A list of configuration keys currently understood by the extension:
                                    its maximum size.  When those additional
                                    connections are returned to the pool,
                                    they are disconnected and discarded.
-``SQLALCHEMY_COMMIT_ON_TEARDOWN``  Commit session when the app context is
-                                   torn down, unless there was an exception.
 ``SQLALCHEMY_TRACK_MODIFICATIONS`` If set to `True` (the default)
                                    Flask-SQLAlchemy will track
                                    modifications of objects and emit
