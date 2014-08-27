@@ -7,7 +7,7 @@ Adds SQLAlchemy support to your Flask application.
 Links
 `````
 
-* `documentation <http://packages.python.org/Flask-SQLAlchemy>`_
+* `documentation <http://flask-sqlalchemy.pocoo.org>`_
 * `development version
   <http://github.com/mitsuhiko/flask-sqlalchemy/zipball/master#egg=Flask-SQLAlchemy-dev>`_
 
@@ -22,6 +22,8 @@ setup(
     license='BSD',
     author='Armin Ronacher',
     author_email='armin.ronacher@active-4.com',
+    maintainer='Phil Howell',
+    maintainer_email='phil@quae.co.uk',
     description='Adds SQLAlchemy support to your Flask application',
     long_description=__doc__,
     packages=['flask_sqlalchemy'],
