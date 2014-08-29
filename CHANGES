@@ -19,6 +19,7 @@ Released on August 29th 2014, codename Bohrium
   longer cause an error that a parameter is given twice.
 - Added working table reflection support.
 - Enabled autoflush by default.
+- Consider ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` harmful and remove from docs.
 
 Version 1.0
 -----------
