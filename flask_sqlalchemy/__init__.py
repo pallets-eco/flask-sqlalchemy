@@ -5,7 +5,7 @@
 
     Adds basic SQLAlchemy support to your application.
 
-    :copyright: (c) 2012 by Armin Ronacher, Daniel Neuhäuser.
+    :copyright: (c) 2014 by Armin Ronacher, Daniel Neuhäuser.
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement, absolute_import
@@ -42,7 +42,7 @@ except ImportError:
     _app_ctx_stack = None
 
 
-__version__ = '2.0-dev'
+__version__ = '2.0'
 
 
 # Which stack should we use?  _app_ctx_stack is new in 0.9
@@ -148,7 +148,7 @@ class SignallingSession(SessionBase):
         #: The application that this session belongs to.
         self.app = db.get_app()
         self._model_changes = {}
-        #: A flag that controls weather this session should keep track of
+        #: A flag that controls whether this session should keep track of
         #: model modifications.  The default value for this attribute
         #: is set from the ``SQLALCHEMY_TRACK_MODIFICATIONS`` config
         #: key.
@@ -191,7 +191,7 @@ class _SessionSignalEvents(object):
             return
         d = session._model_changes
         if d:
-            models_committed.send(session.app, changes=d.values())
+            models_committed.send(session.app, changes=list(d.values()))
             d.clear()
 
     @staticmethod
@@ -505,7 +505,7 @@ class _EngineConnector(object):
 
 
 def _defines_primary_key(d):
-    """Figures out if the given dictonary defines a primary key column."""
+    """Figures out if the given dictionary defines a primary key column."""
     return any(v.primary_key for k, v in iteritems(d)
                if isinstance(v, sqlalchemy.Column))
 
@@ -591,7 +591,7 @@ class SQLAlchemy(object):
 
     The difference between the two is that in the first case methods like
     :meth:`create_all` and :meth:`drop_all` will work all the time but in
-    the second case a :meth:`flask.Flask.request_context` has to exist.
+    the second case a :meth:`flask.Flask.app_context` has to exist.
 
     By default Flask-SQLAlchemy will apply some backend-specific settings
     to improve your experience with them.  As of SQLAlchemy 0.6 SQLAlchemy
@@ -873,7 +873,7 @@ class SQLAlchemy(object):
 
         if bind == '__all__':
             binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
-        elif isinstance(bind, basestring) or bind is None:
+        elif isinstance(bind, string_types) or bind is None:
             binds = [bind]
         else:
             binds = bind
