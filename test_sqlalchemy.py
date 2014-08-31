@@ -489,6 +489,27 @@ class StandardSessionTestCase(unittest.TestCase):
         assert session.query(QazWsx).first() is None
 
 
+class AdHocSessionTestCase(unittest.TestCase):
+
+    def test_default_session_scoping(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class FOOBar(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        db.create_all()
+
+        with app.test_request_context():
+            fb = FOOBar()
+            s = db.session(expire_on_commit=False)
+            s.add(fb)
+            s.commit()
+            assert fb.id == 1
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BasicAppTestCase))
@@ -504,6 +525,7 @@ def suite():
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
     suite.addTest(unittest.makeSuite(StandardSessionTestCase))
+    suite.addTest(unittest.makeSuite(AdHocSessionTestCase))
     return suite
 
 
