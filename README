@@ -9,9 +9,8 @@
 
     ~ Is it ready?
 
-      Yes! Version 2.0 is close to release and version 1.0 is already
-      widely used.
-
+      Yes! 2.0 is the most recent stable version. 
+      
     ~ What do I need?
 
       SQLAlchemy, and Flask 0.10 or later. `pip` or `easy_install` will
