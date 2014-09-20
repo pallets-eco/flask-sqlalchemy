@@ -670,7 +670,6 @@ class SQLAlchemy(object):
         self._engine_lock = Lock()
 
         if app is not None:
-            self.app = app
             self.init_app(app)
         else:
             self.app = None
@@ -716,6 +715,8 @@ class SQLAlchemy(object):
         of an application not initialized that way or connections will
         leak.
         """
+        self.app = app
+
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
