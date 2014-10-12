@@ -35,7 +35,7 @@ A list of configuration keys currently understood by the extension:
                                    unicode support.  This is required for
                                    some database adapters (like PostgreSQL
                                    on some Ubuntu versions) when used with
-                                   inproper database defaults that specify
+                                   improper database defaults that specify
                                    encoding-less databases.
 ``SQLALCHEMY_POOL_SIZE``           The size of the database pool.  Defaults
                                    to the engine's default (usually 5)
