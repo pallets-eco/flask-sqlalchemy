@@ -784,6 +784,12 @@ class SQLAlchemy(object):
             # which is fail.  Let the user know that
             if info.database in (None, '', ':memory:'):
                 detected_in_memory = True
+                from sqlalchemy.pool import StaticPool
+                options['poolclass'] = StaticPool
+                if 'connect_args' not in options:
+                    options['connect_args'] = {}
+                options['connect_args']['check_same_thread'] = False
+
                 if pool_size == 0:
                     raise RuntimeError('SQLite in memory database with an '
                                        'empty queue not possible due to data '
