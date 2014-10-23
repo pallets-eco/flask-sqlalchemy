@@ -23,6 +23,7 @@ from operator import itemgetter
 from threading import Lock
 from sqlalchemy import orm, event
 from sqlalchemy.orm.exc import UnmappedClassError
+from sqlalchemy.pool import NullPool, StaticPool
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.event import listen
 from sqlalchemy.engine.url import make_url
@@ -778,25 +779,25 @@ class SQLAlchemy(object):
                 options.setdefault('pool_size', 10)
                 options.setdefault('pool_recycle', 7200)
         elif info.drivername == 'sqlite':
-            pool_size = options.get('pool_size')
-            detected_in_memory = False
-            # we go to memory and the pool size was explicitly set to 0
-            # which is fail.  Let the user know that
             if info.database in (None, '', ':memory:'):
-                detected_in_memory = True
-                if pool_size == 0:
-                    raise RuntimeError('SQLite in memory database with an '
-                                       'empty queue not possible due to data '
-                                       'loss.')
-            # if pool size is None or explicitly set to 0 we assume the
-            # user did not want a queue for this sqlite connection and
-            # hook in the null pool.
-            elif not pool_size:
-                from sqlalchemy.pool import NullPool
-                options['poolclass'] = NullPool
+                # We cannot do connection pooling for in-memory databases.
+                # The StaticPool implementation will maintain a single
+                # connection globally.
+                options['poolclass'] = StaticPool
+                options['connect_args'] = {'check_same_thread': False}
+                try:
+                    del options['pool_size']
+                except KeyError:
+                    pass
+            else:
+                # if pool size is None or explicitly set to 0 we assume the
+                # user did not want a queue for this sqlite connection and
+                # hook in the null pool.
+                pool_size = options.get('pool_size')
+                if not pool_size:
+                    options['poolclass'] = NullPool
 
-            # if it's not an in memory database we make the path absolute.
-            if not detected_in_memory:
+                # if it's not an in memory database we make the path absolute.
                 info.database = os.path.join(app.root_path, info.database)
 
         unu = app.config['SQLALCHEMY_NATIVE_UNICODE']
