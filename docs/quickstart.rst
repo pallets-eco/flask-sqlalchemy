@@ -41,7 +41,7 @@ used to declare models::
         def __repr__(self):
             return '<User %r>' % self.username
 
-To create the initial database, just import the `db` object from a
+To create the initial database, just import the `db` object from an
 interactive Python shell and run the
 :meth:`SQLAlchemy.create_all` method to create the
 tables and database:
