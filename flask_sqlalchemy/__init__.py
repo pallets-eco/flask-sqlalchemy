@@ -492,6 +492,9 @@ class _EngineConnector(object):
                 return self._engine
             info = make_url(uri)
             options = {'convert_unicode': True}
+            # allow user to specify additional parameters to the create_engine function
+            if 'SQLALCHEMY_DATABASE_OPTIONS' in self._app.config:
+                options.update(self._app.config['SQLALCHEMY_DATABASE_OPTIONS'])
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
