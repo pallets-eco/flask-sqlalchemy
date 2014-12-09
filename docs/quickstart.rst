@@ -6,7 +6,7 @@ Quickstart
 .. currentmodule:: flask.ext.sqlalchemy
 
 Flask-SQLAlchemy is fun to use, incredibly easy for basic applications, and
-readily extends for larger applications.  For the complete guide, checkout out
+readily extends for larger applications.  For the complete guide, checkout
 the API documentation on the :class:`SQLAlchemy` class.
 
 A Minimal Application
