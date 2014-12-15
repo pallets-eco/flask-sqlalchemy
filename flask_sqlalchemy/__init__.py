@@ -573,7 +573,7 @@ class SQLAlchemy(object):
     object it is usable right away or will attach as needed to a
     Flask application.
 
-    There are two usage modes which work very similar.  One is binding
+    There are two usage modes which work very similarly.  One is binding
     the instance to a very specific Flask application::
 
         app = Flask(__name__)
