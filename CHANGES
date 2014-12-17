@@ -4,6 +4,14 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
+Version 2.1
+-----------
+
+In development
+
+- Table names are automatically generated in more cases, including
+  subclassing mixins and abstract models.
+
 Version 2.0
 -----------
 
