@@ -144,20 +144,20 @@ class SignallingSession(SessionBase):
     .. versionadded:: 2.0
     """
 
-    def __init__(self, db, autocommit=False, autoflush=True, **options):
+    def __init__(self, db, autocommit=False, autoflush=True, app=None, **options):
         #: The application that this session belongs to.
-        self.app = db.get_app()
+        self.app = app = app or db.get_app()
         self._model_changes = {}
         #: A flag that controls whether this session should keep track of
         #: model modifications.  The default value for this attribute
         #: is set from the ``SQLALCHEMY_TRACK_MODIFICATIONS`` config
         #: key.
         self.emit_modification_signals = \
-            self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
+            app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
         bind = options.pop('bind', None) or db.engine
+        binds = options.pop('binds', db.get_binds(app))
         SessionBase.__init__(self, autocommit=autocommit, autoflush=autoflush,
-                             bind=bind,
-                             binds=db.get_binds(self.app), **options)
+                             bind=bind, binds=binds, **options)
 
     def get_bind(self, mapper, clause=None):
         # mapper is None if someone tries to just get a connection
