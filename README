@@ -35,6 +35,12 @@
       it on the command line:
 
         $ python test_sqlalchemy.py PaginationTestCase
+        
+      In case you have `tox` installed, you can also run that to have
+      virtualenvs created automatically and tests run inside of them
+      at your convenience. Running just `tox` is enough:
+      
+        $ tox
 
     ~ Where can I get help?
 
