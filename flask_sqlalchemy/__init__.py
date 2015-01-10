@@ -14,6 +14,7 @@ import re
 import sys
 import time
 import functools
+import warnings
 import sqlalchemy
 from math import ceil
 from functools import partial
@@ -24,7 +25,6 @@ from threading import Lock
 from sqlalchemy import orm, event
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
-from sqlalchemy.event import listen
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from flask.ext.sqlalchemy._compat import iteritems, itervalues, xrange, \
@@ -146,20 +146,20 @@ class SignallingSession(SessionBase):
 
     def __init__(self, db, autocommit=False, autoflush=True, **options):
         #: The application that this session belongs to.
-        self.app = db.get_app()
+        self.app = app = db.get_app()
+        track_modifications = app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
         self._model_changes = {}
-        #: A flag that controls whether this session should keep track of
-        #: model modifications.  The default value for this attribute
-        #: is set from the ``SQLALCHEMY_TRACK_MODIFICATIONS`` config
-        #: key.
-        self.emit_modification_signals = \
-            self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
         bind = options.pop('bind', None) or db.engine
-        SessionBase.__init__(self, autocommit=autocommit, autoflush=autoflush,
-                             bind=bind,
-                             binds=db.get_binds(self.app), **options)
 
-    def get_bind(self, mapper, clause=None):
+        if track_modifications is None or track_modifications:
+            _SessionSignalEvents.register(self)
+
+        SessionBase.__init__(
+            self, autocommit=autocommit, autoflush=autoflush,
+            bind=bind, binds=db.get_binds(self.app), **options
+        )
+
+    def get_bind(self, mapper=None, clause=None):
         # mapper is None if someone tries to just get a connection
         if mapper is not None:
             info = getattr(mapper.mapped_table, 'info', {})
@@ -171,11 +171,17 @@ class SignallingSession(SessionBase):
 
 
 class _SessionSignalEvents(object):
+    @classmethod
+    def register(cls, session):
+        event.listen(session, 'before_commit', cls.session_signal_before_commit)
+        event.listen(session, 'after_commit', cls.session_signal_after_commit)
+        event.listen(session, 'after_rollback', cls.session_signal_after_rollback)
 
-    def register(self):
-        listen(SessionBase, 'before_commit', self.session_signal_before_commit)
-        listen(SessionBase, 'after_commit', self.session_signal_after_commit)
-        listen(SessionBase, 'after_rollback', self.session_signal_after_rollback)
+    @classmethod
+    def unregister(cls, session):
+        event.remove(session, 'before_commit', cls.session_signal_before_commit)
+        event.remove(session, 'after_commit', cls.session_signal_after_commit)
+        event.remove(session, 'after_rollback', cls.session_signal_after_rollback)
 
     @staticmethod
     def session_signal_before_commit(session):
@@ -202,31 +208,36 @@ class _SessionSignalEvents(object):
 
 
 class _MapperSignalEvents(object):
+    @classmethod
+    def register(cls, mapper):
+        event.listen(mapper, 'after_delete', cls.mapper_signal_after_delete)
+        event.listen(mapper, 'after_insert', cls.mapper_signal_after_insert)
+        event.listen(mapper, 'after_update', cls.mapper_signal_after_update)
 
-    def __init__(self, mapper):
-        self.mapper = mapper
+    @classmethod
+    def unregister(cls, mapper):
+        event.remove(mapper, 'after_delete', cls.mapper_signal_after_delete)
+        event.remove(mapper, 'after_insert', cls.mapper_signal_after_insert)
+        event.remove(mapper, 'after_update', cls.mapper_signal_after_update)
 
-    def register(self):
-        listen(self.mapper, 'after_delete', self.mapper_signal_after_delete)
-        listen(self.mapper, 'after_insert', self.mapper_signal_after_insert)
-        listen(self.mapper, 'after_update', self.mapper_signal_after_update)
+    @classmethod
+    def mapper_signal_after_delete(cls, mapper, connection, target):
+        cls._record(mapper, target, 'delete')
 
-    def mapper_signal_after_delete(self, mapper, connection, target):
-        self._record(mapper, target, 'delete')
+    @classmethod
+    def mapper_signal_after_insert(cls, mapper, connection, target):
+        cls._record(mapper, target, 'insert')
 
-    def mapper_signal_after_insert(self, mapper, connection, target):
-        self._record(mapper, target, 'insert')
-
-    def mapper_signal_after_update(self, mapper, connection, target):
-        self._record(mapper, target, 'update')
+    @classmethod
+    def mapper_signal_after_update(cls, mapper, connection, target):
+        cls._record(mapper, target, 'update')
 
     @staticmethod
     def _record(mapper, target, operation):
         s = orm.object_session(target)
-        if isinstance(s, SignallingSession) and s.emit_modification_signals:
+        if isinstance(s, SignallingSession):
             pk = tuple(mapper.primary_key_from_instance(target))
             s._model_changes[pk] = (target, operation)
-
 
 
 class _EngineDebuggingSignalEvents(object):
@@ -237,8 +248,8 @@ class _EngineDebuggingSignalEvents(object):
         self.app_package = import_name
 
     def register(self):
-        listen(self.engine, 'before_cursor_execute', self.before_cursor_execute)
-        listen(self.engine, 'after_cursor_execute', self.after_cursor_execute)
+        event.listen(self.engine, 'before_cursor_execute', self.before_cursor_execute)
+        event.listen(self.engine, 'after_cursor_execute', self.after_cursor_execute)
 
     def before_cursor_execute(self, conn, cursor, statement,
                               parameters, context, executemany):
@@ -680,32 +691,21 @@ class SQLAlchemy(object):
         a custom function which will define the SQLAlchemy session's scoping.
     """
 
-    def __init__(self, app=None,
-                 use_native_unicode=True,
-                 session_options=None):
-        self.use_native_unicode = use_native_unicode
-
+    def __init__(self, app=None, use_native_unicode=True, session_options=None):
         if session_options is None:
             session_options = {}
 
-        session_options.setdefault(
-            'scopefunc', connection_stack.__ident_func__
-        )
-
+        session_options.setdefault('scopefunc', connection_stack.__ident_func__)
+        self.use_native_unicode = use_native_unicode
         self.session = self.create_scoped_session(session_options)
+        self.Query = BaseQuery
         self.Model = self.make_declarative_base()
         self._engine_lock = Lock()
+        self.app = app
+        _include_sqlalchemy(self)
 
         if app is not None:
-            self.app = app
             self.init_app(app)
-        else:
-            self.app = None
-
-        _include_sqlalchemy(self)
-        _MapperSignalEvents(self.mapper).register()
-        _SessionSignalEvents().register()
-        self.Query = BaseQuery
 
     @property
     def metadata(self):
@@ -753,7 +753,14 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
-        app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', True)
+        track_modifications = app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', None)
+
+        if track_modifications is None:
+            track_modifications = True
+            warnings.warn('SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and will be disabled by default in the future.  Set it to True to suppress this warning.')
+
+        if track_modifications:
+            _MapperSignalEvents.register(self.mapper)
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
