@@ -22,7 +22,7 @@ from flask import _request_ctx_stack, abort
 from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
-from sqlalchemy import orm, event
+from sqlalchemy import orm, event, inspect
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.engine.url import make_url
@@ -148,7 +148,6 @@ class SignallingSession(SessionBase):
         #: The application that this session belongs to.
         self.app = app = db.get_app()
         track_modifications = app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
-        self._model_changes = {}
         bind = options.pop('bind', None) or db.engine
 
         if track_modifications is None or track_modifications:
@@ -173,71 +172,68 @@ class SignallingSession(SessionBase):
 class _SessionSignalEvents(object):
     @classmethod
     def register(cls, session):
-        event.listen(session, 'before_commit', cls.session_signal_before_commit)
-        event.listen(session, 'after_commit', cls.session_signal_after_commit)
-        event.listen(session, 'after_rollback', cls.session_signal_after_rollback)
+        if not hasattr(session, '_model_changes'):
+            session._model_changes = {}
+
+        event.listen(session, 'before_flush', cls.record_ops)
+        event.listen(session, 'before_commit', cls.record_ops)
+        event.listen(session, 'before_commit', cls.before_commit)
+        event.listen(session, 'after_commit', cls.after_commit)
+        event.listen(session, 'after_rollback', cls.after_rollback)
 
     @classmethod
     def unregister(cls, session):
-        event.remove(session, 'before_commit', cls.session_signal_before_commit)
-        event.remove(session, 'after_commit', cls.session_signal_after_commit)
-        event.remove(session, 'after_rollback', cls.session_signal_after_rollback)
+        if hasattr(session, '_model_changes'):
+            del session._model_changes
+
+        event.remove(session, 'before_flush', cls.record_ops)
+        event.remove(session, 'before_commit', cls.record_ops)
+        event.remove(session, 'before_commit', cls.before_commit)
+        event.remove(session, 'after_commit', cls.after_commit)
+        event.remove(session, 'after_rollback', cls.after_rollback)
 
     @staticmethod
-    def session_signal_before_commit(session):
-        if not isinstance(session, SignallingSession):
+    def record_ops(session, flush_context=None, instances=None):
+        try:
+            d = session._model_changes
+        except AttributeError:
             return
-        d = session._model_changes
+
+        for targets, operation in ((session.new, 'insert'), (session.dirty, 'update'), (session.deleted, 'delete')):
+            for target in targets:
+                state = inspect(target)
+                key = state.identity_key if state.has_identity else id(target)
+                d[key] = (target, operation)
+
+    @staticmethod
+    def before_commit(session):
+        try:
+            d = session._model_changes
+        except AttributeError:
+            return
+
         if d:
-            before_models_committed.send(session.app, changes=d.values())
+            before_models_committed.send(session.app, changes=list(d.values()))
 
     @staticmethod
-    def session_signal_after_commit(session):
-        if not isinstance(session, SignallingSession):
+    def after_commit(session):
+        try:
+            d = session._model_changes
+        except AttributeError:
             return
-        d = session._model_changes
+
         if d:
             models_committed.send(session.app, changes=list(d.values()))
             d.clear()
 
     @staticmethod
-    def session_signal_after_rollback(session):
-        if not isinstance(session, SignallingSession):
+    def after_rollback(session):
+        try:
+            d = session._model_changes
+        except AttributeError:
             return
-        session._model_changes.clear()
 
-
-class _MapperSignalEvents(object):
-    @classmethod
-    def register(cls, mapper):
-        event.listen(mapper, 'after_delete', cls.mapper_signal_after_delete)
-        event.listen(mapper, 'after_insert', cls.mapper_signal_after_insert)
-        event.listen(mapper, 'after_update', cls.mapper_signal_after_update)
-
-    @classmethod
-    def unregister(cls, mapper):
-        event.remove(mapper, 'after_delete', cls.mapper_signal_after_delete)
-        event.remove(mapper, 'after_insert', cls.mapper_signal_after_insert)
-        event.remove(mapper, 'after_update', cls.mapper_signal_after_update)
-
-    @classmethod
-    def mapper_signal_after_delete(cls, mapper, connection, target):
-        cls._record(mapper, target, 'delete')
-
-    @classmethod
-    def mapper_signal_after_insert(cls, mapper, connection, target):
-        cls._record(mapper, target, 'insert')
-
-    @classmethod
-    def mapper_signal_after_update(cls, mapper, connection, target):
-        cls._record(mapper, target, 'update')
-
-    @staticmethod
-    def _record(mapper, target, operation):
-        s = orm.object_session(target)
-        if isinstance(s, SignallingSession):
-            pk = tuple(mapper.primary_key_from_instance(target))
-            s._model_changes[pk] = (target, operation)
+        d.clear()
 
 
 class _EngineDebuggingSignalEvents(object):
@@ -756,11 +752,7 @@ class SQLAlchemy(object):
         track_modifications = app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', None)
 
         if track_modifications is None:
-            track_modifications = True
             warnings.warn('SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and will be disabled by default in the future.  Set it to True to suppress this warning.')
-
-        if track_modifications:
-            _MapperSignalEvents.register(self.mapper)
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
