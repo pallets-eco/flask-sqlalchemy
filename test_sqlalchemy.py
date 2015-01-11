@@ -281,6 +281,34 @@ class PaginationTestCase(unittest.TestCase):
         p = sqlalchemy.Pagination(None, 1, 0, 500, [])
         self.assertEqual(p.pages, 0)
 
+    def test_query_paginate(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app)
+        Todo = make_todo_model(db)
+        db.create_all()
+
+        with app.app_context():
+            db.session.add_all([Todo('', '') for _ in range(100)])
+            db.session.commit()
+
+        @app.route('/')
+        def index():
+            p = Todo.query.paginate()
+            return '{0} items retrieved'.format(len(p.items))
+
+        c = app.test_client()
+        # request default
+        r = c.get('/')
+        self.assertEqual(r.status_code, 200)
+        # request args
+        r = c.get('/?per_page=10')
+        self.assertEqual(r.data.decode('utf8'), '10 items retrieved')
+
+        with app.app_context():
+            # query default
+            p = Todo.query.paginate()
+            self.assertEqual(p.total, 100)
+
 
 class BindsTestCase(unittest.TestCase):
 
