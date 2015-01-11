@@ -7,10 +7,6 @@
       Flask-SQLAlchemy is a Flask microframework extension which adds
       support for the SQLAlchemy SQL toolkit/ORM.
 
-    ~ Is it ready?
-
-      Yes! 2.0 is the most recent stable version. 
-      
     ~ What do I need?
 
       SQLAlchemy, and Flask 0.10 or later. `pip` or `easy_install` will
