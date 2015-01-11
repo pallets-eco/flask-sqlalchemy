@@ -51,10 +51,10 @@ import pkg_resources
 try:
     release = pkg_resources.get_distribution('Flask-SQLAlchemy').version
 except pkg_resources.DistributionNotFound:
-    print 'To build the documentation, The distribution information of'
-    print 'Flask-SQLAlchemy has to be available.  Either install the package'
-    print 'into your development environment or run "setup.py develop"'
-    print 'to setup the metadata.  A virtualenv is recommended!'
+    print('To build the documentation, The distribution information of')
+    print('Flask-SQLAlchemy has to be available.  Either install the package')
+    print('into your development environment or run "setup.py develop"')
+    print('to setup the metadata.  A virtualenv is recommended!')
     sys.exit(1)
 del pkg_resources
 
@@ -232,13 +232,13 @@ pygments_style = 'flask_theme_support.FlaskyStyle'
 # fall back if theme is not there
 try:
     __import__('flask_theme_support')
-except ImportError, e:
-    print '-' * 74
-    print 'Warning: Flask themes unavailable.  Building with default theme'
-    print 'If you want the Flask themes, run this command and build again:'
-    print
-    print '  git submodule update --init'
-    print '-' * 74
+except ImportError as e:
+    print('-' * 74)
+    print('Warning: Flask themes unavailable.  Building with default theme')
+    print('If you want the Flask themes, run this command and build again:')
+    print()
+    print('  git submodule update --init')
+    print('-' * 74)
 
     pygments_style = 'tango'
     html_theme = 'default'
