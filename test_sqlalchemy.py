@@ -129,17 +129,6 @@ class SignallingTestCase(unittest.TestCase):
     def tearDown(self):
         self.db.drop_all()
 
-    def test_before_committed(self):
-        is_received = False
-        def before_committed(sender, changes):
-            is_received = True
-        with sqlalchemy.before_models_committed.connected_to(before_committed,
-                                                             sender=self.app):
-            todo = self.Todo('Awesome', 'the text')
-            self.db.session.add(todo)
-            self.db.session.commit()
-            self.assertTrue(is_received)
-
     def test_model_signals(self):
         recorded = []
         def committed(sender, changes):
