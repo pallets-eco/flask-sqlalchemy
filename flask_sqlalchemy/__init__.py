@@ -545,7 +545,7 @@ def _should_set_tablename(bases, d):
                 return True
 
 
-class _BoundDeclarativeMeta(DeclarativeMeta):
+class BoundDeclarativeMeta(DeclarativeMeta):
 
     def __new__(cls, name, bases, d):
         if _should_set_tablename(bases, d):
@@ -682,7 +682,8 @@ class SQLAlchemy(object):
 
     def __init__(self, app=None,
                  use_native_unicode=True,
-                 session_options=None):
+                 session_options=None,
+                 base_metaclass=BoundDeclarativeMeta):
         self.use_native_unicode = use_native_unicode
 
         if session_options is None:
@@ -693,7 +694,7 @@ class SQLAlchemy(object):
         )
 
         self.session = self.create_scoped_session(session_options)
-        self.Model = self.make_declarative_base()
+        self.Model = self.make_declarative_base(base_metaclass)
         self._engine_lock = Lock()
 
         if app is not None:
@@ -730,10 +731,10 @@ class SQLAlchemy(object):
         """
         return SignallingSession(self, **options)
 
-    def make_declarative_base(self):
+    def make_declarative_base(self, base_metaclass):
         """Creates the declarative base."""
         base = declarative_base(cls=Model, name='Model',
-                                metaclass=_BoundDeclarativeMeta)
+                                metaclass=base_metaclass)
         base.query = _QueryProperty(self)
         return base
 
