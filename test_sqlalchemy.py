@@ -576,6 +576,29 @@ class StandardSessionTestCase(unittest.TestCase):
         session.delete(qaz_wsx) # issues a DELETE.
         assert session.query(QazWsx).first() is None
 
+class SetSchemaTestCase(unittest.TestCase):
+
+    def test_insert_update_delete(self):
+        # Ensure _SignalTrackingMapperExtension doesn't croak when
+        # faced with a vanilla SQLAlchemy session.
+        #
+        # Verifies that "AttributeError: 'SessionMaker' object has no attribute '_model_changes'"
+        # is not thrown.
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        test_schema = 'naboo'
+        db = sqlalchemy.SQLAlchemy(app, schema=test_schema)
+        Session = sessionmaker(bind=db.engine)
+
+        class QazWsx(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            x = db.Column(db.String, default='')
+
+        a = QazWsx()
+
+        assert a.metadata.schema != 'alderan'
+        assert a.metadata.schema == test_schema
 
 def suite():
     suite = unittest.TestSuite()
@@ -589,6 +612,7 @@ def suite():
     suite.addTest(unittest.makeSuite(RegressionTestCase))
     suite.addTest(unittest.makeSuite(SessionScopingTestCase))
     suite.addTest(unittest.makeSuite(CommitOnTeardownTestCase))
+    suite.addTest(unittest.makeSuite(SetSchemaTestCase))
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
     suite.addTest(unittest.makeSuite(StandardSessionTestCase))
