@@ -155,9 +155,10 @@ class SignallingSession(SessionBase):
         self.emit_modification_signals = \
             self.app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
         bind = options.pop('bind', None) or db.engine
+        binds = options.pop('binds', None) or db.get_binds(self.app)
         SessionBase.__init__(self, autocommit=autocommit, autoflush=autoflush,
                              bind=bind,
-                             binds=db.get_binds(self.app), **options)
+                             binds=binds, **options)
 
     def get_bind(self, mapper, clause=None):
         # mapper is None if someone tries to just get a connection
