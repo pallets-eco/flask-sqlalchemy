@@ -6,7 +6,7 @@ Quickstart
 .. currentmodule:: flask.ext.sqlalchemy
 
 Flask-SQLAlchemy is fun to use, incredibly easy for basic applications, and
-readily extends for larger applications.  For the complete guide, checkout out
+readily extends for larger applications.  For the complete guide, checkout
 the API documentation on the :class:`SQLAlchemy` class.
 
 A Minimal Application
@@ -41,7 +41,7 @@ used to declare models::
         def __repr__(self):
             return '<User %r>' % self.username
 
-To create the initial database, just import the `db` object from a
+To create the initial database, just import the `db` object from an
 interactive Python shell and run the
 :meth:`SQLAlchemy.create_all` method to create the
 tables and database:

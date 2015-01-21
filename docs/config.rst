@@ -35,7 +35,7 @@ A list of configuration keys currently understood by the extension:
                                    unicode support.  This is required for
                                    some database adapters (like PostgreSQL
                                    on some Ubuntu versions) when used with
-                                   inproper database defaults that specify
+                                   improper database defaults that specify
                                    encoding-less databases.
 ``SQLALCHEMY_POOL_SIZE``           The size of the database pool.  Defaults
                                    to the engine's default (usually 5)
@@ -53,8 +53,6 @@ A list of configuration keys currently understood by the extension:
                                    its maximum size.  When those additional
                                    connections are returned to the pool,
                                    they are disconnected and discarded.
-``SQLALCHEMY_COMMIT_ON_TEARDOWN``  Commit session when the app context is
-                                   torn down, unless there was an exception.
 ``SQLALCHEMY_TRACK_MODIFICATIONS`` If set to `True` (the default)
                                    Flask-SQLAlchemy will track
                                    modifications of objects and emit

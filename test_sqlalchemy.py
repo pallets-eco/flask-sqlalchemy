@@ -1,11 +1,11 @@
 from __future__ import with_statement
 
-import os
 import atexit
 import unittest
 from datetime import datetime
 import flask
 from flask.ext import sqlalchemy
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import sessionmaker
 
 
@@ -157,20 +157,108 @@ class SignallingTestCase(unittest.TestCase):
             self.assertEqual(recorded[0][1], 'delete')
 
 
-class HelperTestCase(unittest.TestCase):
-
-    def test_default_table_name(self):
+class TablenameTestCase(unittest.TestCase):
+    def test_name(self):
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
         db = sqlalchemy.SQLAlchemy(app)
 
         class FOOBar(db.Model):
             id = db.Column(db.Integer, primary_key=True)
+
         class BazBar(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        class Ham(db.Model):
+            __tablename__ = 'spam'
             id = db.Column(db.Integer, primary_key=True)
 
         self.assertEqual(FOOBar.__tablename__, 'foo_bar')
         self.assertEqual(BazBar.__tablename__, 'baz_bar')
+        self.assertEqual(Ham.__tablename__, 'spam')
+
+    def test_single_name(self):
+        """Single table inheritance should not set a new name."""
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Duck(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        class Mallard(Duck):
+            pass
+
+        self.assertEqual(Mallard.__tablename__, 'duck')
+
+    def test_joined_name(self):
+        """Model has a separate primary key; it should set a new name."""
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Duck(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        class Donald(Duck):
+            id = db.Column(db.Integer, db.ForeignKey(Duck.id), primary_key=True)
+
+        self.assertEqual(Donald.__tablename__, 'donald')
+
+    def test_mixin_name(self):
+        """Primary key provided by mixin should still allow model to set tablename."""
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Base(object):
+            id = db.Column(db.Integer, primary_key=True)
+
+        class Duck(Base, db.Model):
+            pass
+
+        self.assertFalse(hasattr(Base, '__tablename__'))
+        self.assertEqual(Duck.__tablename__, 'duck')
+
+    def test_abstract_name(self):
+        """Abstract model should not set a name.  Subclass should set a name."""
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Base(db.Model):
+            __abstract__ = True
+            id = db.Column(db.Integer, primary_key=True)
+
+        class Duck(Base):
+            pass
+
+        self.assertFalse(hasattr(Base, '__tablename__'))
+        self.assertEqual(Duck.__tablename__, 'duck')
+
+    def test_complex_inheritance(self):
+        """Joined table inheritance, but the new primary key is provided by a mixin, not directly on the class."""
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class Duck(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        class IdMixin(object):
+            @declared_attr
+            def id(cls):
+                return db.Column(db.Integer, db.ForeignKey(Duck.id), primary_key=True)
+
+        class RubberDuck(IdMixin, Duck):
+            pass
+
+        self.assertEqual(RubberDuck.__tablename__, 'rubber_duck')
 
 
 class PaginationTestCase(unittest.TestCase):
@@ -493,7 +581,7 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(BasicAppTestCase))
     suite.addTest(unittest.makeSuite(TestQueryProperty))
-    suite.addTest(unittest.makeSuite(HelperTestCase))
+    suite.addTest(unittest.makeSuite(TablenameTestCase))
     suite.addTest(unittest.makeSuite(PaginationTestCase))
     suite.addTest(unittest.makeSuite(BindsTestCase))
     suite.addTest(unittest.makeSuite(DefaultQueryClassTestCase))

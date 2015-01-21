@@ -5,7 +5,7 @@
 
     Adds basic SQLAlchemy support to your application.
 
-    :copyright: (c) 2012 by Armin Ronacher, Daniel Neuhäuser.
+    :copyright: (c) 2014 by Armin Ronacher, Daniel Neuhäuser.
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement, absolute_import
@@ -42,7 +42,7 @@ except ImportError:
     _app_ctx_stack = None
 
 
-__version__ = '2.0-dev'
+__version__ = '2.0'
 
 
 # Which stack should we use?  _app_ctx_stack is new in 0.9
@@ -504,24 +504,51 @@ class _EngineConnector(object):
             return rv
 
 
-def _defines_primary_key(d):
-    """Figures out if the given dictionary defines a primary key column."""
-    return any(v.primary_key for k, v in iteritems(d)
-               if isinstance(v, sqlalchemy.Column))
+def _should_set_tablename(bases, d):
+    """Check what values are set by a class and its bases to determine if a
+    tablename should be automatically generated.
+
+    The class and its bases are checked in order of precedence: the class
+    itself then each base in the order they were given at class definition.
+
+    Abstract classes do not generate a tablename, although they may have set
+    or inherited a tablename elsewhere.
+
+    If a class defines a tablename or table, a new one will not be generated.
+    Otherwise, if the class defines a primary key, a new name will be generated.
+
+    This supports:
+
+    * Joined table inheritance without explicitly naming sub-models.
+    * Single table inheritance.
+    * Inheriting from mixins or abstract models.
+
+    :param bases: base classes of new class
+    :param d: new class dict
+    :return: True if tablename should be set
+    """
+
+    if '__tablename__' in d or '__table__' in d or '__abstract__' in d:
+        return False
+
+    if any(v.primary_key for v in itervalues(d) if isinstance(v, sqlalchemy.Column)):
+        return True
+
+    for base in bases:
+        if hasattr(base, '__tablename__') or hasattr(base, '__table__'):
+            return False
+
+        for name in dir(base):
+            attr = getattr(base, name)
+
+            if isinstance(attr, sqlalchemy.Column) and attr.primary_key:
+                return True
 
 
 class _BoundDeclarativeMeta(DeclarativeMeta):
 
     def __new__(cls, name, bases, d):
-        tablename = d.get('__tablename__')
-
-        # generate a table name automatically if it's missing and the
-        # class dictionary declares a primary key.  We cannot always
-        # attach a primary key to support model inheritance that does
-        # not use joins.  We also don't want a table name if a whole
-        # table is defined
-        if not tablename and d.get('__table__') is None and \
-           _defines_primary_key(d):
+        if _should_set_tablename(bases, d):
             def _join(match):
                 word = match.group()
                 if len(word) > 1:
@@ -573,7 +600,7 @@ class SQLAlchemy(object):
     object it is usable right away or will attach as needed to a
     Flask application.
 
-    There are two usage modes which work very similar.  One is binding
+    There are two usage modes which work very similarly.  One is binding
     the instance to a very specific Flask application::
 
         app = Flask(__name__)
@@ -790,6 +817,12 @@ class SQLAlchemy(object):
             # which is fail.  Let the user know that
             if info.database in (None, '', ':memory:'):
                 detected_in_memory = True
+                from sqlalchemy.pool import StaticPool
+                options['poolclass'] = StaticPool
+                if 'connect_args' not in options:
+                    options['connect_args'] = {}
+                options['connect_args']['check_same_thread'] = False
+
                 if pool_size == 0:
                     raise RuntimeError('SQLite in memory database with an '
                                        'empty queue not possible due to data '

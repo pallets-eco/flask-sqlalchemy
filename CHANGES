@@ -4,10 +4,18 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
+Version 2.1
+-----------
+
+In development
+
+- Table names are automatically generated in more cases, including
+  subclassing mixins and abstract models.
+
 Version 2.0
 -----------
 
-(Release date to be decided, codename to be selected)
+Released on August 29th 2014, codename Bohrium
 
 - Changed how the builtin signals are subscribed to skip non Flask-SQLAlchemy
   sessions.  This will also fix the attribute error about model changes
@@ -19,11 +27,12 @@ Version 2.0
   longer cause an error that a parameter is given twice.
 - Added working table reflection support.
 - Enabled autoflush by default.
+- Consider ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` harmful and remove from docs.
 
 Version 1.0
 -----------
 
-(Released on July 20th 2013, no codename)
+Released on July 20th 2013, codename Aurum
 
 - Added Python 3.3 support.
 - Dropped 2.5 compatibility.
