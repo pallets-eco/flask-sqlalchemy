@@ -691,6 +691,9 @@ class SQLAlchemy(object):
         session_options.setdefault(
             'scopefunc', connection_stack.__ident_func__
         )
+        session_options.setdefault(
+            'query_cls', BaseQuery
+        )
 
         self.session = self.create_scoped_session(session_options)
         self.Model = self.make_declarative_base()

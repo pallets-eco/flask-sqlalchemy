@@ -378,6 +378,7 @@ class DefaultQueryClassTestCase(unittest.TestCase):
         self.assertEqual(type(Parent.query), sqlalchemy.BaseQuery)
         self.assertEqual(type(Child.query), sqlalchemy.BaseQuery)
         self.assertTrue(isinstance(p.children, sqlalchemy.BaseQuery))
+        self.assertTrue(isinstance(db.session.query(Parent), sqlalchemy.BaseQuery))
         #self.assertTrue(isinstance(c.parents, sqlalchemy.BaseQuery))
 
 
