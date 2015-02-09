@@ -53,11 +53,13 @@ A list of configuration keys currently understood by the extension:
                                    its maximum size.  When those additional
                                    connections are returned to the pool,
                                    they are disconnected and discarded.
-``SQLALCHEMY_TRACK_MODIFICATIONS`` If set to `True` (the default)
-                                   Flask-SQLAlchemy will track
-                                   modifications of objects and emit
-                                   signals.  This requires extra memory
-                                   and can be disabled if not needed. 
+``SQLALCHEMY_TRACK_MODIFICATIONS`` If set to ``True``, Flask-SQLAlchemy will
+                                   track modifications of objects and emit
+                                   signals.  The default is ``None``, which
+                                   enables tracking but issues a warning
+                                   that it will be disabled by default in
+                                   the future.  This requires extra memory
+                                   and should be disabled if not needed.
 ================================== =========================================
 
 .. versionadded:: 0.8
@@ -73,6 +75,8 @@ A list of configuration keys currently understood by the extension:
 
 .. versionadded:: 2.0
    The ``SQLALCHEMY_TRACK_MODIFICATIONS`` configuration key was added.
+.. versionchanged:: 2.1
+   ``SQLALCHEMY_TRACK_MODIFICATIONS`` will warn if unset.
 
 Connection URI Format
 ---------------------
