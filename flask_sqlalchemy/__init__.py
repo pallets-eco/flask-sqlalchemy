@@ -301,7 +301,7 @@ def get_debug_queries():
 
 
 class Pagination(object):
-    """Internal helper class returned by :meth:`BaseQuery.paginate`.  You
+    """Internal helper class returned by :meth:`paginate`.  You
     can also construct it from any other SQLAlchemy query object if you are
     working with other libraries.  Additionally it is possible to pass `None`
     as query object in which case the :meth:`prev` and :meth:`next` will
@@ -334,7 +334,7 @@ class Pagination(object):
         """Returns a :class:`Pagination` object for the previous page."""
         assert self.query is not None, 'a query object is required ' \
                                        'for this method to work'
-        return self.query.paginate(self.page - 1, self.per_page, error_out)
+        return paginate(self.query, self.page - 1, self.per_page, error_out)
 
     @property
     def prev_num(self):
@@ -350,7 +350,7 @@ class Pagination(object):
         """Returns a :class:`Pagination` object for the next page."""
         assert self.query is not None, 'a query object is required ' \
                                        'for this method to work'
-        return self.query.paginate(self.page + 1, self.per_page, error_out)
+        return paginate(self.query, self.page + 1, self.per_page, error_out)
 
     @property
     def has_next(self):
@@ -427,26 +427,33 @@ class BaseQuery(orm.Query):
         return rv
 
     def paginate(self, page, per_page=20, error_out=True):
-        """Returns `per_page` items from page `page`.  By default it will
-        abort with 404 if no items were found and the page was larger than
-        1.  This behavor can be disabled by setting `error_out` to `False`.
+        """:class:`BaseQuery` wrapper for :func:`sqlalchemy.paginate`
 
         Returns an :class:`Pagination` object.
         """
-        if error_out and page < 1:
-            abort(404)
-        items = self.limit(per_page).offset((page - 1) * per_page).all()
-        if not items and page != 1 and error_out:
-            abort(404)
+        return paginate(self, page, per_page, error_out)
 
-        # No need to count if we're on the first page and there are fewer
-        # items than we expected.
-        if page == 1 and len(items) < per_page:
-            total = len(items)
-        else:
-            total = self.order_by(None).count()
+def paginate(query, page, per_page=20, error_out=True):
+    """Returns `per_page` items from page `page`.  By default it will
+    abort with 404 if no items were found and the page was larger than
+    1.  This behavor can be disabled by setting `error_out` to `False`.
 
-        return Pagination(self, page, per_page, total, items)
+    Returns an :class:`Pagination` object.
+    """
+    if error_out and page < 1:
+        abort(404)
+    items = query.limit(per_page).offset((page - 1) * per_page).all()
+    if not items and page != 1 and error_out:
+        abort(404)
+
+    # No need to count if we're on the first page and there are fewer
+    # items than we expected.
+    if page == 1 and len(items) < per_page:
+        total = len(items)
+    else:
+        total = query.order_by(None).count()
+
+    return Pagination(query, page, per_page, total, items)
 
 
 class _QueryProperty(object):
