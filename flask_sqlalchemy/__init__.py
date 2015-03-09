@@ -27,8 +27,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from flask.ext.sqlalchemy._compat import iteritems, itervalues, xrange, \
-     string_types
+from ._compat import iteritems, itervalues, xrange, string_types
 
 # the best timer function for the platform
 if sys.platform == 'win32':
