@@ -16,7 +16,7 @@ object globally, how does the latter learn about the former?  The answer
 is the :meth:`~SQLAlchemy.init_app` function::
 
     from flask import Flask
-    from flask.ext.sqlalchemy import SQLAlchemy
+    from flask_sqlalchemy import SQLAlchemy
 
     db = SQLAlchemy()
 

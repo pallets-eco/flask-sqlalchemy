@@ -405,7 +405,7 @@ class SQLAlchemyIncludesTestCase(unittest.TestCase):
         self.assertTrue(db.Column == sqlalchemy_lib.Column)
 
         # The Query object we expose is actually our own subclass.
-        from flask.ext.sqlalchemy import BaseQuery
+        from flask_sqlalchemy import BaseQuery
         self.assertTrue(db.Query == BaseQuery)
 
 
