@@ -295,6 +295,63 @@ class PaginationTestCase(unittest.TestCase):
         self.assertEqual(p.pages, 0)
 
 
+class MockPaginationTestCase(unittest.TestCase):
+
+    def setUp(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+
+        self.book_name = "To Kill a Mockingbird"
+
+        class Book(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            name = db.Column(db.String(10))
+            chapter = db.Column(db.Integer)
+
+            def __init__(self, name, chapter):
+                self.name = name
+                self.chapter = chapter
+
+        db.create_all()
+
+        for index in range(1, 10):
+            db.session.add(Book(self.book_name, index))
+        db.session.commit()
+
+        self.db = db
+        self.Book = Book
+
+    def tearDown(self):
+        self.db.drop_all()
+
+    def test_base_query_paginate(self):
+        book = self.Book.query \
+                   .filter(self.Book.name==self.book_name) \
+                   .paginate(5, 1)
+
+        self.assertEqual(book.page, 5)
+        self.assertTrue(book.has_prev)
+        self.assertTrue(book.has_next)
+        self.assertEqual(book.total, 9)
+        self.assertEqual(book.pages, 9)
+        self.assertEqual(book.next_num, 6)
+
+    def test_sqlalchemy_query_paginate(self):
+        book = self.db \
+                   .session \
+                   .query(self.Book) \
+                   .filter(self.Book.name==self.book_name)
+        p = sqlalchemy.paginate(book, 5, 1)
+
+        self.assertEqual(p.page, 5)
+        self.assertTrue(p.has_prev)
+        self.assertTrue(p.has_next)
+        self.assertEqual(p.total, 9)
+        self.assertEqual(p.pages, 9)
+        self.assertEqual(p.next_num, 6)
+
 class BindsTestCase(unittest.TestCase):
 
     def test_basic_binds(self):
@@ -596,6 +653,7 @@ def suite():
     suite.addTest(unittest.makeSuite(TestQueryProperty))
     suite.addTest(unittest.makeSuite(TablenameTestCase))
     suite.addTest(unittest.makeSuite(PaginationTestCase))
+    suite.addTest(unittest.makeSuite(MockPaginationTestCase))
     suite.addTest(unittest.makeSuite(BindsTestCase))
     suite.addTest(unittest.makeSuite(DefaultQueryClassTestCase))
     suite.addTest(unittest.makeSuite(SQLAlchemyIncludesTestCase))
