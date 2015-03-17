@@ -18,7 +18,7 @@ import warnings
 import sqlalchemy
 from math import ceil
 from functools import partial
-from flask import _request_ctx_stack, abort
+from flask import _request_ctx_stack, abort, has_request_context, request
 from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
@@ -426,16 +426,50 @@ class BaseQuery(orm.Query):
             abort(404)
         return rv
 
-    def paginate(self, page, per_page=20, error_out=True):
+    def paginate(self, page=None, per_page=None, error_out=True):
         """Returns `per_page` items from page `page`.  By default it will
         abort with 404 if no items were found and the page was larger than
         1.  This behavor can be disabled by setting `error_out` to `False`.
 
+        If page or per_page are None, they will be retrieved from the
+        request query.  If the values are not ints and ``error_out`` is
+        true, it will abort with 404.  If there is no request or they
+        aren't in the query, they default to page 1 and 20
+        respectively.
+
         Returns an :class:`Pagination` object.
         """
+
+        if has_request_context():
+            if page is None:
+                try:
+                    page = int(request.args.get('page', 1))
+                except (TypeError, ValueError):
+                    if error_out:
+                        abort(404)
+
+                    page = 1
+
+            if per_page is None:
+                try:
+                    per_page = int(request.args.get('per_page', 20))
+                except (TypeError, ValueError):
+                    if error_out:
+                        abort(404)
+
+                    per_page = 20
+        else:
+            if page is None:
+                page = 1
+
+            if per_page is None:
+                per_page = 20
+
         if error_out and page < 1:
             abort(404)
+
         items = self.limit(per_page).offset((page - 1) * per_page).all()
+
         if not items and page != 1 and error_out:
             abort(404)
 
