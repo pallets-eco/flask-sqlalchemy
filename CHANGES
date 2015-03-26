@@ -7,7 +7,7 @@ release.
 Version 2.1
 -----------
 
-In development
+In development, codename Caesium
 
 - Table names are automatically generated in more cases, including
   subclassing mixins and abstract models.

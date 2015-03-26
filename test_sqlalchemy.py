@@ -4,7 +4,7 @@ import atexit
 import unittest
 from datetime import datetime
 import flask
-from flask.ext import sqlalchemy
+import flask_sqlalchemy as sqlalchemy
 from sqlalchemy import MetaData
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import sessionmaker
@@ -188,15 +188,17 @@ class SignallingTestCase(unittest.TestCase):
         self.db.drop_all()
 
     def test_before_committed(self):
-        is_received = False
+        class Namespace(object):
+            is_received = False
+
         def before_committed(sender, changes):
-            is_received = True
-        with sqlalchemy.before_models_committed.connected_to(before_committed,
-                                                             sender=self.app):
+            Namespace.is_received = True
+
+        with sqlalchemy.before_models_committed.connected_to(before_committed, sender=self.app):
             todo = self.Todo('Awesome', 'the text')
             self.db.session.add(todo)
             self.db.session.commit()
-            self.assertTrue(is_received)
+            self.assertTrue(Namespace.is_received)
 
     def test_model_signals(self):
         recorded = []
@@ -350,6 +352,34 @@ class PaginationTestCase(unittest.TestCase):
         p = sqlalchemy.Pagination(None, 1, 0, 500, [])
         self.assertEqual(p.pages, 0)
 
+    def test_query_paginate(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app)
+        Todo = make_todo_model(db)
+        db.create_all()
+
+        with app.app_context():
+            db.session.add_all([Todo('', '') for _ in range(100)])
+            db.session.commit()
+
+        @app.route('/')
+        def index():
+            p = Todo.query.paginate()
+            return '{0} items retrieved'.format(len(p.items))
+
+        c = app.test_client()
+        # request default
+        r = c.get('/')
+        self.assertEqual(r.status_code, 200)
+        # request args
+        r = c.get('/?per_page=10')
+        self.assertEqual(r.data.decode('utf8'), '10 items retrieved')
+
+        with app.app_context():
+            # query default
+            p = Todo.query.paginate()
+            self.assertEqual(p.total, 100)
+
 
 class BindsTestCase(unittest.TestCase):
 
@@ -461,7 +491,7 @@ class SQLAlchemyIncludesTestCase(unittest.TestCase):
         self.assertTrue(db.Column == sqlalchemy_lib.Column)
 
         # The Query object we expose is actually our own subclass.
-        from flask.ext.sqlalchemy import BaseQuery
+        from flask_sqlalchemy import BaseQuery
         self.assertTrue(db.Query == BaseQuery)
 
 

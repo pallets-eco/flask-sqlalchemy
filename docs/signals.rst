@@ -1,27 +1,24 @@
 Signalling Support
 ==================
 
+Connect to the following signals to get notified before and after changes are committed to the database.
+These changes are only tracked if ``SQLALCHEMY_TRACK_MODIFICATIONS`` is enabled in the config.
+
 .. versionadded:: 0.10
-
-Starting with Flask-SQLAlchemy 0.10 you can now connect to signals to get
-notifications when certain things happen.
-
-The following two signals exist:
+.. versionchanged:: 2.1
+   ``before_models_committed`` is triggered correctly.
+.. deprecated:: 2.1
+   This will be disabled by default in a future version.
 
 .. data:: models_committed
 
-   This signal is sent when changed models were committed to the
-   database.  The sender is the application that emitted the changes
-   and the models and an operation identifier are passed as list of tuples
-   in the form ``(model, operation)`` to the receiver in the `changes`
-   parameter.
+   This signal is sent when changed models were committed to the database.
 
-   The model is the instance of the model that was sent to the database
-   and the operation is ``'insert'`` when a model was inserted,
-   ``'delete'`` when the model was deleted and ``'update'`` if any
-   of the columns where updated.
+   The sender is the application that emitted the changes.
+   The receiver is passed the ``changes`` parameter with a list of tuples in the form ``(model instance, operation)``.
+
+   The operation is one of ``'insert'``, ``'update'``, and ``'delete'``.
 
 .. data:: before_models_committed
 
-   Works exactly the same as :data:`models_committed` but is emitted
-   right before the committing takes place.
+   This signal works exactly like :data:`models_committed` but is emitted before the commit takes place.
