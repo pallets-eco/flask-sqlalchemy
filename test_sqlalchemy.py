@@ -115,9 +115,9 @@ class CustomMetaDataTestCase(unittest.TestCase):
         self.assertEqual(list(One.__table__.constraints)[0].name, 'pk_one')
         self.assertEqual(list(One.__table__.indexes)[0].name, 'ix_one_myindex')
 
-        self.assertIn('fk_two_one_id_one', [c.name for c in Two.__table__.constraints])
-        self.assertIn('uq_two_myunique', [c.name for c in Two.__table__.constraints])
-        self.assertIn('pk_two', [c.name for c in Two.__table__.constraints])
+        self.assertTrue('fk_two_one_id_one' in [c.name for c in Two.__table__.constraints])
+        self.assertTrue('uq_two_myunique' in [c.name for c in Two.__table__.constraints])
+        self.assertTrue('pk_two' in [c.name for c in Two.__table__.constraints])
 
     def test_custom_metadata_negative(self):
         db = sqlalchemy.SQLAlchemy(self.app, metadata=None)
@@ -134,9 +134,9 @@ class CustomMetaDataTestCase(unittest.TestCase):
 
         self.assertNotEqual(list(One.__table__.constraints)[0].name, 'pk_one')
 
-        self.assertNotIn('fk_two_one_id_one', [c.name for c in Two.__table__.constraints])
-        self.assertNotIn('uq_two_myunique', [c.name for c in Two.__table__.constraints])
-        self.assertNotIn('pk_two', [c.name for c in Two.__table__.constraints])
+        self.assertFalse('fk_two_one_id_one' in [c.name for c in Two.__table__.constraints])
+        self.assertFalse('uq_two_myunique' in [c.name for c in Two.__table__.constraints])
+        self.assertFalse('pk_two' in [c.name for c in Two.__table__.constraints])
 
 
 class TestQueryProperty(unittest.TestCase):
