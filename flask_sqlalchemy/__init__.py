@@ -719,17 +719,22 @@ class SQLAlchemy(object):
     .. versionadded:: 0.16
        `scopefunc` is now accepted on `session_options`. It allows specifying
         a custom function which will define the SQLAlchemy session's scoping.
+
+    .. versionadded:: 2.1
+       The `metadata` parameter was added. This allows for setting custom
+       naming conventions among other, non-trivial things.
     """
 
-    def __init__(self, app=None, use_native_unicode=True, session_options=None):
+    def __init__(self, app=None, use_native_unicode=True, session_options=None, metadata=None):
+
         if session_options is None:
             session_options = {}
 
         session_options.setdefault('scopefunc', connection_stack.__ident_func__)
         self.use_native_unicode = use_native_unicode
         self.session = self.create_scoped_session(session_options)
+        self.Model = self.make_declarative_base(metadata)
         self.Query = BaseQuery
-        self.Model = self.make_declarative_base()
         self._engine_lock = Lock()
         self.app = app
         _include_sqlalchemy(self)
@@ -760,9 +765,10 @@ class SQLAlchemy(object):
         """
         return SignallingSession(self, **options)
 
-    def make_declarative_base(self):
+    def make_declarative_base(self, metadata=None):
         """Creates the declarative base."""
         base = declarative_base(cls=Model, name='Model',
+                                metadata=metadata,
                                 metaclass=_BoundDeclarativeMeta)
         base.query = _QueryProperty(self)
         return base

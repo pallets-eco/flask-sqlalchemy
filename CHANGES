@@ -11,6 +11,7 @@ In development, codename Caesium
 
 - Table names are automatically generated in more cases, including
   subclassing mixins and abstract models.
+- Allow using a custom MetaData object.
 
 Version 2.0
 -----------

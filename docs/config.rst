@@ -111,3 +111,37 @@ Oracle::
 SQLite (note the four leading slashes)::
 
     sqlite:////absolute/path/to/foo.db
+
+Using custom MetaData and naming conventions
+--------------------------------------------
+
+You can optionally construct the :class:`SQLAlchemy` object with a custom
+:class:`~sqlalchemy.schema.MetaData` object.
+This allows you to, among other things,
+specify a `custom constraint naming convention
+<http://docs.sqlalchemy.org/en/latest/core/constraints.html#constraint-naming-conventions>`_.
+Doing so is important for dealing with database migrations (for instance using
+`alembic <https://alembic.readthedocs.org>`_ as stated
+`here <http://alembic.readthedocs.org/en/latest/naming.html>`_. Since SQL
+defines no standard naming conventions, there is no guaranteed nor effective
+compatibility by default among database implementations. You can define a
+custom naming convention like this as suggested by the SQLAlchemy docs::
+
+    from sqlalchemy import MetaData
+    from flask import Flask
+    from flask.ext.sqlalchemy import SQLAlchemy
+
+    convention = {
+        "ix": 'ix_%(column_0_label)s',
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s"
+    }
+
+    metadata = MetaData(naming_convention=convention)
+    db = SQLAlchemy(app, metadata=metadata)
+
+For more info about :class:`~sqlalchemy.schema.MetaData`,
+`check out the official docs on it
+<http://docs.sqlalchemy.org/en/latest/core/metadata.html>`_.
