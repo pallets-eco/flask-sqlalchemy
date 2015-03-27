@@ -148,14 +148,16 @@ class SignallingSession(SessionBase):
         #: The application that this session belongs to.
         self.app = app = db.get_app()
         track_modifications = app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
-        bind = options.pop('bind', None) or db.engine
+        
+        bind = options.pop('bind', db.engine)
+        binds = options.pop('binds', db.get_binds(self.app))
 
         if track_modifications is None or track_modifications:
             _SessionSignalEvents.register(self)
 
         SessionBase.__init__(
             self, autocommit=autocommit, autoflush=autoflush,
-            bind=bind, binds=db.get_binds(self.app), **options
+            bind=bind, binds=binds, **options
         )
 
     def get_bind(self, mapper=None, clause=None):
