@@ -22,7 +22,7 @@ from flask import _request_ctx_stack, abort, has_request_context, request
 from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
-from sqlalchemy import orm, event, inspect
+from sqlalchemy import orm, event, inspect, func
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.engine.url import make_url
@@ -478,7 +478,7 @@ class BaseQuery(orm.Query):
         if page == 1 and len(items) < per_page:
             total = len(items)
         else:
-            total = self.order_by(None).count()
+            total = self.session.execute(self.statement.with_only_columns([func.count()]).order_by(None)).scalar()
 
         return Pagination(self, page, per_page, total, items)
 
