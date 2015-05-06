@@ -105,6 +105,7 @@ class _DebugQueryTuple(tuple):
     start_time = property(itemgetter(2))
     end_time = property(itemgetter(3))
     context = property(itemgetter(4))
+    bind = property(itemgetter(5))
 
     @property
     def duration(self):
@@ -239,9 +240,10 @@ class _SessionSignalEvents(object):
 class _EngineDebuggingSignalEvents(object):
     """Sets up handlers for two events that let us track the execution time of queries."""
 
-    def __init__(self, engine, import_name):
+    def __init__(self, engine, import_name, bind=None):
         self.engine = engine
         self.app_package = import_name
+        self.bind=bind
 
     def register(self):
         event.listen(self.engine, 'before_cursor_execute', self.before_cursor_execute)
@@ -262,7 +264,7 @@ class _EngineDebuggingSignalEvents(object):
                 setattr(ctx, 'sqlalchemy_queries', queries)
             queries.append(_DebugQueryTuple((
                 statement, parameters, context._query_start_time, _timer(),
-                _calling_context(self.app_package))))
+                _calling_context(self.app_package), self.bind)))
 
 
 def get_debug_queries():
@@ -540,7 +542,7 @@ class _EngineConnector(object):
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
-                                             self._app.import_name).register()
+                                             self._app.import_name, self._bind).register()
             self._connected_for = (uri, echo)
             return rv
 
