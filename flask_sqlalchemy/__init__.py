@@ -68,34 +68,34 @@ def _make_table(db):
     return _make_table
 
 
-def _set_default_query_class(d):
+def _set_default_query_class(d, cls):
     if 'query_class' not in d:
-        d['query_class'] = BaseQuery
+        d['query_class'] = cls
 
 
-def _wrap_with_default_query_class(fn):
+def _wrap_with_default_query_class(fn, cls):
     @functools.wraps(fn)
     def newfn(*args, **kwargs):
-        _set_default_query_class(kwargs)
+        _set_default_query_class(kwargs, cls)
         if "backref" in kwargs:
             backref = kwargs['backref']
             if isinstance(backref, string_types):
                 backref = (backref, {})
-            _set_default_query_class(backref[1])
+            _set_default_query_class(backref[1], cls)
         return fn(*args, **kwargs)
     return newfn
 
 
-def _include_sqlalchemy(obj):
+def _include_sqlalchemy(obj, cls):
     for module in sqlalchemy, sqlalchemy.orm:
         for key in module.__all__:
             if not hasattr(obj, key):
                 setattr(obj, key, getattr(module, key))
     # Note: obj.Table does not attempt to be a SQLAlchemy Table class.
     obj.Table = _make_table(obj)
-    obj.relationship = _wrap_with_default_query_class(obj.relationship)
-    obj.relation = _wrap_with_default_query_class(obj.relation)
-    obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader)
+    obj.relationship = _wrap_with_default_query_class(obj.relationship, cls)
+    obj.relation = _wrap_with_default_query_class(obj.relation, cls)
+    obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader, cls)
     obj.event = event
 
 
@@ -730,7 +730,8 @@ class SQLAlchemy(object):
        naming conventions among other, non-trivial things.
     """
 
-    def __init__(self, app=None, use_native_unicode=True, session_options=None, metadata=None):
+    def __init__(self, app=None, use_native_unicode=True, session_options=None,
+                 metadata=None, query_class=BaseQuery, model_class=Model):
 
         if session_options is None:
             session_options = {}
@@ -738,11 +739,13 @@ class SQLAlchemy(object):
         session_options.setdefault('scopefunc', connection_stack.__ident_func__)
         self.use_native_unicode = use_native_unicode
         self.session = self.create_scoped_session(session_options)
-        self.Model = self.make_declarative_base(metadata)
-        self.Query = BaseQuery
+        self.Model = self.make_declarative_base(model_class, metadata)
+        # ugly hack, is there a better way?
+        self.Model.query_class = query_class
+        self.Query = query_class
         self._engine_lock = Lock()
         self.app = app
-        _include_sqlalchemy(self)
+        _include_sqlalchemy(self, query_class)
 
         if app is not None:
             self.init_app(app)
@@ -770,9 +773,9 @@ class SQLAlchemy(object):
         """
         return SignallingSession(self, **options)
 
-    def make_declarative_base(self, metadata=None):
+    def make_declarative_base(self, model_class, metadata=None):
         """Creates the declarative base."""
-        base = declarative_base(cls=Model, name='Model',
+        base = declarative_base(cls=model_class, name='Model',
                                 metadata=metadata,
                                 metaclass=_BoundDeclarativeMeta)
         base.query = _QueryProperty(self)

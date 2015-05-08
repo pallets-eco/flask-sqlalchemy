@@ -467,18 +467,66 @@ class DefaultQueryClassTestCase(unittest.TestCase):
 
         class Parent(db.Model):
             id = db.Column(db.Integer, primary_key=True)
-            children = db.relationship("Child", backref = "parents", lazy='dynamic')
+            children = db.relationship("Child", backref = "parent", lazy='dynamic')
+
         class Child(db.Model):
             id = db.Column(db.Integer, primary_key=True)
             parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+
         p = Parent()
         c = Child()
         c.parent = p
+
         self.assertEqual(type(Parent.query), sqlalchemy.BaseQuery)
         self.assertEqual(type(Child.query), sqlalchemy.BaseQuery)
         self.assertTrue(isinstance(p.children, sqlalchemy.BaseQuery))
-        #self.assertTrue(isinstance(c.parents, sqlalchemy.BaseQuery))
 
+
+class CustomQueryClassTestCase(unittest.TestCase):
+
+    def test_custom_query_class(self):
+        class CustomQueryClass(sqlalchemy.BaseQuery):
+            pass
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app, query_class=CustomQueryClass)
+
+        class Parent(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            children = db.relationship("Child", backref = "parent", lazy='dynamic')
+
+        class Child(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+            parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+
+        p = Parent()
+        c = Child()
+        c.parent = p
+
+        self.assertEqual(type(Parent.query), CustomQueryClass)
+        self.assertEqual(type(Child.query), CustomQueryClass)
+        self.assertTrue(isinstance(p.children, CustomQueryClass))
+        self.assertEqual(db.Query, CustomQueryClass)
+        self.assertEqual(db.Model.query_class, CustomQueryClass)
+
+
+class CustomModelClassTestCase(unittest.TestCase):
+
+    def test_custom_query_class(self):
+        class CustomModelClass(sqlalchemy.Model):
+            pass
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app, model_class=CustomModelClass)
+
+        class SomeModel(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        self.assertTrue(isinstance(SomeModel(), CustomModelClass))
 
 class SQLAlchemyIncludesTestCase(unittest.TestCase):
 
