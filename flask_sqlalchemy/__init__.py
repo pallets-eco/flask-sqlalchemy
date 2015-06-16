@@ -498,11 +498,11 @@ class _QueryProperty(object):
 
 
 def _record_queries(app):
-    if app.debug:
-        return True
     rq = app.config['SQLALCHEMY_RECORD_QUERIES']
     if rq is not None:
         return rq
+    if app.debug:
+        return True
     return bool(app.config.get('TESTING'))
 
 
