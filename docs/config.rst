@@ -28,9 +28,11 @@ A list of configuration keys currently understood by the extension:
                                    be useful for debugging.
 ``SQLALCHEMY_RECORD_QUERIES``      Can be used to explicitly disable or
                                    enable query recording.  Query recording
-                                   automatically happens in debug or testing
-                                   mode.  See :func:`get_debug_queries` for
-                                   more information.
+                                   is turned on by default in debug or
+                                   testing mode, but that behavior can be
+                                   overridden using this option.  See
+                                   :func:`get_debug_queries` for more
+                                   information.
 ``SQLALCHEMY_NATIVE_UNICODE``      Can be used to explicitly disable native
                                    unicode support.  This is required for
                                    some database adapters (like PostgreSQL
