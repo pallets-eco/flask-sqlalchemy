@@ -1,6 +1,6 @@
 .. _contexts:
 
-.. currentmodule:: flask.ext.sqlalchemy
+.. currentmodule:: flask_sqlalchemy
 
 Introduction into Contexts
 ==========================
