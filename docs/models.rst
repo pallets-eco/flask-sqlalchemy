@@ -67,7 +67,7 @@ One-to-Many Relationships
 The most common relationships are one-to-many relationships.  Because
 relationships are declared before they are established you can use strings
 to refer to classes that are not created yet (for instance if `Person`
-defines a relationship to `Article` which is declared later in the file).
+defines a relationship to `Address` which is declared later in the file).
 
 Relationships are expressed with the :func:`~sqlalchemy.orm.relationship`
 function.  However the foreign key has to be separately declared with the
