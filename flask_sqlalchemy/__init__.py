@@ -142,6 +142,10 @@ class SignallingSession(SessionBase):
     :meth:`SQLAlchemy.create_session` function.
 
     .. versionadded:: 2.0
+
+    .. versionadded:: 2.1
+        The `binds` option was added, which allows a session to be joined
+        to an external transaction.
     """
 
     def __init__(self, db, autocommit=False, autoflush=True, app=None, **options):

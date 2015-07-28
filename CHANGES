@@ -12,6 +12,7 @@ In development, codename Caesium
 - Table names are automatically generated in more cases, including
   subclassing mixins and abstract models.
 - Allow using a custom MetaData object.
+- Add support for binds parameter to session.
 
 Version 2.0
 -----------
