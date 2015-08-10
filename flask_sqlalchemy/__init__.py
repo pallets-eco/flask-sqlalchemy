@@ -737,6 +737,7 @@ class SQLAlchemy(object):
             session_options = {}
 
         session_options.setdefault('scopefunc', connection_stack.__ident_func__)
+        session_options.setdefault('query_cls', query_class)
         self.use_native_unicode = use_native_unicode
         self.session = self.create_scoped_session(session_options)
         self.Model = self.make_declarative_base(model_class, metadata)

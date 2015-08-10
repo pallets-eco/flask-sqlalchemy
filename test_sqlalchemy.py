@@ -480,6 +480,7 @@ class DefaultQueryClassTestCase(unittest.TestCase):
         self.assertEqual(type(Parent.query), sqlalchemy.BaseQuery)
         self.assertEqual(type(Child.query), sqlalchemy.BaseQuery)
         self.assertTrue(isinstance(p.children, sqlalchemy.BaseQuery))
+        self.assertTrue(isinstance(db.session.query(Parent), sqlalchemy.BaseQuery))
 
 
 class CustomQueryClassTestCase(unittest.TestCase):
@@ -510,6 +511,7 @@ class CustomQueryClassTestCase(unittest.TestCase):
         self.assertTrue(isinstance(p.children, CustomQueryClass))
         self.assertEqual(db.Query, CustomQueryClass)
         self.assertEqual(db.Model.query_class, CustomQueryClass)
+        self.assertTrue(isinstance(db.session.query(Parent), CustomQueryClass))
 
 
 class CustomModelClassTestCase(unittest.TestCase):
