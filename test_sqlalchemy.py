@@ -489,10 +489,14 @@ class CustomQueryClassTestCase(unittest.TestCase):
         class CustomQueryClass(sqlalchemy.BaseQuery):
             pass
 
+        class MyModelClass(object):
+            pass
+
         app = flask.Flask(__name__)
         app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app, query_class=CustomQueryClass)
+        db = sqlalchemy.SQLAlchemy(app, query_class=CustomQueryClass,
+                                   model_class=MyModelClass)
 
         class Parent(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -512,6 +516,21 @@ class CustomQueryClassTestCase(unittest.TestCase):
         self.assertEqual(db.Query, CustomQueryClass)
         self.assertEqual(db.Model.query_class, CustomQueryClass)
         self.assertTrue(isinstance(db.session.query(Parent), CustomQueryClass))
+
+
+    def test_dont_override_model_default(self):
+        class CustomQueryClass(sqlalchemy.BaseQuery):
+            pass
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app, query_class=CustomQueryClass)
+
+        class SomeModel(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        self.assertEqual(type(SomeModel.query), sqlalchemy.BaseQuery)
 
 
 class CustomModelClassTestCase(unittest.TestCase):

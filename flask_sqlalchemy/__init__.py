@@ -740,10 +740,8 @@ class SQLAlchemy(object):
         session_options.setdefault('query_cls', query_class)
         self.use_native_unicode = use_native_unicode
         self.session = self.create_scoped_session(session_options)
-        self.Model = self.make_declarative_base(model_class, metadata)
-        # ugly hack, is there a better way?
-        self.Model.query_class = query_class
         self.Query = query_class
+        self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
         self.app = app
         _include_sqlalchemy(self, query_class)
@@ -774,11 +772,15 @@ class SQLAlchemy(object):
         """
         return SignallingSession(self, **options)
 
-    def make_declarative_base(self, model_class, metadata=None):
+    def make_declarative_base(self, model, metadata=None):
         """Creates the declarative base."""
-        base = declarative_base(cls=model_class, name='Model',
+        base = declarative_base(cls=model, name='Model',
                                 metadata=metadata,
                                 metaclass=_BoundDeclarativeMeta)
+
+        if not getattr(base, 'query_class', None):
+            base.query_class = self.Query
+
         base.query = _QueryProperty(self)
         return base
 
