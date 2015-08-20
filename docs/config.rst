@@ -37,6 +37,10 @@ A list of configuration keys currently understood by the extension:
                                    on some Ubuntu versions) when used with
                                    improper database defaults that specify
                                    encoding-less databases.
+``SQLALCHEMY_POOLCLASS``           The class used by the pool module to provide
+                                   pooling. Defaults to QueuePool. If you are
+                                   using SQLite adapter and pool size None or 0
+                                   will default to NullPool.
 ``SQLALCHEMY_POOL_SIZE``           The size of the database pool.  Defaults
                                    to the engine's default (usually 5)
 ``SQLALCHEMY_POOL_TIMEOUT``        Specifies the connection timeout for the
