@@ -789,6 +789,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
         app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
+        app.config.setdefault('SQLALCHEMY_POOLCLASS', None)
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
@@ -828,6 +829,7 @@ class SQLAlchemy(object):
             value = app.config[configkey]
             if value is not None:
                 options[optionkey] = value
+        _setdefault('poolclass', 'SQLALCHEMY_POOLCLASS')
         _setdefault('pool_size', 'SQLALCHEMY_POOL_SIZE')
         _setdefault('pool_timeout', 'SQLALCHEMY_POOL_TIMEOUT')
         _setdefault('pool_recycle', 'SQLALCHEMY_POOL_RECYCLE')
@@ -845,7 +847,8 @@ class SQLAlchemy(object):
         """
         if info.drivername.startswith('mysql'):
             info.query.setdefault('charset', 'utf8')
-            if info.drivername != 'mysql+gaerdbms':
+            if info.drivername != 'mysql+gaerdbms' and \
+               options.get('poolclass', None) != sqlalchemy.pool.NullPool:
                 options.setdefault('pool_size', 10)
                 options.setdefault('pool_recycle', 7200)
         elif info.drivername == 'sqlite':
