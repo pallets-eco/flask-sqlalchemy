@@ -4,10 +4,15 @@ Changelog
 Here you can see the full list of changes between each Flask-SQLAlchemy
 release.
 
+Version 3.0
+-----------
+
+In development, codename Dubnium
+
 Version 2.1
 -----------
 
-In development, codename Caesium
+Released on October 23rd 2015, codename Caesium
 
 - Table names are automatically generated in more cases, including
   subclassing mixins and abstract models.
