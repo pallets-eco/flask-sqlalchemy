@@ -42,7 +42,7 @@ except ImportError:
     _app_ctx_stack = None
 
 
-__version__ = '2.0'
+__version__ = '2.1'
 
 
 # Which stack should we use?  _app_ctx_stack is new in 0.9
