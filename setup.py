@@ -17,7 +17,7 @@ from setuptools import setup
 
 setup(
     name='Flask-SQLAlchemy',
-    version='2.1',
+    version='3.0-dev',
     url='http://github.com/mitsuhiko/flask-sqlalchemy',
     license='BSD',
     author='Armin Ronacher',
