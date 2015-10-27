@@ -472,8 +472,11 @@ class BaseQuery(orm.Query):
         if max_per_page is not None:
             per_page = min(per_page, max_per_page)
 
-        if error_out and page < 1:
-            abort(404)
+        if page < 1:
+            if error_out:
+                abort(404)
+            else:
+                page = 1
 
         items = self.limit(per_page).offset((page - 1) * per_page).all()
 
