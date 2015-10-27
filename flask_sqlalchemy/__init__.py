@@ -317,8 +317,9 @@ class Pagination(object):
         #: the unlimited query object that was used to create this
         #: pagination object.
         self.query = query
-        #: the current page number (1 indexed)
-        self.page = page
+        #: the current page number (1 indexed). if it is lower than 1
+        #: it gets defaulted to 1.
+        self.page = page if page and page > 0 else 1
         #: the number of items to be displayed on a page.
         self.per_page = per_page
         #: the total number of items matching the query
@@ -470,8 +471,11 @@ class BaseQuery(orm.Query):
             if per_page is None:
                 per_page = 20
 
-        if error_out and page < 1:
-            abort(404)
+        if page < 1:
+            if error_out:
+                abort(404)
+            else:
+                page = 1
 
         items = self.limit(per_page).offset((page - 1) * per_page).all()
 

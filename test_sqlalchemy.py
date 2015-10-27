@@ -8,6 +8,7 @@ import flask_sqlalchemy as sqlalchemy
 from sqlalchemy import MetaData
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import sessionmaker
+from werkzeug.exceptions import NotFound
 
 
 def make_todo_model(db):
@@ -352,6 +353,14 @@ class PaginationTestCase(unittest.TestCase):
         p = sqlalchemy.Pagination(None, 1, 0, 500, [])
         self.assertEqual(p.pages, 0)
 
+    def test_pagination_page_when_page_number_is_none(self):
+        p = sqlalchemy.Pagination(None, None, 20, 500, [])
+        self.assertEqual(p.page, 1)
+
+    def test_pagination_page_when_page_number_is_negative(self):
+        p = sqlalchemy.Pagination(None, -1, 20, 500, [])
+        self.assertEqual(p.page, 1)
+
     def test_query_paginate(self):
         app = flask.Flask(__name__)
         db = sqlalchemy.SQLAlchemy(app)
@@ -379,6 +388,23 @@ class PaginationTestCase(unittest.TestCase):
             # query default
             p = Todo.query.paginate()
             self.assertEqual(p.total, 100)
+
+    def test_query_paginate_with_negative_page(self):
+        app = flask.Flask(__name__)
+        db = sqlalchemy.SQLAlchemy(app)
+        Todo = make_todo_model(db)
+        db.create_all()
+
+        with app.app_context():
+            db.session.add_all([Todo('', '') for _ in range(100)])
+            db.session.commit()
+
+            # with error_out
+            self.assertRaises(NotFound, lambda: Todo.query.paginate(page=-1))
+
+            # without error_out
+            p = Todo.query.paginate(page=-1, error_out=False)
+            self.assertEqual(p.page, 1)
 
 
 class BindsTestCase(unittest.TestCase):

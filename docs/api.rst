@@ -49,12 +49,12 @@ Models
 
    .. method:: limit(limit)
 
-      Apply a LIMIT  to the query and return the newly resulting query.
+      Apply a LIMIT to the query and return the newly resulting query.
 
    .. method:: offset(offset)
 
-      Apply an OFFSET  to the query and return the newly resulting
-      query.
+      Apply an OFFSET to the query and return the newly resulting
+      query. If the offset is less than 0, it will defaulted to 0.
 
    .. method:: first()
 
