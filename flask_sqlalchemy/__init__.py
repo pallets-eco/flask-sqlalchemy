@@ -861,8 +861,8 @@ class SQLAlchemy(object):
             # which is fail.  Let the user know that
             if info.database in (None, '', ':memory:'):
                 detected_in_memory = True
-                from sqlalchemy.pool import StaticPool
-                options['poolclass'] = StaticPool
+                from sqlalchemy.pool import SingletonThreadPool
+                options['poolclass'] = SingletonThreadPool
                 if 'connect_args' not in options:
                     options['connect_args'] = {}
                 options['connect_args']['check_same_thread'] = False
