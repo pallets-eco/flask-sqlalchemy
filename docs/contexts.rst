@@ -31,7 +31,7 @@ What it does is prepare the application to work with
 :class:`SQLAlchemy` object to your application.  Why doesn't it do that?
 Because there might be more than one application created.
 
-So how does :class:`SQLAlchemy` now really know about your application?
+So how does :class:`SQLAlchemy` come to know about your application?
 You will have to setup an application context.  If you are working inside
 a Flask view function, that automatically happens.  However if you are
 working inside the interactive shell, you will have to do that yourself
@@ -44,7 +44,7 @@ In a nutshell, do something like this:
 >>> app = create_app()
 >>> app.app_context().push()
 
-Inside scripts it makes also sense to use the with-statement::
+Alternatively, use the with-statement to take care of setup and teardown::
 
     def my_function():
         with app.app_context():
