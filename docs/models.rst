@@ -18,7 +18,8 @@ Things to keep in mind:
 -   Some parts that are required in SQLAlchemy are optional in
     Flask-SQLAlchemy.  For instance the table name is automatically set
     for you unless overridden.  It's derived from the class name converted
-    to lowercase and with “CamelCase” converted to “camel_case”.
+    to lowercase and with “CamelCase” converted to “camel_case”.  To override
+    the table name, set the `__tablename__` class attribute.
 
 Simple Example
 --------------
