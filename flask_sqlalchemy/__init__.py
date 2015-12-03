@@ -405,44 +405,39 @@ class Pagination(object):
 
 
 class BaseQuery(orm.Query):
-    """The default query object used for models, and exposed as
-    :attr:`~SQLAlchemy.Query`. This can be subclassed and
-    replaced for individual models by setting the :attr:`~Model.query_class`
-    attribute.  This is a subclass of a standard SQLAlchemy
-    :class:`~sqlalchemy.orm.query.Query` class and has all the methods of a
-    standard query as well.
+    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with convenience methods for querying in a web application.
+
+    This is the default :attr:`~Model.query` object used for models, and exposed as :attr:`~SQLAlchemy.Query`.
+    Override the query class for an individual model by subclassing this and setting :attr:`~Model.query_class`.
     """
 
     def get_or_404(self, ident):
-        """Like :meth:`get` but aborts with 404 if not found instead of
-        returning `None`.
-        """
+        """Like :meth:`get` but aborts with 404 if not found instead of returning ``None``."""
+
         rv = self.get(ident)
         if rv is None:
             abort(404)
         return rv
 
     def first_or_404(self):
-        """Like :meth:`first` but aborts with 404 if not found instead of
-        returning `None`.
-        """
+        """Like :meth:`first` but aborts with 404 if not found instead of returning ``None``."""
+
         rv = self.first()
         if rv is None:
             abort(404)
         return rv
 
     def paginate(self, page=None, per_page=None, error_out=True):
-        """Returns `per_page` items from page `page`.  By default it will
-        abort with 404 if no items were found and the page was larger than
-        1.  This behavor can be disabled by setting `error_out` to `False`.
+        """Returns ``per_page`` items from page ``page``.
 
-        If page or per_page are None, they will be retrieved from the
-        request query.  If the values are not ints and ``error_out`` is
-        true, it will abort with 404.  If there is no request or they
-        aren't in the query, they default to page 1 and 20
-        respectively.
+        If no items are found and ``page`` is greater than 1, or if page is less than 1, it aborts with 404.
+        This behavior can be disabled by passing ``error_out=False``.
 
-        Returns an :class:`Pagination` object.
+        If ``page`` or ``per_page`` are ``None``, they will be retrieved from the request query.
+        If the values are not ints and ``error_out`` is ``True``, it aborts with 404.
+        If there is no request or they aren't in the query, they default to 1 and 20 respectively.
+
+        Returns a :class:`Pagination` object.
         """
 
         if has_request_context():
@@ -489,7 +484,6 @@ class BaseQuery(orm.Query):
 
 
 class _QueryProperty(object):
-
     def __init__(self, sa):
         self.sa = sa
 
@@ -629,14 +623,18 @@ class _SQLAlchemyState(object):
 
 
 class Model(object):
-    """Baseclass for custom user models."""
+    """Base class for SQLAlchemy declarative base model.
 
-    #: the query class used.  The :attr:`query` attribute is an instance
-    #: of this class.  By default a :class:`BaseQuery` is used.
-    query_class = BaseQuery
+    To define models, subclass :attr:`db.Model <SQLAlchemy.Model>`, not this class.
+    To customize ``db.Model``, subclass this and pass it as ``model_class`` to :func:`SQLAlchemy`.
+    """
 
-    #: an instance of :attr:`query_class`.  Can be used to query the
-    #: database for instances of this model.
+    #: Query class used by :attr:`query`.
+    #: Defaults to :class:`SQLAlchemy.Query`, which defaults to :class:`BaseQuery`.
+    query_class = None
+
+    #: Convenience property to query the database for instances of this model using the current session.
+    #: Equivalent to ``db.session.query(Model)`` unless :attr:`query_class` has been changed.
     query = None
 
 
@@ -671,8 +669,8 @@ class SQLAlchemy(object):
     will probe the library for native unicode support.  If it detects
     unicode it will let the library handle that, otherwise do that itself.
     Sometimes this detection can fail in which case you might want to set
-    `use_native_unicode` (or the ``SQLALCHEMY_NATIVE_UNICODE`` configuration
-    key) to `False`.  Note that the configuration key overrides the
+    ``use_native_unicode`` (or the ``SQLALCHEMY_NATIVE_UNICODE`` configuration
+    key) to ``False``.  Note that the configuration key overrides the
     value you pass to the constructor.
 
     This class also provides access to all the SQLAlchemy functions and classes
@@ -697,26 +695,9 @@ class SQLAlchemy(object):
        emulates `Table` behavior but is not a class. `db.Table` exposes the
        `Table` interface, but is a function which allows omission of metadata.
 
-    You may also define your own SessionExtension instances as well when
-    defining your SQLAlchemy class instance. You may pass your custom instances
-    to the `session_extensions` keyword. This can be either a single
-    SessionExtension instance, or a list of SessionExtension instances. In the
-    following use case we use the VersionedListener from the SQLAlchemy
-    versioning examples.::
-
-        from history_meta import VersionedMeta, VersionedListener
-
-        app = Flask(__name__)
-        db = SQLAlchemy(app, session_extensions=[VersionedListener()])
-
-        class User(db.Model):
-            __metaclass__ = VersionedMeta
-            username = db.Column(db.String(80), unique=True)
-            pw_hash = db.Column(db.String(80))
-
-    The `session_options` parameter can be used to override session
-    options.  If provided it's a dict of parameters passed to the
-    session's constructor.
+    The ``session_options`` parameter, if provided, is a dict of parameters
+    to be passed to the session constructor.  See :class:`~sqlalchemy.orm.session.Session`
+    for the standard options.
 
     .. versionadded:: 0.10
        The `session_options` parameter was added.
@@ -729,6 +710,11 @@ class SQLAlchemy(object):
        The `metadata` parameter was added. This allows for setting custom
        naming conventions among other, non-trivial things.
     """
+
+    #: Default query class used by :attr:`Model.query` and other queries.
+    #: Customize this by passing ``query_class`` to :func:`SQLAlchemy`.
+    #: Defaults to :class:`BaseQuery`.
+    Query = None
 
     def __init__(self, app=None, use_native_unicode=True, session_options=None,
                  metadata=None, query_class=BaseQuery, model_class=Model):
