@@ -1,6 +1,6 @@
 .. _models:
 
-.. currentmodule:: flask.ext.sqlalchemy
+.. currentmodule:: flask_sqlalchemy
 
 Declaring Models
 ================

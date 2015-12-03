@@ -1,6 +1,6 @@
 .. _binds:
 
-.. currentmodule:: flask.ext.sqlalchemy
+.. currentmodule:: flask_sqlalchemy
 
 Multiple Databases with Binds
 =============================

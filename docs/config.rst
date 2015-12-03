@@ -129,7 +129,7 @@ custom naming convention like this as suggested by the SQLAlchemy docs::
 
     from sqlalchemy import MetaData
     from flask import Flask
-    from flask.ext.sqlalchemy import SQLAlchemy
+    from flask_sqlalchemy import SQLAlchemy
 
     convention = {
         "ix": 'ix_%(column_0_label)s',
