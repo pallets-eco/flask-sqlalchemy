@@ -747,10 +747,10 @@ class SQLAlchemy(object):
         if options is None:
             options = {}
         scopefunc = options.pop('scopefunc', None)
-        return orm.scoped_session(partial(self.create_session, options),
+        return orm.scoped_session(partial(self.create_session, **options),
                                   scopefunc=scopefunc)
 
-    def create_session(self, options):
+    def create_session(self, **options):
         """Creates the session.  The default implementation returns a
         :class:`SignallingSession`.
 
