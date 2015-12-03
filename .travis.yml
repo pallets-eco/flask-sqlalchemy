@@ -1,6 +1,5 @@
-language: python
-
 sudo: false
+language: python
 
 python:
   - "2.6"
@@ -11,10 +10,10 @@ python:
   - "3.5"
 
 install:
-  - pip install --editable .
-  - pip install blinker
+  - pip install tox
 
-script: make test
+script:
+  - tox -e py
 
 notifications:
   email: false

@@ -6,3 +6,5 @@ dist/
 docs/_build
 .tox/
 *.egg
+.idea/
+.cache/
