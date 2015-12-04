@@ -14,6 +14,24 @@ from sqlalchemy.orm import sessionmaker
 import flask_sqlalchemy as fsa
 
 
+def fix_pysqlite(engine):
+    """This ugly mess is a known issue with pysqlite and how it does
+    Serializable isolation / Savepoints / Transactional DDL:
+    http://docs.sqlalchemy.org/en/rel_1_0/dialects/sqlite.html#pysqlite-serializable
+    """
+
+    @sa.event.listens_for(engine, "connect")
+    def do_connect(dbapi_connection, connection_record):
+        # disable pysqlite's emitting of the BEGIN statement entirely.
+        # also stops it from emitting COMMIT before any DDL.
+        dbapi_connection.isolation_level = None
+
+    @sa.event.listens_for(engine, "begin")
+    def do_begin(conn):
+        # emit our own BEGIN
+        conn.execute("BEGIN")
+
+
 def make_todo_model(db):
     class Todo(db.Model):
         __tablename__ = 'todos'
@@ -177,6 +195,7 @@ class SignallingTestCase(unittest.TestCase):
         self.app = app = flask.Flask(__name__)
         app.config['TESTING'] = True
         self.db = fsa.SQLAlchemy(app)
+        fix_pysqlite(self.db.engine)
         self.Todo = make_todo_model(self.db)
         self.db.create_all()
 
@@ -748,19 +767,7 @@ class BaseTransactionTestCase(unittest.TestCase):
         self.Todo = make_todo_model(db)
         self.app = app
         self.db = db
-
-        # http://docs.sqlalchemy.org/en/latest/dialects/sqlite.html#serializable-isolation-savepoints-transactional-ddl
-        @sa.event.listens_for(db.engine, "connect")
-        def do_connect(dbapi_connection, connection_record):
-            # disable pysqlite's emitting of the BEGIN statement entirely.
-            # also stops it from emitting COMMIT before any DDL.
-            dbapi_connection.isolation_level = None
-
-        @sa.event.listens_for(db.engine, "begin")
-        def do_begin(conn):
-            # emit our own BEGIN
-            conn.execute("BEGIN")
-
+        fix_pysqlite(self.db.engine)
         db.create_all()
 
     def tearDown(self):
