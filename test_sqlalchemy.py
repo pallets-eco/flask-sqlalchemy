@@ -10,6 +10,24 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import sessionmaker
 
 
+def fix_pysqlite(engine):
+    """This ugly mess is a known issue with pysqlite and how it does
+    Serializable isolation / Savepoints / Transactional DDL:
+    http://docs.sqlalchemy.org/en/rel_1_0/dialects/sqlite.html#pysqlite-serializable
+    """
+
+    @event.listens_for(engine, "connect")
+    def do_connect(dbapi_connection, connection_record):
+        # disable pysqlite's emitting of the BEGIN statement entirely.
+        # also stops it from emitting COMMIT before any DDL.
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(engine, "begin")
+    def do_begin(conn):
+        # emit our own BEGIN
+        conn.execute("BEGIN")
+
+
 def make_todo_model(db):
     class Todo(db.Model):
         __tablename__ = 'todos'
@@ -181,6 +199,7 @@ class SignallingTestCase(unittest.TestCase):
         app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
         self.db = sqlalchemy.SQLAlchemy(app)
+        fix_pysqlite(self.db.engine)
         self.Todo = make_todo_model(self.db)
         self.db.create_all()
 
@@ -226,6 +245,74 @@ class SignallingTestCase(unittest.TestCase):
             self.assertEqual(len(recorded), 1)
             self.assertEqual(recorded[0][0], todo)
             self.assertEqual(recorded[0][1], 'delete')
+
+    def test_model_signals_in_nested_session(self):
+        """Nested sessions should not send a models_committed signal when
+        committing"""
+
+        recorded = []
+        def committed(sender, changes):
+            recorded.extend(changes)
+
+        with sqlalchemy.models_committed.connected_to(committed,
+                                                      sender=self.app):
+            todo = self.Todo('Awesome', 'the text')
+            self.db.session.add(todo)
+            self.assertEqual(len(recorded), 0)
+            self.db.session.begin_nested()
+            todo.done = True
+            self.db.session.commit()
+            self.assertEqual(len(recorded), 0)
+            self.db.session.commit()
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(recorded[0][0], todo)
+            self.assertEqual(recorded[0][1], 'insert')
+
+    def test_model_signals_in_nested_session_that_is_rolled_back(self):
+        """Models_committed signal does not send on a change to a model that
+        is rolled back in a nested session"""
+
+        recorded = []
+        def committed(sender, changes):
+            recorded.extend(changes)
+
+        with sqlalchemy.models_committed.connected_to(committed,
+                                                      sender=self.app):
+            todos = [
+                self.Todo('Awesome', 'I will persist!'),
+                self.Todo('Radical', 'I will rollback!')
+            ]
+
+            self.db.session.add(todos[0])
+            self.db.session.begin_nested()
+            self.db.session.add(todos[1])
+            self.db.session.rollback()
+            self.db.session.commit()
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(recorded[0][0], todos[0])
+            self.assertEqual(recorded[0][1], 'insert')
+
+    def test_model_signals_merge_changes_in_nested_sessions(self):
+        """When committing a nested session, model modifications are merged
+        to the parent session"""
+
+        recorded = []
+        def committed(sender, changes):
+            recorded.extend(changes)
+
+        with sqlalchemy.models_committed.connected_to(committed,
+                                                      sender=self.app):
+            todo = self.Todo('Awesome', 'the text')
+            self.db.session.add(todo)
+            self.assertEqual(len(recorded), 0)
+            self.db.session.begin_nested()
+            todo.text = 'this is an UPDATE, but as a whole the transaction ' \
+                        'will still be an INSERT'
+            self.db.session.commit()
+            self.db.session.commit()
+            self.assertEqual(len(recorded), 1)
+            self.assertEqual(recorded[0][0], todo)
+            self.assertEqual(recorded[0][1], 'insert')
 
 
 class TablenameTestCase(unittest.TestCase):
