@@ -9,6 +9,9 @@ Version 3.0
 
 In development, codename Dubnium
 
+- Fix minimum SQLAlchemy version requirement (0.9.2 or above), introduced
+  by custom MetaData support in 2.1.
+
 Version 2.1
 -----------
 
