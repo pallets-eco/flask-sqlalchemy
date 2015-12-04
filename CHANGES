@@ -11,8 +11,8 @@ In development, codename Dubnium
 
 - Added support for custom ``query_class`` and ``model_class`` as args
   to the ``SQLAlchemy`` constructor.
-- Fix minimum SQLAlchemy version requirement (0.9.2 or above), introduced
-  by custom MetaData support in 2.1.
+- Fix minimum SQLAlchemy version requirement (0.8 or above), due to use
+  of ``sqlalchemy.inspect``.
 
 Version 2.1
 -----------

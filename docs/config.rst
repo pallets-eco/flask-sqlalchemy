@@ -119,13 +119,12 @@ You can optionally construct the :class:`SQLAlchemy` object with a custom
 :class:`~sqlalchemy.schema.MetaData` object.
 This allows you to, among other things,
 specify a `custom constraint naming convention
-<http://docs.sqlalchemy.org/en/latest/core/constraints.html#constraint-naming-conventions>`_.
+<http://docs.sqlalchemy.org/en/latest/core/constraints.html#constraint-naming-conventions>`_
+in conjunction with SQLAlchemy 0.9.2 or higher.
 Doing so is important for dealing with database migrations (for instance using
 `alembic <https://alembic.readthedocs.org>`_ as stated
-`here <http://alembic.readthedocs.org/en/latest/naming.html>`_. Since SQL
-defines no standard naming conventions, there is no guaranteed nor effective
-compatibility by default among database implementations. You can define a
-custom naming convention like this as suggested by the SQLAlchemy docs::
+`here <http://alembic.readthedocs.org/en/latest/naming.html>`_. Here's an
+example, as suggested by the SQLAlchemy docs::
 
     from sqlalchemy import MetaData
     from flask import Flask
