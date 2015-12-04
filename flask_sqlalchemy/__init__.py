@@ -709,6 +709,16 @@ class SQLAlchemy(object):
     .. versionadded:: 2.1
        The `metadata` parameter was added. This allows for setting custom
        naming conventions among other, non-trivial things.
+
+    .. versionadded:: 3.0
+       The `query_class` parameter was added, to allow customisation
+       of the query class, in place of the default of :class:`BaseQuery`.
+
+       The `model_class` parameter was added, which allows a custom model
+       class to be used in place of :class:`Model`.
+
+    .. versionchanged:: 3.0
+       Utilise the same query class across `session`, `Model.query` and `Query`.
     """
 
     #: Default query class used by :attr:`Model.query` and other queries.
