@@ -126,8 +126,8 @@ class MetaDataTestCase(unittest.TestCase):
             one_id = db.Column(db.Integer, db.ForeignKey(One.id))
             myunique = db.Column(db.Integer, unique=True)
 
-        self.assertIs(One.metadata, custom_metadata)
-        self.assertIs(Two.metadata, custom_metadata)
+        self.assertTrue(One.metadata is custom_metadata)
+        self.assertTrue(Two.metadata is custom_metadata)
 
         self.assertFalse(One.metadata.__class__ is MetaData)
         self.assertTrue(One.metadata.__class__ is CustomMetaData)
