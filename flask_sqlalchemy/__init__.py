@@ -892,28 +892,29 @@ class SQLAlchemy(object):
         is used this might raise a :exc:`RuntimeError` if no application is
         active at the moment.
         """
-        return self.get_engine(self.get_app())
+        return self.get_engine()
 
-    def make_connector(self, app, bind=None):
+    def make_connector(self, app=None, bind=None):
         """Creates the connector for a given state and bind."""
-        return _EngineConnector(self, app, bind)
+        return _EngineConnector(self, self.get_app(app), bind)
 
-    def get_engine(self, app, bind=None):
-        """Returns a specific engine.
+    def get_engine(self, app=None, bind=None):
+        """Returns a specific engine."""
 
-        .. versionadded:: 0.12
-        """
+        app = self.get_app(app)
+        state = get_state(app)
+
         with self._engine_lock:
-            state = get_state(app)
             connector = state.connectors.get(bind)
+
             if connector is None:
                 connector = self.make_connector(app, bind)
                 state.connectors[bind] = connector
+
             return connector.get_engine()
 
     def get_app(self, reference_app=None):
-        """Helper method that implements the logic to look up an application.
-        """
+        """Helper method that implements the logic to look up an application."""
         if reference_app is not None:
             return reference_app
         if self.app is not None:
