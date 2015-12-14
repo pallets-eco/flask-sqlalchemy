@@ -8,7 +8,7 @@
     :copyright: (c) 2014 by Armin Ronacher, Daniel Neuhäuser.
     :license: BSD, see LICENSE for more details.
 """
-from __future__ import with_statement, absolute_import
+from __future__ import absolute_import
 import os
 import re
 import sys
@@ -148,7 +148,7 @@ class SignallingSession(SessionBase):
         to an external transaction.
     """
 
-    def __init__(self, db, autocommit=False, autoflush=True, app=None, **options):
+    def __init__(self, db, autocommit=False, autoflush=True, **options):
         #: The application that this session belongs to.
         self.app = app = db.get_app()
         track_modifications = app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
@@ -729,14 +729,9 @@ class SQLAlchemy(object):
     def __init__(self, app=None, use_native_unicode=True, session_options=None,
                  metadata=None, query_class=BaseQuery, model_class=Model):
 
-        if session_options is None:
-            session_options = {}
-
-        session_options.setdefault('scopefunc', connection_stack.__ident_func__)
-        session_options.setdefault('query_cls', query_class)
         self.use_native_unicode = use_native_unicode
-        self.session = self.create_scoped_session(session_options)
         self.Query = query_class
+        self.session = self.create_scoped_session(session_options)
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
         self.app = app
@@ -747,26 +742,44 @@ class SQLAlchemy(object):
 
     @property
     def metadata(self):
-        """Returns the metadata"""
+        """The metadata associated with ``db.Model``."""
+
         return self.Model.metadata
 
     def create_scoped_session(self, options=None):
-        """Helper factory method that creates a scoped session.  It
-        internally calls :meth:`create_session`.
+        """Create a :class:`~sqlalchemy.orm.scoping.scoped_session`
+        on the factory from :meth:`create_session`.
+
+        An extra key ``'scopefunc'`` can be set on the ``options`` dict to specify a custom
+        scope function.  If it's not provided, Flask's app context stack identity is used.
+        This will ensure that sessions are created and removed with the request/response cycle,
+        and should be fine in most cases.
+
+        :param options: dict of keyword arguments passed to session class  in ``create_session``
         """
+
         if options is None:
             options = {}
-        scopefunc = options.pop('scopefunc', None)
-        return orm.scoped_session(partial(self.create_session, options),
-                                  scopefunc=scopefunc)
+
+        scopefunc = options.pop('scopefunc', connection_stack.__ident_func__)
+        options.setdefault('query_cls', self.Query)
+        return orm.scoped_session(self.create_session(options), scopefunc=scopefunc)
 
     def create_session(self, options):
-        """Creates the session.  The default implementation returns a
-        :class:`SignallingSession`.
+        """Create the session factory used by :meth:`create_scoped_session`.
 
-        .. versionadded:: 2.0
+        The factory **must** return an object that SQLAlchemy recognizes as a session,
+        or registering session events may raise an exception.
+
+        Valid factories include a :class:`~sqlalchemy.orm.session.Session`
+        class or a :class:`~sqlalchemy.orm.session.sessionmaker`.
+
+        The default implementation creates a ``sessionmaker`` for :class:`SignallingSession`.
+
+        :param options: dict of keyword arguments passed to session class
         """
-        return SignallingSession(self, **options)
+
+        return orm.sessionmaker(class_=SignallingSession, db=self, **options)
 
     def make_declarative_base(self, model, metadata=None):
         """Creates the declarative base."""

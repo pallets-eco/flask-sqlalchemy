@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime
 import flask
 import flask_sqlalchemy as sqlalchemy
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, event
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import sessionmaker
 
@@ -676,7 +676,6 @@ class SessionScopingTestCase(unittest.TestCase):
             assert fb not in db.session  # because a new scope is generated on each call
 
 
-
 class CommitOnTeardownTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -743,6 +742,12 @@ class StandardSessionTestCase(unittest.TestCase):
         assert qaz_wsx.x == 'test'
         session.delete(qaz_wsx) # issues a DELETE.
         assert session.query(QazWsx).first() is None
+
+    def test_listen_to_session_event(self):
+        app = flask.Flask(__name__)
+        app.config['TESTING'] = True
+        db = sqlalchemy.SQLAlchemy(app)
+        event.listen(db.session, 'after_commit', lambda session: None)
 
 
 def suite():
