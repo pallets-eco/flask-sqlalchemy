@@ -810,7 +810,8 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
         track_modifications = app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', None)
-
+        if self.app is None:
+            self.app=app
         if track_modifications is None:
             warnings.warn('SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and will be disabled by default in the future.  Set it to True or False to suppress this warning.')
 
