@@ -97,7 +97,7 @@ Selecting a bunch of users by a more complex expression:
 
 Ordering users by something:
 
->>> User.query.order_by(User.username)
+>>> User.query.order_by(User.username).all()
 [<User u'admin'>, <User u'guest'>, <User u'peter'>]
 
 Limiting users:
