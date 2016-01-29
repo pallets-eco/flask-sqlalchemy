@@ -1,6 +1,8 @@
 from __future__ import with_statement
 
 import atexit
+import tempfile
+import os
 import unittest
 from datetime import datetime
 import flask
@@ -384,12 +386,10 @@ class PaginationTestCase(unittest.TestCase):
 class BindsTestCase(unittest.TestCase):
 
     def test_basic_binds(self):
-        import tempfile
         _, db1 = tempfile.mkstemp()
         _, db2 = tempfile.mkstemp()
 
         def _remove_files():
-            import os
             try:
                 os.remove(db1)
                 os.remove(db2)
@@ -455,6 +455,44 @@ class BindsTestCase(unittest.TestCase):
             Bar.__table__: db.get_engine(app, 'bar'),
             Baz.__table__: db.get_engine(app, None)
         })
+
+    def test_abstract_binds(self):
+        _, db1 = tempfile.mkstemp()
+        _, db2 = tempfile.mkstemp()
+
+        def _remove_files():
+            try:
+                os.remove(db1)
+                os.remove(db2)
+            except IOError:
+                pass
+        atexit.register(_remove_files)
+
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['SQLALCHEMY_BINDS'] = {
+            'foo':      'sqlite:///' + db1,
+            'bar':      'sqlite:///' + db2
+        }
+        db = sqlalchemy.SQLAlchemy(app)
+
+        class AbstractFooBoundModel(db.Model):
+            __abstract__ = True
+            __bind_key__ = 'foo'
+
+        class FooBoundModel(AbstractFooBoundModel):
+            id = db.Column(db.Integer, primary_key=True)
+
+        db.create_all()
+
+        # does the model have the correct engines?
+        self.assertEqual(db.metadata.tables['foo_bound_model'].info['bind_key'], 'foo')
+
+        # see the tables created in an engine
+        metadata = db.MetaData()
+        metadata.reflect(bind=db.get_engine(app, 'foo'))
+        self.assertEqual(len(metadata.tables), 1)
+        self.assertTrue('foo_bound_model' in metadata.tables)
 
 
 class DefaultQueryClassTestCase(unittest.TestCase):
