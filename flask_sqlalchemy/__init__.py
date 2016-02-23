@@ -22,7 +22,7 @@ from flask import _request_ctx_stack, abort, has_request_context, request
 from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
-from sqlalchemy import orm, event, inspect
+from sqlalchemy import orm, event, inspect, select
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.engine.url import make_url
@@ -268,6 +268,45 @@ class _EngineDebuggingSignalEvents(object):
             queries.append(_DebugQueryTuple((
                 statement, parameters, context._query_start_time, _timer(),
                 _calling_context(self.app_package))))
+
+
+class _PessimisticDisconnectionHandling(object):
+    """ Handle gone-away connections in the Pool.
+
+    This is mainly taken from the SQLAlchemy documentation.
+    """
+
+    def __init__(self, engine):
+        self.engine = engine
+
+    def register(self):
+        event.listen(self.engine, 'engine_connect', self.ping_connection)
+
+    def ping_connection(self, connection, branch):
+        if branch:
+            # "branch" refers to a sub-connection of a connection,
+            # we don't want to bother pinging on these.
+            return
+
+        try:
+            # run a SELECT 1.   use a core select() so that
+            # the SELECT of a scalar value without a table is
+            # appropriately formatted for the backend
+            connection.scalar(select([1]))
+        except exc.DBAPIError as err:
+            # catch SQLAlchemy's DBAPIError, which is a wrapper
+            # for the DBAPI's exception.  It includes a .connection_invalidated
+            # attribute which specifies if this connection is a "disconnect"
+            # condition, which is based on inspection of the original exception
+            # by the dialect in use.
+            if err.connection_invalidated:
+                # run the same SELECT again - the connection will re-validate
+                # itself and establish a new connection.  The disconnect detection
+                # here also causes the whole connection pool to be invalidated
+                # so that all stale connections are discarded.
+                connection.scalar(select([1]))
+            else:
+                raise
 
 
 def get_debug_queries():
@@ -540,6 +579,8 @@ class _EngineConnector(object):
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
                                              self._app.import_name).register()
+            if self._app.config['SQLALCHEMY_PESSIMISTIC_DISCONNECTION_HANDLING']:
+                _PessimisticDisconnectionHandling(self._engine).register()
             self._connected_for = (uri, echo)
             return rv
 
@@ -810,6 +851,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
         track_modifications = app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', None)
+        app.config.setdefault('SQLALCHEMY_PESSIMISTIC_DISCONNECTION_HANDLING', True)
 
         if track_modifications is None:
             warnings.warn('SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and will be disabled by default in the future.  Set it to True or False to suppress this warning.')
