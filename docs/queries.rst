@@ -80,7 +80,7 @@ Retrieve a user by username:
 
 >>> peter = User.query.filter_by(username='peter').first()
 >>> peter.id
-1
+2
 >>> peter.email
 u'peter@example.org'
 
