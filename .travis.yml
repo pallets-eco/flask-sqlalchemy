@@ -9,11 +9,15 @@ python:
   - "3.4"
   - "3.5"
 
+env:
+  - REQUIREMENTS=lowest
+  - REQUIREMENTS=current
+
 install:
   - pip install tox
 
 script:
-  - tox -e py
+  - tox -e py-$REQUIREMENTS
 
 notifications:
   email: false
