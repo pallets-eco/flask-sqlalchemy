@@ -10,25 +10,25 @@
 """
 from __future__ import absolute_import
 import os
+import random
 import re
 import sys
 import time
 import functools
 import warnings
 import sqlalchemy
+from contextlib import contextmanager
 from math import ceil
-from functools import partial
 from flask import _request_ctx_stack, abort, has_request_context, request
 from flask.signals import Namespace
 from operator import itemgetter
-from threading import Lock
+from threading import Lock, RLock
 from sqlalchemy import orm, event, inspect
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from flask_sqlalchemy._compat import iteritems, itervalues, xrange, \
-     string_types
+from flask_sqlalchemy._compat import itervalues, xrange, string_types
 
 # the best timer function for the platform
 if sys.platform == 'win32':
@@ -55,6 +55,28 @@ _signals = Namespace()
 
 models_committed = _signals.signal('models-committed')
 before_models_committed = _signals.signal('before-models-committed')
+db_chooser = RLock()
+using_master = True
+
+
+@contextmanager
+def choose_slave():
+    """Choose slave."""
+    global using_master
+    using_master = False
+    yield
+    using_master = True
+
+
+def with_slave(func):
+    """Using slave session."""
+    @functools.wraps(func)
+    def wraps(*args, **kwargs):
+        with db_chooser:
+            with choose_slave():
+                rst = func(*args, **kwargs)
+                return rst
+    return wraps
 
 
 def _make_table(db):
@@ -171,7 +193,12 @@ class SignallingSession(SessionBase):
             if bind_key is not None:
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
-        return SessionBase.get_bind(self, mapper, clause)
+
+        if using_master:
+            return SessionBase.get_bind(self, mapper, clause)
+        else:
+            state = get_state(self.app)
+            return state.db.get_engine(self.app, bind="slaves")
 
 
 class _SessionSignalEvents(object):
@@ -516,6 +543,13 @@ class _EngineConnector(object):
         self._lock = Lock()
 
     def get_uri(self):
+        if self._bind == "slaves":
+            slaves = self._app.config["SQLALCHEMY_DATABASE_SLAVE_URIS"] or ()
+            if slaves:
+                return random.choice(slaves)
+            else:
+                self._bind = None
+
         if self._bind is None:
             return self._app.config['SQLALCHEMY_DATABASE_URI']
         binds = self._app.config.get('SQLALCHEMY_BINDS') or ()
@@ -800,6 +834,7 @@ class SQLAlchemy(object):
         leak.
         """
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
+        app.config.setdefault('SQLALCHEMY_DATABASE_SLAVE_URIS', None)
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
