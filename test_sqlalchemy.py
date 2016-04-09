@@ -1,15 +1,15 @@
+#!/usr/bin/env python
 from __future__ import with_statement
 
-import atexit
-import tempfile
-import os
 import unittest
 from datetime import datetime
+
 import flask
-import flask_sqlalchemy as sqlalchemy
-from sqlalchemy import MetaData, event
+import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import sessionmaker
+
+import flask_sqlalchemy as fsa
 
 
 def make_todo_model(db):
@@ -26,16 +26,15 @@ def make_todo_model(db):
             self.text = text
             self.done = False
             self.pub_date = datetime.utcnow()
+
     return Todo
 
 
 class BasicAppTestCase(unittest.TestCase):
-
     def setUp(self):
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
         self.Todo = make_todo_model(db)
 
         @app.route('/')
@@ -71,7 +70,7 @@ class BasicAppTestCase(unittest.TestCase):
             self.db.session.add(todo)
             self.db.session.commit()
 
-            queries = sqlalchemy.get_debug_queries()
+            queries = fsa.get_debug_queries()
             self.assertEqual(len(queries), 1)
             query = queries[0]
             self.assertTrue('insert into' in query.statement.lower())
@@ -85,14 +84,12 @@ class BasicAppTestCase(unittest.TestCase):
 
 
 class MetaDataTestCase(unittest.TestCase):
-
     def setUp(self):
         self.app = flask.Flask(__name__)
-        self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         self.app.config['TESTING'] = True
 
     def test_default_metadata(self):
-        db = sqlalchemy.SQLAlchemy(self.app, metadata=None)
+        db = fsa.SQLAlchemy(self.app, metadata=None)
         self.db = db
 
         class One(db.Model):
@@ -104,19 +101,18 @@ class MetaDataTestCase(unittest.TestCase):
             one_id = db.Column(db.Integer, db.ForeignKey(One.id))
             myunique = db.Column(db.Integer, unique=True)
 
-        self.assertTrue(One.metadata.__class__ is MetaData)
-        self.assertTrue(Two.metadata.__class__ is MetaData)
+        self.assertTrue(One.metadata.__class__ is sa.MetaData)
+        self.assertTrue(Two.metadata.__class__ is sa.MetaData)
 
         self.assertEqual(One.__table__.schema, None)
         self.assertEqual(Two.__table__.schema, None)
 
     def test_custom_metadata(self):
-
-        class CustomMetaData(MetaData):
+        class CustomMetaData(sa.MetaData):
             pass
 
         custom_metadata = CustomMetaData(schema="test_schema")
-        db = sqlalchemy.SQLAlchemy(self.app, metadata=custom_metadata)
+        db = fsa.SQLAlchemy(self.app, metadata=custom_metadata)
         self.db = db
 
         class One(db.Model):
@@ -131,10 +127,10 @@ class MetaDataTestCase(unittest.TestCase):
         self.assertTrue(One.metadata is custom_metadata)
         self.assertTrue(Two.metadata is custom_metadata)
 
-        self.assertFalse(One.metadata.__class__ is MetaData)
+        self.assertFalse(One.metadata.__class__ is sa.MetaData)
         self.assertTrue(One.metadata.__class__ is CustomMetaData)
 
-        self.assertFalse(Two.metadata.__class__ is MetaData)
+        self.assertFalse(Two.metadata.__class__ is sa.MetaData)
         self.assertTrue(Two.metadata.__class__ is CustomMetaData)
 
         self.assertEqual(One.__table__.schema, "test_schema")
@@ -142,14 +138,12 @@ class MetaDataTestCase(unittest.TestCase):
 
 
 class TestQueryProperty(unittest.TestCase):
-
     def setUp(self):
         self.app = flask.Flask(__name__)
-        self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         self.app.config['TESTING'] = True
 
     def test_no_app_bound(self):
-        db = sqlalchemy.SQLAlchemy()
+        db = fsa.SQLAlchemy()
         db.init_app(self.app)
         Todo = make_todo_model(db)
 
@@ -164,7 +158,7 @@ class TestQueryProperty(unittest.TestCase):
             self.assertEqual(len(Todo.query.all()), 1)
 
     def test_app_bound(self):
-        db = sqlalchemy.SQLAlchemy(self.app)
+        db = fsa.SQLAlchemy(self.app)
         Todo = make_todo_model(db)
         db.create_all()
 
@@ -177,12 +171,10 @@ class TestQueryProperty(unittest.TestCase):
 
 
 class SignallingTestCase(unittest.TestCase):
-
     def setUp(self):
         self.app = app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        self.db = sqlalchemy.SQLAlchemy(app)
+        self.db = fsa.SQLAlchemy(app)
         self.Todo = make_todo_model(self.db)
         self.db.create_all()
 
@@ -196,45 +188,47 @@ class SignallingTestCase(unittest.TestCase):
         def before_committed(sender, changes):
             Namespace.is_received = True
 
-        with sqlalchemy.before_models_committed.connected_to(before_committed, sender=self.app):
-            todo = self.Todo('Awesome', 'the text')
-            self.db.session.add(todo)
-            self.db.session.commit()
-            self.assertTrue(Namespace.is_received)
+        fsa.before_models_committed.connect(before_committed)
+        todo = self.Todo('Awesome', 'the text')
+        self.db.session.add(todo)
+        self.db.session.commit()
+        self.assertTrue(Namespace.is_received)
+        fsa.before_models_committed.disconnect(before_committed)
 
     def test_model_signals(self):
         recorded = []
+
         def committed(sender, changes):
             self.assertTrue(isinstance(changes, list))
             recorded.extend(changes)
-        with sqlalchemy.models_committed.connected_to(committed,
-                                                      sender=self.app):
-            todo = self.Todo('Awesome', 'the text')
-            self.db.session.add(todo)
-            self.assertEqual(len(recorded), 0)
-            self.db.session.commit()
-            self.assertEqual(len(recorded), 1)
-            self.assertEqual(recorded[0][0], todo)
-            self.assertEqual(recorded[0][1], 'insert')
-            del recorded[:]
-            todo.text = 'aha'
-            self.db.session.commit()
-            self.assertEqual(len(recorded), 1)
-            self.assertEqual(recorded[0][0], todo)
-            self.assertEqual(recorded[0][1], 'update')
-            del recorded[:]
-            self.db.session.delete(todo)
-            self.db.session.commit()
-            self.assertEqual(len(recorded), 1)
-            self.assertEqual(recorded[0][0], todo)
-            self.assertEqual(recorded[0][1], 'delete')
+
+        fsa.models_committed.connect(committed)
+        todo = self.Todo('Awesome', 'the text')
+        self.db.session.add(todo)
+        self.assertEqual(len(recorded), 0)
+        self.db.session.commit()
+        self.assertEqual(len(recorded), 1)
+        self.assertEqual(recorded[0][0], todo)
+        self.assertEqual(recorded[0][1], 'insert')
+        del recorded[:]
+        todo.text = 'aha'
+        self.db.session.commit()
+        self.assertEqual(len(recorded), 1)
+        self.assertEqual(recorded[0][0], todo)
+        self.assertEqual(recorded[0][1], 'update')
+        del recorded[:]
+        self.db.session.delete(todo)
+        self.db.session.commit()
+        self.assertEqual(len(recorded), 1)
+        self.assertEqual(recorded[0][0], todo)
+        self.assertEqual(recorded[0][1], 'delete')
+        fsa.models_committed.disconnect(committed)
 
 
 class TablenameTestCase(unittest.TestCase):
     def test_name(self):
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class FOOBar(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -254,8 +248,7 @@ class TablenameTestCase(unittest.TestCase):
         """Single table inheritance should not set a new name."""
 
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Duck(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -269,8 +262,7 @@ class TablenameTestCase(unittest.TestCase):
         """Model has a separate primary key; it should set a new name."""
 
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Duck(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -284,8 +276,7 @@ class TablenameTestCase(unittest.TestCase):
         """Primary key provided by mixin should still allow model to set tablename."""
 
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Base(object):
             id = db.Column(db.Integer, primary_key=True)
@@ -300,8 +291,7 @@ class TablenameTestCase(unittest.TestCase):
         """Abstract model should not set a name.  Subclass should set a name."""
 
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Base(db.Model):
             __abstract__ = True
@@ -317,8 +307,7 @@ class TablenameTestCase(unittest.TestCase):
         """Joined table inheritance, but the new primary key is provided by a mixin, not directly on the class."""
 
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://'
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Duck(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -335,9 +324,8 @@ class TablenameTestCase(unittest.TestCase):
 
 
 class PaginationTestCase(unittest.TestCase):
-
     def test_basic_pagination(self):
-        p = sqlalchemy.Pagination(None, 1, 20, 500, [])
+        p = fsa.Pagination(None, 1, 20, 500, [])
         self.assertEqual(p.page, 1)
         self.assertFalse(p.has_prev)
         self.assertTrue(p.has_next)
@@ -351,12 +339,12 @@ class PaginationTestCase(unittest.TestCase):
                          [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
 
     def test_pagination_pages_when_0_items_per_page(self):
-        p = sqlalchemy.Pagination(None, 1, 0, 500, [])
+        p = fsa.Pagination(None, 1, 0, 500, [])
         self.assertEqual(p.pages, 0)
 
     def test_query_paginate(self):
         app = flask.Flask(__name__)
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
         Todo = make_todo_model(db)
         db.create_all()
 
@@ -384,26 +372,13 @@ class PaginationTestCase(unittest.TestCase):
 
 
 class BindsTestCase(unittest.TestCase):
-
     def test_basic_binds(self):
-        _, db1 = tempfile.mkstemp()
-        _, db2 = tempfile.mkstemp()
-
-        def _remove_files():
-            try:
-                os.remove(db1)
-                os.remove(db2)
-            except IOError:
-                pass
-        atexit.register(_remove_files)
-
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['SQLALCHEMY_BINDS'] = {
-            'foo':      'sqlite:///' + db1,
-            'bar':      'sqlite:///' + db2
+            'foo': 'sqlite://',
+            'bar': 'sqlite://'
         }
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Foo(db.Model):
             __bind_key__ = 'foo'
@@ -457,24 +432,11 @@ class BindsTestCase(unittest.TestCase):
         })
 
     def test_abstract_binds(self):
-        _, db1 = tempfile.mkstemp()
-        _, db2 = tempfile.mkstemp()
-
-        def _remove_files():
-            try:
-                os.remove(db1)
-                os.remove(db2)
-            except IOError:
-                pass
-        atexit.register(_remove_files)
-
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['SQLALCHEMY_BINDS'] = {
-            'foo':      'sqlite:///' + db1,
-            'bar':      'sqlite:///' + db2
+            'foo': 'sqlite://'
         }
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class AbstractFooBoundModel(db.Model):
             __abstract__ = True
@@ -496,16 +458,14 @@ class BindsTestCase(unittest.TestCase):
 
 
 class DefaultQueryClassTestCase(unittest.TestCase):
-
     def test_default_query_class(self):
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Parent(db.Model):
             id = db.Column(db.Integer, primary_key=True)
-            children = db.relationship("Child", backref = "parent", lazy='dynamic')
+            children = db.relationship("Child", backref="parent", lazy='dynamic')
 
         class Child(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -515,30 +475,28 @@ class DefaultQueryClassTestCase(unittest.TestCase):
         c = Child()
         c.parent = p
 
-        self.assertEqual(type(Parent.query), sqlalchemy.BaseQuery)
-        self.assertEqual(type(Child.query), sqlalchemy.BaseQuery)
-        self.assertTrue(isinstance(p.children, sqlalchemy.BaseQuery))
-        self.assertTrue(isinstance(db.session.query(Parent), sqlalchemy.BaseQuery))
+        self.assertEqual(type(Parent.query), fsa.BaseQuery)
+        self.assertEqual(type(Child.query), fsa.BaseQuery)
+        self.assertTrue(isinstance(p.children, fsa.BaseQuery))
+        self.assertTrue(isinstance(db.session.query(Parent), fsa.BaseQuery))
 
 
 class CustomQueryClassTestCase(unittest.TestCase):
-
     def test_custom_query_class(self):
-        class CustomQueryClass(sqlalchemy.BaseQuery):
+        class CustomQueryClass(fsa.BaseQuery):
             pass
 
         class MyModelClass(object):
             pass
 
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app, query_class=CustomQueryClass,
-                                   model_class=MyModelClass)
+        db = fsa.SQLAlchemy(app, query_class=CustomQueryClass,
+                            model_class=MyModelClass)
 
         class Parent(db.Model):
             id = db.Column(db.Integer, primary_key=True)
-            children = db.relationship("Child", backref = "parent", lazy='dynamic')
+            children = db.relationship("Child", backref="parent", lazy='dynamic')
 
         class Child(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -555,47 +513,43 @@ class CustomQueryClassTestCase(unittest.TestCase):
         self.assertEqual(db.Model.query_class, CustomQueryClass)
         self.assertTrue(isinstance(db.session.query(Parent), CustomQueryClass))
 
-
     def test_dont_override_model_default(self):
-        class CustomQueryClass(sqlalchemy.BaseQuery):
+        class CustomQueryClass(fsa.BaseQuery):
             pass
 
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app, query_class=CustomQueryClass)
+        db = fsa.SQLAlchemy(app, query_class=CustomQueryClass)
 
         class SomeModel(db.Model):
             id = db.Column(db.Integer, primary_key=True)
+            query_class = fsa.BaseQuery
 
-        self.assertEqual(type(SomeModel.query), sqlalchemy.BaseQuery)
+        self.assertEqual(type(SomeModel.query), fsa.BaseQuery)
 
 
 class CustomModelClassTestCase(unittest.TestCase):
-
     def test_custom_query_class(self):
-        class CustomModelClass(sqlalchemy.Model):
+        class CustomModelClass(fsa.Model):
             pass
 
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app, model_class=CustomModelClass)
+        db = fsa.SQLAlchemy(app, model_class=CustomModelClass)
 
         class SomeModel(db.Model):
             id = db.Column(db.Integer, primary_key=True)
 
         self.assertTrue(isinstance(SomeModel(), CustomModelClass))
 
-class SQLAlchemyIncludesTestCase(unittest.TestCase):
 
+class SQLAlchemyIncludesTestCase(unittest.TestCase):
     def test(self):
         """Various SQLAlchemy objects are exposed as attributes.
         """
-        db = sqlalchemy.SQLAlchemy()
+        db = fsa.SQLAlchemy()
 
-        import sqlalchemy as sqlalchemy_lib
-        self.assertTrue(db.Column == sqlalchemy_lib.Column)
+        self.assertTrue(db.Column == sa.Column)
 
         # The Query object we expose is actually our own subclass.
         from flask_sqlalchemy import BaseQuery
@@ -603,10 +557,9 @@ class SQLAlchemyIncludesTestCase(unittest.TestCase):
 
 
 class RegressionTestCase(unittest.TestCase):
-
     def test_joined_inheritance(self):
         app = flask.Flask(__name__)
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Base(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -624,7 +577,7 @@ class RegressionTestCase(unittest.TestCase):
 
     def test_single_table_inheritance(self):
         app = flask.Flask(__name__)
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Base(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -640,7 +593,7 @@ class RegressionTestCase(unittest.TestCase):
 
     def test_joined_inheritance_relation(self):
         app = flask.Flask(__name__)
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class Relation(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -672,16 +625,15 @@ class RegressionTestCase(unittest.TestCase):
 
     def test_connection_binds(self):
         app = flask.Flask(__name__)
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
         assert db.session.connection()
 
-class SessionScopingTestCase(unittest.TestCase):
 
+class SessionScopingTestCase(unittest.TestCase):
     def test_default_session_scoping(self):
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
 
         class FOOBar(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -695,13 +647,12 @@ class SessionScopingTestCase(unittest.TestCase):
 
     def test_session_scoping_changing(self):
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
 
         def scopefunc():
             return id(dict())
 
-        db = sqlalchemy.SQLAlchemy(app, session_options=dict(scopefunc=scopefunc))
+        db = fsa.SQLAlchemy(app, session_options=dict(scopefunc=scopefunc))
 
         class FOOBar(db.Model):
             id = db.Column(db.Integer, primary_key=True)
@@ -715,12 +666,10 @@ class SessionScopingTestCase(unittest.TestCase):
 
 
 class CommitOnTeardownTestCase(unittest.TestCase):
-
     def setUp(self):
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
         Todo = make_todo_model(db)
         db.create_all()
 
@@ -749,7 +698,6 @@ class CommitOnTeardownTestCase(unittest.TestCase):
 
 
 class StandardSessionTestCase(unittest.TestCase):
-
     def test_insert_update_delete(self):
         # Ensure _SignalTrackingMapperExtension doesn't croak when
         # faced with a vanilla SQLAlchemy session.
@@ -757,9 +705,8 @@ class StandardSessionTestCase(unittest.TestCase):
         # Verifies that "AttributeError: 'SessionMaker' object has no attribute '_model_changes'"
         # is not thrown.
         app = flask.Flask(__name__)
-        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(app)
         Session = sessionmaker(bind=db.engine)
 
         class QazWsx(db.Model):
@@ -769,41 +716,46 @@ class StandardSessionTestCase(unittest.TestCase):
         db.create_all()
         session = Session()
         session.add(QazWsx())
-        session.flush() # issues an INSERT.
+        session.flush()  # issues an INSERT.
         session.expunge_all()
         qaz_wsx = session.query(QazWsx).first()
         assert qaz_wsx.x == ''
         qaz_wsx.x = 'test'
-        session.flush() # issues an UPDATE.
+        session.flush()  # issues an UPDATE.
         session.expunge_all()
         qaz_wsx = session.query(QazWsx).first()
         assert qaz_wsx.x == 'test'
-        session.delete(qaz_wsx) # issues a DELETE.
+        session.delete(qaz_wsx)  # issues a DELETE.
         assert session.query(QazWsx).first() is None
 
     def test_listen_to_session_event(self):
         app = flask.Flask(__name__)
         app.config['TESTING'] = True
-        db = sqlalchemy.SQLAlchemy(app)
-        event.listen(db.session, 'after_commit', lambda session: None)
+        db = fsa.SQLAlchemy(app)
+        sa.event.listen(db.session, 'after_commit', lambda session: None)
 
 
 def suite():
     suite = unittest.TestSuite()
+
+    suite.addTest(unittest.makeSuite(RegressionTestCase))
     suite.addTest(unittest.makeSuite(BasicAppTestCase))
+    suite.addTest(unittest.makeSuite(SQLAlchemyIncludesTestCase))
     suite.addTest(unittest.makeSuite(MetaDataTestCase))
     suite.addTest(unittest.makeSuite(TestQueryProperty))
+    suite.addTest(unittest.makeSuite(DefaultQueryClassTestCase))
+    suite.addTest(unittest.makeSuite(CustomQueryClassTestCase))
     suite.addTest(unittest.makeSuite(TablenameTestCase))
     suite.addTest(unittest.makeSuite(PaginationTestCase))
     suite.addTest(unittest.makeSuite(BindsTestCase))
-    suite.addTest(unittest.makeSuite(DefaultQueryClassTestCase))
-    suite.addTest(unittest.makeSuite(SQLAlchemyIncludesTestCase))
-    suite.addTest(unittest.makeSuite(RegressionTestCase))
+    suite.addTest(unittest.makeSuite(StandardSessionTestCase))
     suite.addTest(unittest.makeSuite(SessionScopingTestCase))
     suite.addTest(unittest.makeSuite(CommitOnTeardownTestCase))
+    suite.addTest(unittest.makeSuite(CustomModelClassTestCase))
+
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
-    suite.addTest(unittest.makeSuite(StandardSessionTestCase))
+
     return suite
 
 
