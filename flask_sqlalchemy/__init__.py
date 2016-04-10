@@ -17,7 +17,6 @@ import functools
 import warnings
 import sqlalchemy
 from math import ceil
-from functools import partial
 from flask import _request_ctx_stack, abort, has_request_context, request
 from flask.signals import Namespace
 from operator import itemgetter
@@ -27,8 +26,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from flask_sqlalchemy._compat import iteritems, itervalues, xrange, \
-     string_types
+from flask_sqlalchemy._compat import iteritems, itervalues, xrange, string_types
 
 # the best timer function for the platform
 if sys.platform == 'win32':
@@ -812,7 +810,7 @@ class SQLAlchemy(object):
         track_modifications = app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', None)
 
         if track_modifications is None:
-            warnings.warn('SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and will be disabled by default in the future.  Set it to True or False to suppress this warning.')
+            warnings.warn(FSADeprecationWarning('SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and will be disabled by default in the future.  Set it to True or False to suppress this warning.'))
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
@@ -928,16 +926,19 @@ class SQLAlchemy(object):
 
     def get_app(self, reference_app=None):
         """Helper method that implements the logic to look up an application."""
+
         if reference_app is not None:
             return reference_app
-        if self.app is not None:
-            return self.app
+
         ctx = connection_stack.top
+
         if ctx is not None:
             return ctx.app
-        raise RuntimeError('application not registered on db '
-                           'instance and no application bound '
-                           'to current context')
+
+        if self.app is not None:
+            return self.app
+
+        raise RuntimeError('application not registered on db instance and no application bound to current context')
 
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
@@ -1015,3 +1016,10 @@ class SQLAlchemy(object):
             self.__class__.__name__,
             app and app.config['SQLALCHEMY_DATABASE_URI'] or None
         )
+
+
+class FSADeprecationWarning(DeprecationWarning):
+    pass
+
+
+warnings.simplefilter('always', FSADeprecationWarning)
