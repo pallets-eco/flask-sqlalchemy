@@ -390,8 +390,20 @@ class Pagination(object):
               </div>
             {% endmacro %}
         """
+
+        pages = []
+        pages += range(1, min(left_edge + 1, self.pages + 1))
+        pages += range(
+            max(self.page - left_current, left_edge + 1),
+            min(self.page + right_current, self.pages - right_edge)
+        )
+        pages += range(
+            max(self.pages - right_edge, right_edge + 1),
+            self.pages + 1
+        )
+
         last = 0
-        for num in xrange(1, self.pages + 1):
+        for num in pages:
             if num <= left_edge or \
                (num > self.page - left_current - 1 and \
                 num < self.page + right_current) or \

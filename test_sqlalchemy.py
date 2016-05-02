@@ -334,9 +334,52 @@ class PaginationTestCase(unittest.TestCase):
         self.assertEqual(p.next_num, 2)
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, 3, 4, 5, None, 24, 25])
+
+        p.page = 5
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, 3, 4, 5, 6, 7, 8, 9, None, 24, 25])
+
+        p.page = 6
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, None, 4, 5, 6, 7, 8, 9, 10, None, 24, 25])
+
         p.page = 10
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
+
+        p.page = 18
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, None, 16, 17, 18, 19, 20, 21, 22, None, 24, 25])
+
+        p.page = 22
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, None, 20, 21, 22, 23, 24, 25])
+
+        p.page = 23
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, None, 21, 22, 23, 24, 25])
+
+        p.page = 24
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, None, 22, 23, 24, 25])
+
+        p.page = 25
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, None, 23, 24, 25])
+
+        p.per_page = 500
+        self.assertEqual(list(p.iter_pages()),
+                         [1])
+
+        p.per_page = 250
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2])
+
+        p.per_page = 249
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, 3])
+
+
 
     def test_pagination_pages_when_0_items_per_page(self):
         p = fsa.Pagination(None, 1, 0, 500, [])
