@@ -392,26 +392,28 @@ class Pagination(object):
         """
 
         pages = []
-        pages += range(1, min(left_edge + 1, self.pages + 1))
         pages += range(
-            max(self.page - left_current, left_edge + 1),
-            min(self.page + right_current, self.pages - right_edge)
+            1,
+            min(left_edge + 1, self.pages + 1)
         )
         pages += range(
-            max(self.pages - right_edge, right_edge + 1),
+            max(self.page - left_current, left_edge + 1),
+            min(self.page + right_current, self.pages + 1 - right_edge)
+        )
+        pages += range(
+            max(
+                self.pages + 1 - right_edge,
+                right_edge + 1
+            ),
             self.pages + 1
         )
 
         last = 0
-        for num in pages:
-            if num <= left_edge or \
-               (num > self.page - left_current - 1 and \
-                num < self.page + right_current) or \
-               num > self.pages - right_edge:
-                if last + 1 != num:
-                    yield None
-                yield num
-                last = num
+        for i in pages:
+            if last + 1 != i:
+                yield None
+            yield i
+            last = i
 
 
 class BaseQuery(orm.Query):
