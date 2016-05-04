@@ -401,10 +401,7 @@ class Pagination(object):
             min(self.page + right_current, self.pages + 1 - right_edge)
         )
         pages += range(
-            max(
-                self.pages + 1 - right_edge,
-                right_edge + 1
-            ),
+            max(self.pages + 1 - right_edge, right_edge + 1),
             self.pages + 1
         )
 
