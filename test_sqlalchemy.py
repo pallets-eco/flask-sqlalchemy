@@ -335,6 +335,29 @@ class PaginationTestCase(unittest.TestCase):
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, 3, 4, 5, None, 24, 25])
 
+        p.page = 10
+        self.assertEqual(list(p.iter_pages()),
+                         [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
+        self.assertEqual(list(p.iter_pages(right_edge=0)),
+                         [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None])
+        self.assertEqual(list(p.iter_pages(left_edge=0)),
+                         [None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
+        self.assertEqual(list(p.iter_pages(left_edge=0, right_edge=0)),
+                         [None, 8, 9, 10, 11, 12, 13, 14, None])
+        self.assertEqual(list(p.iter_pages(left_current=0, right_current=0)),
+                         [1, 2, None, 24, 25])
+        self.assertEqual(list(p.iter_pages(left_current=0, right_current=1)),
+                         [1, 2, None, 10, None, 24, 25])
+        self.assertEqual(list(p.iter_pages(left_current=2, right_current=2)),
+                         [1, 2, None, 8, 9, 10, 11, None, 24, 25])
+        self.assertEqual(list(p.iter_pages(left_current=0)),
+                         [1, 2, None, 10, 11, 12, 13, 14, None, 24, 25])
+        self.assertEqual(list(p.iter_pages(right_current=0)),
+                         [1, 2, None, 8, 9, None, 24, 25])
+        self.assertEqual(list(p.iter_pages(
+            left_edge=0, left_current=0, right_current=0, right_edge=0)),
+                         [])
+
         p.page = 5
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, 3, 4, 5, 6, 7, 8, 9, None, 24, 25])
@@ -342,10 +365,6 @@ class PaginationTestCase(unittest.TestCase):
         p.page = 6
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, None, 4, 5, 6, 7, 8, 9, 10, None, 24, 25])
-
-        p.page = 10
-        self.assertEqual(list(p.iter_pages()),
-                         [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
 
         p.page = 18
         self.assertEqual(list(p.iter_pages()),
@@ -378,6 +397,7 @@ class PaginationTestCase(unittest.TestCase):
         p.per_page = 249
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, 3])
+
 
 
 

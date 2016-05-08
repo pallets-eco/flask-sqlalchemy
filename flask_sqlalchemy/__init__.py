@@ -404,13 +404,14 @@ class Pagination(object):
             max(self.pages + 1 - right_edge, right_edge + 1),
             self.pages + 1
         )
-
         last = 0
         for i in pages:
             if last + 1 != i:
                 yield None
             yield i
             last = i
+        if pages and i != self.pages:
+            yield None
 
 
 class BaseQuery(orm.Query):
