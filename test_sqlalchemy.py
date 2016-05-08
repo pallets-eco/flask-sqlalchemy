@@ -399,8 +399,6 @@ class PaginationTestCase(unittest.TestCase):
                          [1, 2, 3])
 
 
-
-
     def test_pagination_pages_when_0_items_per_page(self):
         p = fsa.Pagination(None, 1, 0, 500, [])
         self.assertEqual(p.pages, 0)
