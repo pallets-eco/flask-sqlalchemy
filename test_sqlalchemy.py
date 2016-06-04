@@ -734,6 +734,295 @@ class StandardSessionTestCase(unittest.TestCase):
         db = fsa.SQLAlchemy(app)
         sa.event.listen(db.session, 'after_commit', lambda session: None)
 
+class RawSQLADeclarativeBaseTestCase(unittest.TestCase):
+
+    def sqla_raw_declarative_base(self):
+        from sqlalchemy.ext.declarative import declarative_base
+        from sqlalchemy import Column, String, Integer, ForeignKey
+        from sqlalchemy.orm import relationship
+
+        Base = declarative_base()
+
+        class Bar(Base):
+            __tablename__ = 'bar'
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(Integer, ForeignKey('foo.id'))
+
+
+        class Foo(Base):
+            __tablename__ = 'foo'
+            id = Column(Integer, primary_key=True)
+            string = Column(String(255))
+            children = relationship("Bar", lazy='dynamic')
+
+
+        return Base, Foo, Bar
+
+    def setUp(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        self.Base, self.Foo, self.Bar = self.sqla_raw_declarative_base()
+        db = fsa.SQLAlchemy(app)
+        
+        
+        db.register_base(self.Base)
+        db.create_all()
+
+        self.db = db
+        self.app = app
+        
+    def tearDown(self):
+        self.db.drop_all()
+
+
+    def test_register_base_success(self):
+
+        self.assertTrue(self.db.engine.dialect.has_table(
+            self.db.engine.connect(), 'foo'))
+        self.assertTrue(self.db.engine.dialect.has_table(
+            self.db.engine.connect(), 'bar'))
+        self.assertFalse(self.db.engine.dialect.has_table(
+            self.db.engine.connect(), 'faketable'))
+
+    def test_drop_all(self):
+        # Make sure the tables were originally created so we can compare
+        # the fact that they have been dropped.
+        self.assertTrue(self.db.engine.dialect.has_table(
+            self.db.engine.connect(), 'foo'))
+        self.assertTrue(self.db.engine.dialect.has_table(
+            self.db.engine.connect(), 'bar'))
+
+        self.db.drop_all()
+        self.assertFalse(self.db.engine.dialect.has_table(
+            self.db.engine.connect(), 'foo'))
+        self.assertFalse(self.db.engine.dialect.has_table(
+            self.db.engine.connect(), 'bar'))
+
+        
+    def test_query_insert(self):
+
+        self.assertEqual(len(self.Foo.query.all()), 0)
+
+        foo = self.Foo(string='Foo')
+
+        self.db.session.add(foo)
+        self.db.session.commit()
+
+        self.assertEqual(len(self.db.session.query(self.Foo).all()), 1)
+        self.assertEqual(self.db.session.query(self.Foo).count(), 1)
+
+        first_foo = self.db.session.query(self.Foo).first()
+        self.assertEqual(first_foo.string, 'Foo')
+
+    def test_query_property(self):
+            
+        self.assertEqual(len(self.Foo.query.all()), 0)
+        foo = self.Foo(string='Foo')
+
+        self.db.session.add(foo)
+        self.db.session.commit()
+
+        self.assertEqual(len(self.Foo.query.all()), 1)
+        self.assertEqual(self.Foo.query.count(), 1)
+
+        first_foo = self.Foo.query.first()
+        self.assertEqual(first_foo.string, 'Foo')
+        
+
+    def test_default_query_class(self):
+        # Also test children.
+        p = self.Foo()
+        c = self.Bar()
+        c.parent = p
+
+        self.assertEqual(type(self.Foo.query), fsa.BaseQuery)
+        self.assertEqual(type(self.Bar.query), fsa.BaseQuery)
+
+        # Unable to override SQLA's relationship constructor to use our 
+        # own query class for relationships, since we cannot inspect the 
+        # relationship. If we can get enough info about how the original
+        # relationship property was constructed, we could reconstruct using
+        # a wrapped relationship property. Disabling this test for now.
+
+        # self.assertTrue(isinstance(p.children, sqlalchemy.BaseQuery))
+
+
+
+class RawSQLAMultipleDeclarativeBaseTestCase(unittest.TestCase):
+
+    def sqla_raw_declarative_base(self):
+        from sqlalchemy.ext.declarative import declarative_base
+        from sqlalchemy import Column, String, Integer, ForeignKey
+        from sqlalchemy.orm import relationship
+
+        models = dict()
+
+        Base_A = declarative_base()
+        Base_B = declarative_base()
+        Base_C = declarative_base()
+
+        class Bar_A(Base_A):
+            __tablename__ = 'bar_A'
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(Integer, ForeignKey('foo_A.id'))
+
+
+        class Foo_A(Base_A):
+            __tablename__ = 'foo_A'
+            id = Column(Integer, primary_key=True)
+            string = Column(String(255))
+            children = relationship("Bar_A", lazy='dynamic')
+
+        models['A'] = dict(
+            Foo=Foo_A,
+            Bar=Bar_A,
+            Base=Base_A
+        )
+
+        class Bar_B(Base_B):
+            __tablename__ = 'bar_B'
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(Integer, ForeignKey('foo_B.id'))
+
+
+        class Foo_B(Base_B):
+            __tablename__ = 'foo_B'
+            id = Column(Integer, primary_key=True)
+            string = Column(String(255))
+            children = relationship("Bar_B", lazy='dynamic')
+
+        models['B'] = dict(
+            Foo=Foo_B,
+            Bar=Bar_B,
+            Base=Base_B
+        )
+
+        class Bar_C(Base_C):
+            __tablename__ = 'bar_C'
+            id = Column(Integer, primary_key=True)
+            parent_id = Column(Integer, ForeignKey('foo_C.id'))
+
+
+        class Foo_C(Base_C):
+            __tablename__ = 'foo_C'
+            id = Column(Integer, primary_key=True)
+            string = Column(String(255))
+            children = relationship("Bar_C", lazy='dynamic')
+
+        models['C'] = dict(
+            Foo=Foo_C,
+            Bar=Bar_C,
+            Base=Base_C
+        )
+        
+        
+        return models
+
+    def setUp(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
+        app.config['TESTING'] = True
+        self.model_suffixes = ['A','B','C']
+
+        self.Models = self.sqla_raw_declarative_base()
+        db = fsa.SQLAlchemy(app)
+        
+        for base_group in self.Models.values():
+            db.register_base(base_group['Base'])
+        db.create_all()
+
+        self.db = db
+        self.app = app
+
+        
+    def tearDown(self):
+        self.db.drop_all()
+
+    def test_register_base_success(self):
+        for suffix in self.model_suffixes:
+            self.assertTrue(self.db.engine.dialect.has_table(
+                self.db.engine.connect(), 
+                'foo_{0}'.format(suffix)))
+            self.assertTrue(self.db.engine.dialect.has_table(
+                self.db.engine.connect(), 
+                'bar_{0}'.format(suffix)))
+
+        self.assertFalse(self.db.engine.dialect.has_table(
+            self.db.engine.connect(), 
+            'faketable'))
+
+        
+    def test_query_insert(self):
+        for suffix in self.model_suffixes:
+            self.assertEqual(len(self.db.session.query(
+                self.Models[suffix]['Foo']).all()), 0)
+
+            foo = self.Models[suffix]['Foo'](string='Foo_{0}'.format(suffix))
+            self.db.session.add(foo)
+            self.db.session.commit()
+
+            self.assertEqual(len(self.db.session.query(
+                self.Models[suffix]['Foo']).all()), 1)
+            self.assertEqual(self.db.session.query(
+                self.Models[suffix]['Foo']).count(), 1)
+
+            first_foo = self.db.session.query(
+                self.Models[suffix]['Foo']).first()
+            self.assertEqual(first_foo.string, 'Foo_{0}'.format(suffix))
+
+
+    def test_query_property(self):
+        for suffix in self.model_suffixes:
+            self.assertEqual(len(self.Models[suffix]['Foo'].query.all()), 0)
+
+            foo = self.Models[suffix]['Foo'](string='Foo')
+            self.db.session.add(foo)
+            self.db.session.commit()
+
+            self.assertEqual(len(self.Models[suffix]['Foo'].query.all()), 1)
+            self.assertEqual(self.Models[suffix]['Foo'].query.count(), 1)
+
+            first_foo = self.Models[suffix]['Foo'].query.first()
+            self.assertEqual(first_foo.string, 'Foo')
+        
+
+    def test_default_query_class(self):
+        # Also test children.
+        for suffix in self.model_suffixes:
+            p = self.Models[suffix]['Foo']()
+            c = self.Models[suffix]['Bar']()
+            c.parent = p
+
+            self.assertEqual(
+                type(self.Models[suffix]['Foo'].query), 
+                fsa.BaseQuery)
+            self.assertEqual(
+                type(self.Models[suffix]['Bar'].query), 
+                fsa.BaseQuery)
+
+            # Unable to override SQLA's relationship constructor to use our 
+            # own query class for relationships, since we cannot inspect the 
+            # relationship. If we can get enough info about how the original
+            # relationship property was constructed, we could reconstruct using
+            # a wrapped relationship property. Disabling this test for now.
+
+            # self.assertTrue(isinstance(p.children, sqlalchemy.BaseQuery))
+
+    def test_drop_all(self):
+        # Make sure they exist before drop, so we can compare the result.
+        for suffix in self.model_suffixes:
+            self.assertTrue(self.db.engine.dialect.has_table(
+                self.db.engine.connect(), 'foo_{0}'.format(suffix)))
+            self.assertTrue(self.db.engine.dialect.has_table(
+                self.db.engine.connect(), 'bar_{0}'.format(suffix)))
+
+        self.db.drop_all()
+        for suffix in self.model_suffixes:
+            self.assertFalse(self.db.engine.dialect.has_table(
+                self.db.engine.connect(), 'foo_{0}'.format(suffix)))
+            self.assertFalse(self.db.engine.dialect.has_table(
+                self.db.engine.connect(), 'bar_{0}'.format(suffix)))
 
 def suite():
     suite = unittest.TestSuite()
@@ -752,6 +1041,8 @@ def suite():
     suite.addTest(unittest.makeSuite(SessionScopingTestCase))
     suite.addTest(unittest.makeSuite(CommitOnTeardownTestCase))
     suite.addTest(unittest.makeSuite(CustomModelClassTestCase))
+    suite.addTest(unittest.makeSuite(RawSQLADeclarativeBaseTestCase))
+    suite.addTest(unittest.makeSuite(RawSQLAMultipleDeclarativeBaseTestCase))
 
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))

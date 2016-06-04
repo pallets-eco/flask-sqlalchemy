@@ -734,13 +734,17 @@ class SQLAlchemy(object):
         self._engine_lock = Lock()
         self.app = app
         _include_sqlalchemy(self, query_class)
+        self.external_bases = []
 
         if app is not None:
             self.init_app(app)
 
     @property
     def metadata(self):
-        """The metadata associated with ``db.Model``."""
+        """The metadata associated with ``db.Model``.
+        Access to raw SQLA models added using register_base should
+        be referenced directly using it's own declarative base.
+        """
 
         return self.Model.metadata
 
@@ -943,9 +947,11 @@ class SQLAlchemy(object):
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
-        for table in itervalues(self.Model.metadata.tables):
-            if table.info.get('bind_key') == bind:
-                result.append(table)
+        for Base in self.bases:
+            for table in itervalues(Base.metadata.tables):
+                if table.info.get('bind_key') == bind:
+                    result.append(table)
+
         return result
 
     def get_binds(self, app=None):
@@ -972,13 +978,14 @@ class SQLAlchemy(object):
         else:
             binds = bind
 
-        for bind in binds:
-            extra = {}
-            if not skip_tables:
-                tables = self.get_tables_for_bind(bind)
-                extra['tables'] = tables
-            op = getattr(self.Model.metadata, operation)
-            op(bind=self.get_engine(app, bind), **extra)
+        for Base in self.bases:
+            for bind in binds:
+                extra = {}
+                if not skip_tables:
+                    tables = self.get_tables_for_bind(bind)
+                    extra['tables'] = tables
+                op = getattr(Base.metadata, operation)
+                op(bind=self.get_engine(app, bind), **extra)
 
     def create_all(self, bind='__all__', app=None):
         """Creates all tables.
@@ -1016,6 +1023,33 @@ class SQLAlchemy(object):
             self.__class__.__name__,
             app and app.config['SQLALCHEMY_DATABASE_URI'] or None
         )
+
+    @property
+    def bases(self):
+        return [self.Model] + self.external_bases
+
+    def register_base(self, Base):
+        """Register an external raw SQLAlchemy declarative base. 
+        Allows usage of the base with our session management and 
+        adds convenience query property using self.Query by default."""
+
+        self.external_bases.append(Base)
+        for c in Base._decl_class_registry.values():
+            if isinstance(c, type):
+                if not hasattr(c, 'query') and not hasattr(c, 'query_class'):
+                    c.query_class = self.Query
+                if not hasattr(c, 'query'):
+                    c.query = _QueryProperty(self)
+
+                # for name in dir(c):
+                #     attr = getattr(c, name)
+                #     if type(attr) == orm.attributes.InstrumentedAttribute:
+                #         if hasattr(attr.prop, 'query_class'):
+                #             attr.prop.query_class = self.Query
+
+                # if hasattr(c , 'rel_dynamic'):
+                #     c.rel_dynamic.prop.query_class = self.Query
+
 
 
 class FSADeprecationWarning(DeprecationWarning):
