@@ -64,8 +64,10 @@ But they are not yet in the database, so let's make sure they are:
 Accessing the data in database is easy as a pie:
 
 >>> users = User.query.all()
+>>> users
 [<User u'admin'>, <User u'guest'>]
 >>> admin = User.query.filter_by(username='admin').first()
+>>> admin
 <User u'admin'>
 
 Simple Relationships
