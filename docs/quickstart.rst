@@ -18,7 +18,7 @@ then create the :class:`SQLAlchemy` object by passing it the application.
 
 Once created, that object then contains all the functions and helpers
 from both :mod:`sqlalchemy` and :mod:`sqlalchemy.orm`.  Furthermore it
-provides a class called `Model` that is a declarative base which can be
+provides a class called ``Model`` that is a declarative base which can be
 used to declare models::
 
     from flask import Flask
@@ -44,29 +44,29 @@ used to declare models::
 To create the initial database, just import the `db` object from an
 interactive Python shell and run the
 :meth:`SQLAlchemy.create_all` method to create the
-tables and database:
+tables and database::
 
->>> from yourapplication import db
->>> db.create_all()
+    >>> from yourapplication import db
+    >>> db.create_all()
 
-Boom, and there is your database.  Now to create some users:
+Boom, and there is your database.  Now to create some users::
 
->>> from yourapplication import User
->>> admin = User('admin', 'admin@example.com')
->>> guest = User('guest', 'guest@example.com')
+    >>> from yourapplication import User
+    >>> admin = User('admin', 'admin@example.com')
+    >>> guest = User('guest', 'guest@example.com')
 
-But they are not yet in the database, so let's make sure they are:
+But they are not yet in the database, so let's make sure they are::
 
->>> db.session.add(admin)
->>> db.session.add(guest)
->>> db.session.commit()
+    >>> db.session.add(admin)
+    >>> db.session.add(guest)
+    >>> db.session.commit()
 
-Accessing the data in database is easy as a pie:
+Accessing the data in database is easy as a pie::
 
->>> users = User.query.all()
-[<User u'admin'>, <User u'guest'>]
->>> admin = User.query.filter_by(username='admin').first()
-<User u'admin'>
+    >>> User.query.all()
+    [<User u'admin'>, <User u'guest'>]
+    >>> User.query.filter_by(username='admin').first()
+    <User u'admin'>
 
 Simple Relationships
 --------------------
@@ -74,7 +74,6 @@ Simple Relationships
 SQLAlchemy connects to relational databases and what relational databases
 are really good at are relations.  As such, we shall have an example of an
 application that uses two tables that have a relationship to each other::
-
 
     from datetime import datetime
 
@@ -111,24 +110,24 @@ application that uses two tables that have a relationship to each other::
         def __repr__(self):
             return '<Category %r>' % self.name
 
-First let's create some objects:
+First let's create some objects::
 
->>> py = Category('Python')
->>> p = Post('Hello Python!', 'Python is pretty cool', py)
->>> db.session.add(py)
->>> db.session.add(p)
+    >>> py = Category('Python')
+    >>> p = Post('Hello Python!', 'Python is pretty cool', py)
+    >>> db.session.add(py)
+    >>> db.session.add(p)
 
-Now because we declared `posts` as dynamic relationship in the backref
-it shows up as query:
+Now because we declared ``posts`` as dynamic relationship in the backref
+it shows up as query::
 
->>> py.posts
-<sqlalchemy.orm.dynamic.AppenderBaseQuery object at 0x1027d37d0>
+    >>> py.posts
+    <sqlalchemy.orm.dynamic.AppenderBaseQuery object at 0x1027d37d0>
 
 It behaves like a regular query object so we can ask it for all posts that
-are associated with our test “Python” category:
+are associated with our "Python" category::
 
->>> py.posts.all()
-[<Post 'Hello Python!'>]
+    >>> py.posts.all()
+    [<Post 'Hello Python!'>]
 
 
 Road to Enlightenment
@@ -140,7 +139,7 @@ The only things you need to know compared to plain SQLAlchemy are:
 
     -   all the functions and classes from :mod:`sqlalchemy` and
         :mod:`sqlalchemy.orm`
-    -   a preconfigured scoped session called `session`
+    -   a preconfigured scoped session called ``session``
     -   the :attr:`~SQLAlchemy.metadata`
     -   the :attr:`~SQLAlchemy.engine`
     -   a :meth:`SQLAlchemy.create_all` and :meth:`SQLAlchemy.drop_all`
@@ -148,7 +147,7 @@ The only things you need to know compared to plain SQLAlchemy are:
     -   a :class:`Model` baseclass that is a configured declarative base.
 
 2.  The :class:`Model` declarative base class behaves like a regular
-    Python class but has a `query` attribute attached that can be used to
+    Python class but has a ``query`` attribute attached that can be used to
     query the model.  (:class:`Model` and :class:`BaseQuery`)
 
 3.  You have to commit the session, but you don't have to remove it at
