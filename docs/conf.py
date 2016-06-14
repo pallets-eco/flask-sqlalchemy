@@ -45,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Flask-SQLAlchemy'
-copyright = u'2010 - {}, Armin Ronacher'.format(datetime.utcnow().year)
+copyright = u'2010 - {0}, Armin Ronacher'.format(datetime.utcnow().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -106,7 +106,7 @@ html_theme = 'flask'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'index_logo': 'flask-sqlalchemy.png'
+    'index_logo': 'flask-sqlalchemy-title.png'
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -143,7 +143,7 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {
-    'index': ['sidebarintro.html', 'sourcelink.html', 'searchbox.html'],
+    'index': ['sidebarlogo.html', 'sidebarintro.html', 'sourcelink.html', 'searchbox.html'],
     '**': ['sidebarlogo.html', 'localtoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html']
 }
 
