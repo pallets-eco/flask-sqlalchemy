@@ -533,7 +533,7 @@ class _EngineConnector(object):
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
-                options['echo'] = True
+                options['echo'] = echo
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
