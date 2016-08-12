@@ -864,8 +864,6 @@ class SQLAlchemy(object):
         elif info.drivername == 'sqlite':
             pool_size = options.get('pool_size')
             detected_in_memory = False
-            # we go to memory and the pool size was explicitly set to 0
-            # which is fail.  Let the user know that
             if info.database in (None, '', ':memory:'):
                 detected_in_memory = True
                 from sqlalchemy.pool import StaticPool
@@ -874,6 +872,8 @@ class SQLAlchemy(object):
                     options['connect_args'] = {}
                 options['connect_args']['check_same_thread'] = False
 
+                # we go to memory and the pool size was explicitly set
+                # to 0 which is fail.  Let the user know that
                 if pool_size == 0:
                     raise RuntimeError('SQLite in memory database with an '
                                        'empty queue not possible due to data '
