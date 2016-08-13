@@ -6,17 +6,18 @@ Customizing
 ===========
 
 Flask-SQLAlchemy defines sensible defaults. However, sometimes customization is
-needed. The two major points to add customization is with the Model base class
-and the default Query class. Both of these are defined at the creation of the
-:class:`SQLAlchemy` object.
+needed. Two major pieces to customize are the Model base class and the default
+Query class.
+
+Both of these customizations are applied at the creation of the :class:`SQLAlchemy`
+object and extend to all models derived from its ``Model`` class.
 
 Model Class
 -----------
 
 Flask-SQLAlchemy allows defining a custom declarative base, just like SQLAlchemy,
-that you can define your model classes to extend from. For example, if you wanted
-all of your models to share a custom ``__repr__`` method, you could do::
-
+that all model classes should extend from. For example, if all models should have
+a custom ``__repr__`` method::
 
     from flask_sqlalchemy import Model  # this is the default declarative base
     from flask_sqlalchemy import SQLAlchemy
@@ -30,23 +31,19 @@ all of your models to share a custom ``__repr__`` method, you could do::
     class MyModel(db.Model):
         ...
 
-And all class inherited from ``db.Model`` will have the customized ``__repr__``
-method. This is just like passing a custom class to
-:func:`sqlalchemy.ext.declarative.declarative_base`.
-
 .. note::
 
         While not strictly necessary to inherit from :class:`flask_sqlalchemy.Model`
-        it is encouraged as future changes may cause incompatibility if you do not.
+        it is encouraged as future changes may cause incompatibility.
 
 .. note::
 
-        If behavior is needed in only *some* models, not all, a better strategy
+        If behavior is needed in only some models, not all, a better strategy
         is to use a Mixin, as exampled below.
 
 While this particular example is more useful for debugging, it is possible to
-provide all manner of augmentations to your models that would otherwise be
-achieved with mixins instead. The above example is equivalent to the following::
+provide many augmentations to models that would otherwise be achieved with
+mixins instead. The above example is equivalent to the following::
 
     class ReprBase(object):
         def __repr__(self):
@@ -71,11 +68,11 @@ It also possible to provide default columns and properties to all models as well
     class MyModel(db.Model):
         ...
 
-All model classes extending from ``db.Model`` will now also inherit a
-``created_at`` attribute as well.
+All model classes extending from ``db.Model`` will now inherit a
+``created_at`` column.
 
 Query Class
-----------
+-----------
 
 It is also possible to customize what is availble for use on the
 special ``query`` property of models. For example, providing a
@@ -89,8 +86,9 @@ special ``query`` property of models. For example, providing a
 
     db = SQLAlchemy(query_class=GetOrQuery)
 
-And now all queries from ``db.Model`` derived classes can use
-``get_or`` as part of their queries. All relationships defined with
+And now all queries executed from the special ``query`` property
+on Flask-SQLAlchemy models can use the ``get_or`` method as part
+of their queries. All relationships defined with
 ``db.relationship`` (but not :func:`sqlalchemy.relationship`)
 will also be provided with this functionality.
 
@@ -108,3 +106,18 @@ and ``sqlalchemy.relationship``::
 
     class MyModel(db.Model):
         cousin = db.relationship('OtherModel', query_class=GetOrQuery)
+
+.. note::
+
+        If a query class is defined on a relationship, it will take
+        precedence over the query class attached to its corresponding
+        model.
+
+It is also possible to define a specific query class for individual models
+by overriding the ``query_class`` class attribute on the model::
+
+    class MyModel(db.Model):
+        query_class = GetOrQuery
+
+In this case, the ``get_or`` method will be only availble on queries
+orginating from ``MyModel.query``.
