@@ -14,6 +14,7 @@ Flask-SQLAlchemy with Flask.
    queries
    binds
    signals
+   customizing
 
 API Reference
 -------------
