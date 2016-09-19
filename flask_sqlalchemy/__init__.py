@@ -878,12 +878,11 @@ class SQLAlchemy(object):
                     raise RuntimeError('SQLite in memory database with an '
                                        'empty queue not possible due to data '
                                        'loss.')
-            # if pool size is None or explicitly set to 0 we assume the
-            # user did not want a queue for this sqlite connection and
-            # hook in the null pool.
-            elif not pool_size:
-                from sqlalchemy.pool import NullPool
-                options['poolclass'] = NullPool
+            else:  # using sqlite file based db
+                if pool_size >= 0:
+                    warnings.warn('SQLALCHEMY_POOL_SIZE cannot be used with NullPool strategy '
+                                  '-> removing parameter from config')
+                    options.pop('pool_size')
 
             # if it's not an in memory database we make the path absolute.
             if not detected_in_memory:
