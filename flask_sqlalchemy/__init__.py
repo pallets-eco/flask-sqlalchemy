@@ -838,7 +838,8 @@ class SQLAlchemy(object):
         def shutdown_session(response_or_exc):
             if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
                 if response_or_exc is None:
-                    self.session.commit()
+                    if self.session.is_active:
+                        self.session.commit()
             self.session.remove()
             return response_or_exc
 
