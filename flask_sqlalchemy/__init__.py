@@ -543,7 +543,7 @@ class _EngineConnector(object):
 
 
 def _should_set_tablename(bases, d):
-    """Check what values are set by a class and its bases to determine if a
+    """Checks what values are set by a class and its bases to determine if a
     tablename should be automatically generated.
 
     The class and its bases are checked in order of precedence: the class
@@ -745,7 +745,7 @@ class SQLAlchemy(object):
         return self.Model.metadata
 
     def create_scoped_session(self, options=None):
-        """Create a :class:`~sqlalchemy.orm.scoping.scoped_session`
+        """Creates a :class:`~sqlalchemy.orm.scoping.scoped_session`
         on the factory from :meth:`create_session`.
 
         An extra key ``'scopefunc'`` can be set on the ``options`` dict to specify a custom
@@ -764,7 +764,7 @@ class SQLAlchemy(object):
         return orm.scoped_session(self.create_session(options), scopefunc=scopefunc)
 
     def create_session(self, options):
-        """Create the session factory used by :meth:`create_scoped_session`.
+        """Creates the session factory used by :meth:`create_scoped_session`.
 
         The factory **must** return an object that SQLAlchemy recognizes as a session,
         or registering session events may raise an exception.
