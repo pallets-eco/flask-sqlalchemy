@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from __future__ import with_statement
 
+import random
 import unittest
 from datetime import datetime
 
 import flask
 import sqlalchemy as sa
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import sessionmaker
 
@@ -735,8 +737,185 @@ class StandardSessionTestCase(unittest.TestCase):
         sa.event.listen(db.session, 'after_commit', lambda session: None)
 
 
-class TransactionTestCase(unittest.TestCase):
-    pass
+class BaseTransactionTestCase(unittest.TestCase):
+    def setUp(self):
+        app = flask.Flask(__name__)
+        app.config['TESTING'] = True
+        db = fsa.SQLAlchemy(app)
+        self.Todo = make_todo_model(db)
+        self.app = app
+        self.db = db
+
+        @sa.event.listens_for(db.engine, "connect")
+        def do_connect(dbapi_connection, connection_record):
+            # disable pysqlite's emitting of the BEGIN statement entirely.
+            # also stops it from emitting COMMIT before any DDL.
+            dbapi_connection.isolation_level = None
+
+        @sa.event.listens_for(db.engine, "begin")
+        def do_begin(conn):
+            # emit our own BEGIN
+            conn.execute("BEGIN")
+
+        db.create_all()
+
+    def tearDown(self):
+        self.db.drop_all()
+
+    def new_todo(self):
+        todo = self.Todo(str(random.random()), str(random.random()))
+        self.db.session.add(todo)
+        return todo
+
+    def assert_the_same(self, todo1, todo2):
+        self.assertEqual(todo1.title, todo2.title)
+        self.assertEqual(todo1.text, todo2.text)
+        self.assertEqual(todo1.pub_date, todo2.pub_date)
+
+    def test_commit(self):
+        with self.db.transaction():
+            todo = self.new_todo()
+        self.db.session.rollback()
+        self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_rollback(self):
+        def method():
+            with self.db.transaction():
+                self.new_todo()
+                return 1 / 0
+        self.assertRaises(ZeroDivisionError, method)
+        self.db.session.commit()
+        self.assertEqual(len(self.Todo.query.all()), 0)
+
+    def test_rollback_explicitly(self):
+        def method():
+            with self.db.transaction():
+                self.new_todo()
+                raise fsa.Rollback()
+        self.assertRaises(fsa.Rollback, method)
+        with self.db.transaction():
+            todo = self.new_todo()
+        self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_rollback_always_propagate_on_root(self):
+        def method():
+            with self.db.transaction():
+                self.new_todo()
+                raise fsa.Rollback(propagate=False)
+        self.assertRaises(fsa.Rollback, method)
+        with self.db.transaction():
+            todo = self.new_todo()
+        self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_no_isolate_transaction(self):
+        self.app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = False
+        todo0 = self.new_todo()
+        with self.db.transaction():
+            todo1 = self.new_todo()
+        self.db.session.rollback()
+        r = self.Todo.query.order_by(self.Todo.id).all()
+        self.assert_the_same(todo0, r[0])
+        self.assert_the_same(todo1, r[1])
+
+    def test_explicitly_isolate_transaction(self):
+        self.app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = False
+        self.new_todo()
+        with self.db.transaction(isolate=True):
+            todo = self.new_todo()
+        self.db.session.rollback()
+        self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_config_isolate_transaction(self):
+        self.app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = True
+        self.new_todo()
+        with self.db.transaction():
+            todo = self.new_todo()
+        self.db.session.rollback()
+        self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_subtransactions_two_commits(self):
+        with self.db.transaction():
+            todo0 = self.new_todo()
+            with self.db.transaction():
+                todo1 = self.new_todo()
+            todo2 = self.new_todo()
+        self.db.session.rollback()
+        r = self.Todo.query.order_by(self.Todo.id).all()
+        self.assert_the_same(todo0, r[0])
+        self.assert_the_same(todo1, r[1])
+        self.assert_the_same(todo2, r[2])
+
+    def test_subtransactions_inner_rollback(self):
+        todos = []
+
+        def method():
+            with self.db.transaction():
+                todos.append(self.new_todo())
+                try:
+                    with self.db.transaction():
+                        todos.append(self.new_todo())
+                        return 1 / 0
+                except ZeroDivisionError:
+                    pass
+                todos.append(self.new_todo())
+
+        if self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION']:
+            method()
+            r = self.Todo.query.order_by(self.Todo.id).all()
+            self.assert_the_same(todos[0], r[0])
+            self.assert_the_same(todos[2], r[1])
+        else:
+            self.assertEqual(len(todos), 0)
+            self.assertRaises(InvalidRequestError, method)
+            with self.db.transaction():
+                todo = self.new_todo()
+            self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_subtransactions_inner_manual_rollback(self):
+        todos = []
+
+        def method():
+            with self.db.transaction():
+                todos.append(self.new_todo())
+                with self.db.transaction():
+                    todos.append(self.new_todo())
+                    raise fsa.Rollback(propagate=False)
+                todos.append(self.new_todo())
+        if self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION']:
+            method()
+            r = self.Todo.query.order_by(self.Todo.id).all()
+            self.assert_the_same(todos[0], r[0])
+            self.assert_the_same(todos[2], r[1])
+        else:
+            self.assertRaises(InvalidRequestError, method)
+            with self.db.transaction():
+                todo = self.new_todo()
+            self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_subtransactions_outer_rollback(self):
+        def method():
+            with self.db.transaction():
+                self.new_todo()
+                with self.db.transaction():
+                    self.new_todo()
+                self.new_todo()
+                return 1 / 0
+        self.assertRaises(ZeroDivisionError, method)
+        with self.db.transaction():
+            todo = self.new_todo()
+        self.assert_the_same(todo, self.Todo.query.one())
+
+
+class TransactionTestCase(BaseTransactionTestCase):
+    def setUp(self):
+        super(TransactionTestCase, self).setUp()
+        self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION'] = False
+
+
+class NestedTransactionTestCase(BaseTransactionTestCase):
+    def setUp(self):
+        super(NestedTransactionTestCase, self).setUp()
+        self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION'] = True
 
 
 def suite():
@@ -756,6 +935,8 @@ def suite():
     suite.addTest(unittest.makeSuite(SessionScopingTestCase))
     suite.addTest(unittest.makeSuite(CommitOnTeardownTestCase))
     suite.addTest(unittest.makeSuite(CustomModelClassTestCase))
+    suite.addTest(unittest.makeSuite(TransactionTestCase))
+    suite.addTest(unittest.makeSuite(NestedTransactionTestCase))
 
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
