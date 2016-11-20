@@ -75,6 +75,7 @@ A list of configuration keys currently understood by the extension:
                                    that it will be disabled by default in
                                    the future.  This requires extra memory
                                    and should be disabled if not needed.
+
 ``SQLALCHEMY_ENGINE_OPTIONS``      A dictionary of keyword args to send to
                                    :func:`~sqlalchemy.create_engine`.  See
                                    also ``engine_options`` to :class:`SQLAlchemy`.
