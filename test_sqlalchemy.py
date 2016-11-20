@@ -735,6 +735,10 @@ class StandardSessionTestCase(unittest.TestCase):
         sa.event.listen(db.session, 'after_commit', lambda session: None)
 
 
+class TransactionTestCase(unittest.TestCase):
+    pass
+
+
 def suite():
     suite = unittest.TestSuite()
 

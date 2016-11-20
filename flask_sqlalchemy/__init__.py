@@ -16,6 +16,8 @@ import time
 import functools
 import warnings
 import sqlalchemy
+from collections import deque
+from contextlib import contextmanager
 from math import ceil
 from flask import _request_ctx_stack, abort, has_request_context, request
 from flask.signals import Namespace
@@ -636,6 +638,11 @@ class Model(object):
     query = None
 
 
+class Rollback(Exception):
+    def __init__(self, propagate=None):
+        self.propagate = propagate
+
+
 class SQLAlchemy(object):
     """This class is used to control the SQLAlchemy integration to one
     or more Flask applications.  Depending on how you initialize the
@@ -807,6 +814,8 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
+        app.config.setdefault('SQLALCHEMY_USE_NESTED_TRANSACTION', False)
+        app.config.setdefault('SQLALCHEMY_ISOLATE_TRANSACTION', False)
         track_modifications = app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', None)
 
         if track_modifications is None:
@@ -904,6 +913,58 @@ class SQLAlchemy(object):
         active at the moment.
         """
         return self.get_engine()
+
+    @contextmanager
+    def transaction(self, isolate=None, nested=None, **kwargs):
+        session = self.session()
+        stack = session.info.setdefault('sa_stack', deque())
+        is_root = len(stack) == 0
+
+        if is_root:
+            nested = False
+            item = {}
+        else:
+            item = stack[-1].copy()
+
+        if nested is None:
+            nested = self.get_app().config['SQLALCHEMY_USE_NESTED_TRANSACTION']
+        if isolate is None:
+            isolate = self.get_app().config['SQLALCHEMY_ISOLATE_TRANSACTION']
+
+        item.update(kwargs)
+        stack.append(item)
+        try:
+            if is_root and not session.autocommit:
+                if isolate:
+                    session.rollback()
+            else:
+                session.begin(subtransactions=True, nested=nested)
+            try:
+                yield
+                session.commit()
+            except Rollback as e:
+                session.rollback()
+                if e.propagate or is_root:
+                    raise
+                if e.propagate is None and not nested:
+                    raise
+            except:
+                session.rollback()
+                raise
+        finally:
+            stack.pop()
+
+    @property
+    def tx_local(self):
+        stack = self.session.info.get('sa_stack')
+        if stack:
+            return stack[-1]
+
+    @property
+    def root_tx_local(self):
+        stack = self.session.info.get('sa_stack')
+        if stack:
+            return stack[0]
 
     def make_connector(self, app=None, bind=None):
         """Creates the connector for a given state and bind."""
