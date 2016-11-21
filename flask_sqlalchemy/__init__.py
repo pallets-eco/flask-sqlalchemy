@@ -960,6 +960,14 @@ class SQLAlchemy(object):
     def tx_local(self):
         return self.stack.top
 
+    @property
+    def root_tx_local(self):
+        try:
+            # noinspection PyProtectedMember
+            return self.stack._local.stack[0]
+        except (AttributeError, IndexError):
+            return None
+
     def make_connector(self, app=None, bind=None):
         """Creates the connector for a given state and bind."""
         return _EngineConnector(self, self.get_app(app), bind)

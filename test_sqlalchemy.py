@@ -865,7 +865,6 @@ class BaseTransactionTestCase(unittest.TestCase):
             self.assert_the_same(todos[0], r[0])
             self.assert_the_same(todos[2], r[1])
         else:
-            self.assertEqual(len(todos), 0)
             self.assertRaises(InvalidRequestError, method)
             with self.db.transaction():
                 todo = self.new_todo()
@@ -893,15 +892,13 @@ class BaseTransactionTestCase(unittest.TestCase):
             self.assert_the_same(todo, self.Todo.query.one())
 
     def test_subtransactions_inner_manual_rollback_loudly(self):
-        todos = []
-
         def method():
             with self.db.transaction():
-                todos.append(self.new_todo())
+                self.new_todo()
                 with self.db.transaction():
-                    todos.append(self.new_todo())
+                    self.new_todo()
                     raise fsa.Rollback(propagate=True)
-                todos.append(self.new_todo())
+                self.new_todo()
         self.assertRaises(fsa.Rollback, method)
         with self.db.transaction():
             todo = self.new_todo()
@@ -940,6 +937,25 @@ class BaseTransactionTestCase(unittest.TestCase):
         with self.db.transaction():
             todo = self.new_todo()
         self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_local(self):
+        self.assertIsNone(self.db.tx_local)
+        self.assertIsNone(self.db.root_tx_local)
+        with self.db.transaction(base=0, val=1):
+            self.assertIs(self.db.tx_local, self.db.root_tx_local)
+            self.assertEqual(self.db.tx_local['base'], 0)
+            self.assertEqual(self.db.tx_local['val'], 1)
+            with self.db.transaction(base=0, val=2):
+                self.assertIsNot(self.db.tx_local, self.db.root_tx_local)
+                self.assertEqual(self.db.root_tx_local['base'], 0)
+                self.assertEqual(self.db.root_tx_local['val'], 1)
+                self.assertEqual(self.db.tx_local['base'], 0)
+                self.assertEqual(self.db.tx_local['val'], 2)
+            self.assertIs(self.db.tx_local, self.db.root_tx_local)
+            self.assertEqual(self.db.tx_local['base'], 0)
+            self.assertEqual(self.db.tx_local['val'], 1)
+        self.assertIsNone(self.db.tx_local)
+        self.assertIsNone(self.db.root_tx_local)
 
 
 class TransactionTestCase(BaseTransactionTestCase):
