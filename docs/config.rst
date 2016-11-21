@@ -63,6 +63,19 @@ A list of configuration keys currently understood by the extension:
                                    that it will be disabled by default in
                                    the future.  This requires extra memory
                                    and should be disabled if not needed.
+``SQLALCHEMY_ISOLATE_TRANSACTION`` Controls the default behavior of root
+                                   transactions whether to isolate boundary
+                                   to definition. Default is ``True``, means
+                                   entering `with db.transaction()` with a
+                                   session with `autocommit=False` will cause
+                                   a rollback first. Oppositely ``False`` will
+                                   stop the entering rollback from happening.
+``SQLALCHEMY_NESTED_TRANSACTION``  Controls the default implementation of
+                                   nested transactions, ``False`` to use
+                                   programed subtransactions (default, the
+                                   same as ``begin(subtransactions=True)`` in
+                                   SQLAlchemy), ``True`` to use DB savepoint
+                                   (the same as ``begin_nested``).
 ================================== =========================================
 
 .. versionadded:: 0.8

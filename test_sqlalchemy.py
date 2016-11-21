@@ -738,14 +738,18 @@ class StandardSessionTestCase(unittest.TestCase):
 
 
 class BaseTransactionTestCase(unittest.TestCase):
+    autocommit = False
+
     def setUp(self):
         app = flask.Flask(__name__)
         app.config['TESTING'] = True
-        db = fsa.SQLAlchemy(app)
+        db = fsa.SQLAlchemy(
+            app, session_options=dict(autocommit=self.autocommit))
         self.Todo = make_todo_model(db)
         self.app = app
         self.db = db
 
+        # http://docs.sqlalchemy.org/en/latest/dialects/sqlite.html#serializable-isolation-savepoints-transactional-ddl
         @sa.event.listens_for(db.engine, "connect")
         def do_connect(dbapi_connection, connection_record):
             # disable pysqlite's emitting of the BEGIN statement entirely.
@@ -784,7 +788,8 @@ class BaseTransactionTestCase(unittest.TestCase):
                 self.new_todo()
                 return 1 / 0
         self.assertRaises(ZeroDivisionError, method)
-        self.db.session.commit()
+        if not self.db.session().autocommit:
+            self.db.session.commit()
         self.assertEqual(len(self.Todo.query.all()), 0)
 
     def test_rollback_explicitly(self):
@@ -797,12 +802,12 @@ class BaseTransactionTestCase(unittest.TestCase):
             todo = self.new_todo()
         self.assert_the_same(todo, self.Todo.query.one())
 
-    def test_rollback_always_propagate_on_root(self):
+    def test_rollback_no_propagate(self):
         def method():
             with self.db.transaction():
                 self.new_todo()
                 raise fsa.Rollback(propagate=False)
-        self.assertRaises(fsa.Rollback, method)
+        method()
         with self.db.transaction():
             todo = self.new_todo()
         self.assert_the_same(todo, self.Todo.query.one())
@@ -819,19 +824,29 @@ class BaseTransactionTestCase(unittest.TestCase):
 
     def test_explicitly_isolate_transaction(self):
         self.app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = False
-        self.new_todo()
+        todo0 = self.new_todo()
         with self.db.transaction(isolate=True):
-            todo = self.new_todo()
+            todo1 = self.new_todo()
         self.db.session.rollback()
-        self.assert_the_same(todo, self.Todo.query.one())
+        if self.db.session().autocommit:
+            r = self.Todo.query.order_by(self.Todo.id).all()
+            self.assert_the_same(todo0, r[0])
+            self.assert_the_same(todo1, r[1])
+        else:
+            self.assert_the_same(todo1, self.Todo.query.one())
 
     def test_config_isolate_transaction(self):
         self.app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = True
-        self.new_todo()
+        todo0 = self.new_todo()
         with self.db.transaction():
-            todo = self.new_todo()
+            todo1 = self.new_todo()
         self.db.session.rollback()
-        self.assert_the_same(todo, self.Todo.query.one())
+        if self.db.session().autocommit:
+            r = self.Todo.query.order_by(self.Todo.id).all()
+            self.assert_the_same(todo0, r[0])
+            self.assert_the_same(todo1, r[1])
+        else:
+            self.assert_the_same(todo1, self.Todo.query.one())
 
     def test_subtransactions_two_commits(self):
         with self.db.transaction():
@@ -859,7 +874,7 @@ class BaseTransactionTestCase(unittest.TestCase):
                     pass
                 todos.append(self.new_todo())
 
-        if self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION']:
+        if self.app.config['SQLALCHEMY_NESTED_TRANSACTION']:
             method()
             r = self.Todo.query.order_by(self.Todo.id).all()
             self.assert_the_same(todos[0], r[0])
@@ -880,7 +895,7 @@ class BaseTransactionTestCase(unittest.TestCase):
                     todos.append(self.new_todo())
                     raise fsa.Rollback(propagate=False)
                 todos.append(self.new_todo())
-        if self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION']:
+        if self.app.config['SQLALCHEMY_NESTED_TRANSACTION']:
             method()
             r = self.Todo.query.order_by(self.Todo.id).all()
             self.assert_the_same(todos[0], r[0])
@@ -914,7 +929,7 @@ class BaseTransactionTestCase(unittest.TestCase):
                     todos.append(self.new_todo())
                     raise fsa.Rollback()
                 todos.append(self.new_todo())
-        if self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION']:
+        if self.app.config['SQLALCHEMY_NESTED_TRANSACTION']:
             method()
             r = self.Todo.query.order_by(self.Todo.id).all()
             self.assert_the_same(todos[0], r[0])
@@ -961,13 +976,21 @@ class BaseTransactionTestCase(unittest.TestCase):
 class TransactionTestCase(BaseTransactionTestCase):
     def setUp(self):
         super(TransactionTestCase, self).setUp()
-        self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION'] = False
+        self.app.config['SQLALCHEMY_NESTED_TRANSACTION'] = False
 
 
 class NestedTransactionTestCase(BaseTransactionTestCase):
     def setUp(self):
         super(NestedTransactionTestCase, self).setUp()
-        self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION'] = True
+        self.app.config['SQLALCHEMY_NESTED_TRANSACTION'] = True
+
+
+class AutocommitTransactionTestCase(BaseTransactionTestCase):
+    autocommit = True
+
+    def setUp(self):
+        super(AutocommitTransactionTestCase, self).setUp()
+        self.app.config['SQLALCHEMY_NESTED_TRANSACTION'] = False
 
 
 def suite():
@@ -989,6 +1012,7 @@ def suite():
     suite.addTest(unittest.makeSuite(CustomModelClassTestCase))
     suite.addTest(unittest.makeSuite(TransactionTestCase))
     suite.addTest(unittest.makeSuite(NestedTransactionTestCase))
+    suite.addTest(unittest.makeSuite(AutocommitTransactionTestCase))
 
     if flask.signals_available:
         suite.addTest(unittest.makeSuite(SignallingTestCase))
