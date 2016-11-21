@@ -757,8 +757,8 @@ class SQLAlchemy(object):
         self.use_native_unicode = use_native_unicode
         self.Query = query_class
         self.session = self.create_scoped_session(session_options)
-        self.stack = LocalStack()
-        self.stack.__ident_func__ = lambda: id(self.session())
+        self._stack = LocalStack()
+        self._stack.__ident_func__ = lambda: id(self.session())
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
         self.app = app
@@ -1009,13 +1009,13 @@ class SQLAlchemy(object):
         :return: a PEP 343 context object to be used by `with`
         """
         session = self.session()
-        is_root = self.stack.top is None
+        is_root = self._stack.top is None
 
         if is_root:
             nested = False
             item = {}
         else:
-            item = self.stack.top.copy()
+            item = self._stack.top.copy()
 
         if nested is None:
             nested = self.get_app().config['SQLALCHEMY_NESTED_TRANSACTION']
@@ -1023,7 +1023,7 @@ class SQLAlchemy(object):
             isolate = self.get_app().config['SQLALCHEMY_ISOLATE_TRANSACTION']
 
         item.update(kwargs)
-        self.stack.push(item)
+        self._stack.push(item)
         try:
             if is_root and not session.autocommit:
                 if isolate:
@@ -1043,19 +1043,19 @@ class SQLAlchemy(object):
                 session.rollback()
                 raise
         finally:
-            self.stack.pop()
+            self._stack.pop()
 
     @property
     def tx_local(self):
         """A shared dict object associated with current (nested) transaction"""
-        return self.stack.top
+        return self._stack.top
 
     @property
     def root_tx_local(self):
         """A shared dict object associated with current DB transaction"""
         try:
             # noinspection PyProtectedMember
-            return self.stack._local.stack[0]
+            return self._stack._local.stack[0]
         except (AttributeError, IndexError):
             return None
 
