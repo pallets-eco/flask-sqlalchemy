@@ -28,7 +28,6 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from werkzeug.local import LocalStack
 from flask_sqlalchemy._compat import iteritems, itervalues, xrange, string_types
 
 # the best timer function for the platform
@@ -757,8 +756,6 @@ class SQLAlchemy(object):
         self.use_native_unicode = use_native_unicode
         self.Query = query_class
         self.session = self.create_scoped_session(session_options)
-        self._stack = LocalStack()
-        self._stack.__ident_func__ = lambda: id(self.session())
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
         self.app = app
@@ -1009,13 +1006,17 @@ class SQLAlchemy(object):
         :return: a PEP 343 context object to be used by `with`
         """
         session = self.session()
-        is_root = self._stack.top is None
+        try:
+            stack = session._tx_stack
+        except AttributeError:
+            stack = session._tx_stack = deque()
+        is_root = len(stack) == 0
 
         if is_root:
             nested = False
             item = {}
         else:
-            item = self._stack.top.copy()
+            item = stack[-1].copy()
 
         if nested is None:
             nested = self.get_app().config['SQLALCHEMY_NESTED_TRANSACTION']
@@ -1023,7 +1024,7 @@ class SQLAlchemy(object):
             isolate = self.get_app().config['SQLALCHEMY_ISOLATE_TRANSACTION']
 
         item.update(kwargs)
-        self._stack.push(item)
+        stack.append(item)
         try:
             if is_root and not session.autocommit:
                 if isolate:
@@ -1043,21 +1044,21 @@ class SQLAlchemy(object):
                 session.rollback()
                 raise
         finally:
-            self._stack.pop()
+            stack.pop()
 
     @property
     def tx_local(self):
         """A shared dict object associated with current (nested) transaction"""
-        return self._stack.top
+        stack = getattr(self.session(), '_tx_stack', None)
+        if stack:
+            return stack[-1]
 
     @property
     def root_tx_local(self):
         """A shared dict object associated with current DB transaction"""
-        try:
-            # noinspection PyProtectedMember
-            return self._stack._local.stack[0]
-        except (AttributeError, IndexError):
-            return None
+        stack = getattr(self.session(), '_tx_stack', None)
+        if stack:
+            return stack[0]
 
     def make_connector(self, app=None, bind=None):
         """Creates the connector for a given state and bind."""
