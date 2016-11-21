@@ -954,23 +954,23 @@ class BaseTransactionTestCase(unittest.TestCase):
         self.assert_the_same(todo, self.Todo.query.one())
 
     def test_local(self):
-        self.assertIsNone(self.db.tx_local)
-        self.assertIsNone(self.db.root_tx_local)
+        self.assertTrue(self.db.tx_local is None)
+        self.assertTrue(self.db.root_tx_local is None)
         with self.db.transaction(base=0, val=1):
-            self.assertIs(self.db.tx_local, self.db.root_tx_local)
+            self.assertTrue(self.db.tx_local is self.db.root_tx_local)
             self.assertEqual(self.db.tx_local['base'], 0)
             self.assertEqual(self.db.tx_local['val'], 1)
             with self.db.transaction(base=0, val=2):
-                self.assertIsNot(self.db.tx_local, self.db.root_tx_local)
+                self.assertFalse(self.db.tx_local is self.db.root_tx_local)
                 self.assertEqual(self.db.root_tx_local['base'], 0)
                 self.assertEqual(self.db.root_tx_local['val'], 1)
                 self.assertEqual(self.db.tx_local['base'], 0)
                 self.assertEqual(self.db.tx_local['val'], 2)
-            self.assertIs(self.db.tx_local, self.db.root_tx_local)
+            self.assertTrue(self.db.tx_local is self.db.root_tx_local)
             self.assertEqual(self.db.tx_local['base'], 0)
             self.assertEqual(self.db.tx_local['val'], 1)
-        self.assertIsNone(self.db.tx_local)
-        self.assertIsNone(self.db.root_tx_local)
+        self.assertTrue(self.db.tx_local is None)
+        self.assertTrue(self.db.root_tx_local is None)
 
 
 class TransactionTestCase(BaseTransactionTestCase):
