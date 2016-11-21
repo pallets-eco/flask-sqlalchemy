@@ -28,6 +28,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
+from werkzeug.local import LocalStack
 from flask_sqlalchemy._compat import iteritems, itervalues, xrange, string_types
 
 # the best timer function for the platform
@@ -737,6 +738,8 @@ class SQLAlchemy(object):
         self.use_native_unicode = use_native_unicode
         self.Query = query_class
         self.session = self.create_scoped_session(session_options)
+        self.stack = LocalStack()
+        self.stack.__ident_func__ = lambda: id(self.session())
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
         self.app = app
@@ -917,14 +920,13 @@ class SQLAlchemy(object):
     @contextmanager
     def transaction(self, isolate=None, nested=None, **kwargs):
         session = self.session()
-        stack = session.info.setdefault('sa_stack', deque())
-        is_root = len(stack) == 0
+        is_root = self.stack.top is None
 
         if is_root:
             nested = False
             item = {}
         else:
-            item = stack[-1].copy()
+            item = self.stack.top.copy()
 
         if nested is None:
             nested = self.get_app().config['SQLALCHEMY_USE_NESTED_TRANSACTION']
@@ -932,7 +934,7 @@ class SQLAlchemy(object):
             isolate = self.get_app().config['SQLALCHEMY_ISOLATE_TRANSACTION']
 
         item.update(kwargs)
-        stack.append(item)
+        self.stack.push(item)
         try:
             if is_root and not session.autocommit:
                 if isolate:
@@ -952,19 +954,11 @@ class SQLAlchemy(object):
                 session.rollback()
                 raise
         finally:
-            stack.pop()
+            self.stack.pop()
 
     @property
     def tx_local(self):
-        stack = self.session.info.get('sa_stack')
-        if stack:
-            return stack[-1]
-
-    @property
-    def root_tx_local(self):
-        stack = self.session.info.get('sa_stack')
-        if stack:
-            return stack[0]
+        return self.stack.top
 
     def make_connector(self, app=None, bind=None):
         """Creates the connector for a given state and bind."""
