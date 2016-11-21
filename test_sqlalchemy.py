@@ -871,7 +871,7 @@ class BaseTransactionTestCase(unittest.TestCase):
                 todo = self.new_todo()
             self.assert_the_same(todo, self.Todo.query.one())
 
-    def test_subtransactions_inner_manual_rollback(self):
+    def test_subtransactions_inner_manual_rollback_silently(self):
         todos = []
 
         def method():
@@ -888,6 +888,42 @@ class BaseTransactionTestCase(unittest.TestCase):
             self.assert_the_same(todos[2], r[1])
         else:
             self.assertRaises(InvalidRequestError, method)
+            with self.db.transaction():
+                todo = self.new_todo()
+            self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_subtransactions_inner_manual_rollback_loudly(self):
+        todos = []
+
+        def method():
+            with self.db.transaction():
+                todos.append(self.new_todo())
+                with self.db.transaction():
+                    todos.append(self.new_todo())
+                    raise fsa.Rollback(propagate=True)
+                todos.append(self.new_todo())
+        self.assertRaises(fsa.Rollback, method)
+        with self.db.transaction():
+            todo = self.new_todo()
+        self.assert_the_same(todo, self.Todo.query.one())
+
+    def test_subtransactions_inner_manual_rollback(self):
+        todos = []
+
+        def method():
+            with self.db.transaction():
+                todos.append(self.new_todo())
+                with self.db.transaction():
+                    todos.append(self.new_todo())
+                    raise fsa.Rollback()
+                todos.append(self.new_todo())
+        if self.app.config['SQLALCHEMY_USE_NESTED_TRANSACTION']:
+            method()
+            r = self.Todo.query.order_by(self.Todo.id).all()
+            self.assert_the_same(todos[0], r[0])
+            self.assert_the_same(todos[2], r[1])
+        else:
+            self.assertRaises(fsa.Rollback, method)
             with self.db.transaction():
                 todo = self.new_todo()
             self.assert_the_same(todo, self.Todo.query.one())
