@@ -971,7 +971,7 @@ class SQLAlchemy(object):
         `SQLALCHEMY_ISOLATE_TRANSACTION` to `False`, or explicitly by setting
         `isolate=False` on a `db.transaction` call. Latter overrides former.
 
-        Through `autocommit=True` is no recommended by SQLAlchemy, it is anyway
+        Though `autocommit=True` is no recommended by SQLAlchemy, it is anyway
         supported here. Entering `db.transaction` ensures a `begin`, the rest
         stays all the same as described above.
 
