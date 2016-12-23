@@ -590,20 +590,18 @@ class _BoundDeclarativeMeta(DeclarativeMeta):
                 """ Convert a CamelCase string to snake_case """
                 if not name:
                     return ""
-                to_join = []
-                to_join.append(name[0].lower())
-                for prev, c, next in zip(name[:-2], name[1:-1], name[2:]):
-                    if prev.islower() and c.isupper() \
-                       or prev.islower() and c.isdigit() and (next.isupper() or next.isdigit()) \
-                       or (prev.isdigit() or prev.isupper()) and c.isupper() and next.islower():
-                        to_join.append("_" + c.lower())
-                    else:
-                        to_join.append(c.lower())
-                if name[-2:-1].islower() and (name[-1].isupper() or name[-1].isdigit()):
-                    to_join.append("_" + name[-1].lower())
-                else:
-                    to_join.append(name[-1].lower())
-                return "".join(to_join)
+                if len(name) == 1:
+                    return name.lower()
+                return (name[0]
+                        + "".join([("_" + c) \
+                                   if prev.islower() and c.isupper() \
+                                   or prev.islower() and c.isdigit() and (next.isdigit() or next.isupper()) \
+                                   or (prev.isdigit() or prev.isupper()) and c.isupper() and next.islower() \
+                                   else c \
+                                   for prev, c, next in zip(name[:-2], name[1:-1], name[2:])])
+                        + ("_" + name[-1]
+                           if name[-2:-1].islower() and (name[-1].isupper() or name[-1].isdigit())
+                           else name[-1])).lower()
             d['__tablename__'] = _camel_to_snake(name)
 
         return DeclarativeMeta.__new__(cls, name, bases, d)
