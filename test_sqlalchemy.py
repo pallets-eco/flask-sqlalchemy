@@ -236,11 +236,16 @@ class TablenameTestCase(unittest.TestCase):
         class BazBar(db.Model):
             id = db.Column(db.Integer, primary_key=True)
 
+        class LONGName4TestingCamelCase2snake_caseALGORithm22BBQ2(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
         class Ham(db.Model):
             __tablename__ = 'spam'
             id = db.Column(db.Integer, primary_key=True)
 
         self.assertEqual(FOOBar.__tablename__, 'foo_bar')
+        self.assertEqual(LONGName4TestingCamelCase2snake_caseALGORithm22BBQ2.__tablename__,
+                         'long_name_4_testing_camel_case2snake_case_algo_rithm_22bbq2')
         self.assertEqual(BazBar.__tablename__, 'baz_bar')
         self.assertEqual(Ham.__tablename__, 'spam')
 
