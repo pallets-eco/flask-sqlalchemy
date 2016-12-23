@@ -577,7 +577,7 @@ def _should_set_tablename(bases, d):
             return False
 
         for name in dir(base):
-            attr = getattr(base, name)
+            attr = getattr(base, name, None)
 
             if isinstance(attr, sqlalchemy.Column) and attr.primary_key:
                 return True
