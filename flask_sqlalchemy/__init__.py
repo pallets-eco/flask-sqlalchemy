@@ -17,7 +17,7 @@ import functools
 import warnings
 import sqlalchemy
 from math import ceil
-from flask import _request_ctx_stack, abort, has_request_context, request
+from flask import _request_ctx_stack, abort, has_request_context, request, current_app
 from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
@@ -1005,16 +1005,9 @@ class SQLAlchemy(object):
         self._execute_for_all_tables(app, bind, 'reflect', skip_tables=True)
 
     def __repr__(self):
-        app = None
-        if self.app is not None:
-            app = self.app
-        else:
-            ctx = connection_stack.top
-            if ctx is not None:
-                app = ctx.app
         return '<%s engine=%r>' % (
             self.__class__.__name__,
-            app and app.config['SQLALCHEMY_DATABASE_URI'] or None
+            self.engine.url if self.app or current_app else None
         )
 
 
