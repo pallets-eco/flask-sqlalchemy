@@ -614,9 +614,8 @@ def get_state(app):
 class _SQLAlchemyState(object):
     """Remembers configuration for the (db, app) tuple."""
 
-    def __init__(self, db, app):
+    def __init__(self, db):
         self.db = db
-        self.app = app
         self.connectors = {}
 
 
@@ -814,7 +813,7 @@ class SQLAlchemy(object):
 
         if not hasattr(app, 'extensions'):
             app.extensions = {}
-        app.extensions['sqlalchemy'] = _SQLAlchemyState(self, app)
+        app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
 
         # 0.9 and later
         if hasattr(app, 'teardown_appcontext'):
