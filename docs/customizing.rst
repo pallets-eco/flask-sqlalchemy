@@ -188,3 +188,29 @@ generation can be disabled by defining a custom metaclass. ::
 
 This creates a base that still supports the ``__bind_key__`` feature but does
 not generate table names.
+
+
+Session Class
+-------------
+
+The :class:`SQLAlchemy` object can be constructed with a custom session class.
+This must be a subclass of :class:`~sqlalchemy.orm.session.Session` class and by default
+it is the :class:`SignallingSession`. To use a custom session, pass a
+`class_` key in the `session_options` when constructing the :class:`SQLAlchemy` object::
+
+
+   from sqlalchemy.orm.session import Session
+   from flask_sqlalchemy import SQLAlchemy
+
+   class MySession(Session):
+       def commit(self):
+           super(MySession, self).commit()
+           print("Successfully committed!")
+
+   db = SQLAlchemy(session_options={'class_': MySession})
+
+
+Providing a custom session allows providing additional controls around adding and deleting models,
+transaction commits, and more. For more information about
+:class:`~sqlalchemy.orm.session.Session`, `see the official documentation
+<http://docs.sqlalchemy.org/en/latest/orm/session_api.html#sqlalchemy.orm.session.Session>`_.

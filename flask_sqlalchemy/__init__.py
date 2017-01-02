@@ -126,9 +126,6 @@ class SignallingSession(SessionBase):
     uses.  It extends the default session system with bind selection and
     modification tracking.
 
-    If you want to use a different session you can override the
-    :meth:`SQLAlchemy.create_session` function.
-
     .. versionadded:: 2.0
 
     .. versionadded:: 2.1
@@ -661,6 +658,9 @@ class SQLAlchemy(object):
 
     .. versionchanged:: 3.0
        Utilise the same query class across `session`, `Model.query` and `Query`.
+
+    .. versionchanged:: 3.0
+       Allow a custom session class to be passed through session_options
     """
 
     #: Default query class used by :attr:`Model.query` and other queries.
@@ -698,8 +698,14 @@ class SQLAlchemy(object):
         created and removed with the request/response cycle, and should be fine
         in most cases.
 
-        :param options: dict of keyword arguments passed to session class  in
-            ``create_session``
+        :param options: dict of keyword arguments passed to session class  in ``create_session``
+            The session class can be configured by adding a  ``'class_'`` to the ``options`` dict.
+            If this key is not present, the default behavior is to use the
+            :class:`SignallingSession` class.
+        :param options: dict of keyword arguments passed to session class  in ``create_session``
+
+        .. versionchanged:: 3.0
+           Allow configuration of session base class in options dict
         """
 
         if options is None:
@@ -707,6 +713,8 @@ class SQLAlchemy(object):
 
         scopefunc = options.pop('scopefunc', _app_ctx_stack.__ident_func__)
         options.setdefault('query_cls', self.Query)
+        options.setdefault('class_', SignallingSession)
+
         return orm.scoped_session(
             self.create_session(options), scopefunc=scopefunc
         )
@@ -720,12 +728,10 @@ class SQLAlchemy(object):
         Valid factories include a :class:`~sqlalchemy.orm.session.Session`
         class or a :class:`~sqlalchemy.orm.session.sessionmaker`.
 
-        The default implementation creates a ``sessionmaker`` for :class:`SignallingSession`.
-
         :param options: dict of keyword arguments passed to session class
         """
 
-        return orm.sessionmaker(class_=SignallingSession, db=self, **options)
+        return orm.sessionmaker(db=self, **options)
 
     def make_declarative_base(self, model, metadata=None):
         """Creates the declarative base that all models will inherit from.
