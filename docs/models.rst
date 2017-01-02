@@ -143,3 +143,71 @@ Here we configured `Page.tags` to be a list of tags once loaded because we
 don't expect too many tags per page.  The list of pages per tag
 (`Tag.pages`) however is a dynamic backref.  As mentioned above this means
 that you will get a query object back you can use to fire a select yourself.
+
+
+External Declarative Bases
+--------------------------
+
+Flask-SQLAlchemy allows you to provide your own declarative base if you 
+feel the need to do so. Doing so can allow you to cut down circular 
+imports, allow you to use the app factory pattern, or even share your 
+SQLAlchemy model across different python application using SQLAlchemy, 
+without the requirement of running a different set of models for use with
+Flask-SQLAlchemy.
+
+We declare our model just as you would above, however, using SQLAlchemy 
+constructs, rather than accessing classes via ``db.*``. Once defined, call 
+call :meth:`SQLAlchemy.register_base` to register your delcarative base with 
+Flask-SQLAlchemy.
+
+A minimal example::
+
+    from sqlalchemy import Column, Integer, String
+    from sqlalchemy.ext.declarative import declarative_base
+
+    Base = declarative_base()
+
+    class User(Base):
+        __tablename__ = 'user'
+
+        id = Column(Integer, primary_key=True)
+        username = Column(String(80), unique=True)
+        email = Column(String(255), unique=True)
+
+        def __repr__(self):
+            return '<User %r>' % self.username
+
+    from flask import Flask
+    from flask_sqlalchemy import SQLAlchemy
+
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'
+    db = SQLAlchemy(app)
+    db.register_base(Base)
+
+    db.create_all()
+
+    @app.before_first_request
+    def insert_user():
+        # We can create new objects the normal way
+        user = User(id=1, username='foo', email='foo@bar.com')
+        db.session.add(user)
+        db.session.commit()
+
+    @app.route('/<int:user_id>')
+    def index(user_id):
+        # We can query the model two ways:
+        user = db.session.query(User).get_or_404(user_id)
+
+        # Or we can using the model's query property
+        user = User.query.get_or_404(user_id)
+
+        return "Hello, {}".format(user.username)
+
+    if __name__ == '__main__':
+        app.run(debug=True)
+
+If you're using binds, you'll need to use your own session that knows how 
+to handle them, or use the same ``Model.__bind__`` system and register the 
+extra engines with ``SQLALCHEMY_BINDS``
+
