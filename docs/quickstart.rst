@@ -131,8 +131,8 @@ query option)::
     [<Post 'Hello Python!'>, <Post 'Snakes'>]
 
 If you want to get a query object for that relationship, you can do so
-using ``with_parent``.  Let's exclude that post about Snakes for
-example::
+using :func:`~sqlalchemy.orm.query.Query.with_parent`.  Let's exclude
+that post about Snakes for example::
 
     >>> Post.query.with_parent(py).filter(Post.title != 'Snakes').all()
     [<Post 'Hello Python!'>]
