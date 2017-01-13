@@ -135,8 +135,8 @@ helper table that is used for the relationship.  For this helper table it
 is strongly recommended to *not* use a model but an actual table::
 
     tags = db.Table('tags',
-        db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), nullable=False),
-        db.Column('page_id', db.Integer, db.ForeignKey('page.id'), nullable=False)
+        db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True),
+        db.Column('page_id', db.Integer, db.ForeignKey('page.id'), primary_key=True)
     )
 
     class Page(db.Model):
