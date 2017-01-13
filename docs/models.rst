@@ -116,7 +116,8 @@ when SQLAlchemy will load the data from the database:
     when querying so it's often a good idea to avoid using this in
     favor of ``lazy=True``.  A query object equivalent to a dynamic
     ``user.addresses`` relationship can be created using
-    ``Address.query.with_parent(user)`` while still being able to use
+    :meth:`Address.query.with_parent(user) <sqlalchemy.orm.query.Query.with_parent>`
+    while still being able to use
     lazy or eager loading on the relationship itself as necessary.
 
 How do you define the lazy status for backrefs?  By using the
@@ -160,5 +161,7 @@ lazy-loaded so that accessing it for the first time will trigger a
 query to get the list of pages for that tag.  If you need to apply
 further query options on that list, you could either switch to the
 ``'dynamic'`` strategy - with the drawbacks mentioned above - or get
-a query object using ``Page.query.with_parent(some_tag)`` and then use
-it exactly as you would with the query object from a dynamic relationship.
+a query object using
+:meth:`Page.query.with_parent(some_tag) <sqlalchemy.orm.query.Query.with_parent>`
+and then use it exactly as you would with the query object from a dynamic
+relationship.

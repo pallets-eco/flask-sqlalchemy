@@ -147,7 +147,7 @@ load all categories and their posts, you could do it like this::
 
 
 If you want to get a query object for that relationship, you can do so
-using :func:`~sqlalchemy.orm.query.Query.with_parent`.  Let's exclude
+using :meth:`~sqlalchemy.orm.query.Query.with_parent`.  Let's exclude
 that post about Snakes for example::
 
     >>> Post.query.with_parent(py).filter(Post.title != 'Snakes').all()
