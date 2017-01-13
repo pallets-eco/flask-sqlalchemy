@@ -34,10 +34,6 @@ used to declare models::
         username = db.Column(db.String(80), unique=True)
         email = db.Column(db.String(120), unique=True)
 
-        def __init__(self, username, email):
-            self.username = username
-            self.email = email
-
         def __repr__(self):
             return '<User %r>' % self.username
 
@@ -52,8 +48,8 @@ tables and database::
 Boom, and there is your database.  Now to create some users::
 
     >>> from yourapplication import User
-    >>> admin = User('admin', 'admin@example.com')
-    >>> guest = User('guest', 'guest@example.com')
+    >>> admin = User(username='admin', email='admin@example.com')
+    >>> guest = User(username='guest', email='guest@example.com')
 
 But they are not yet in the database, so let's make sure they are::
 
@@ -67,6 +63,13 @@ Accessing the data in database is easy as a pie::
     [<User u'admin'>, <User u'guest'>]
     >>> User.query.filter_by(username='admin').first()
     <User u'admin'>
+
+Note how we never defined a ``__init__`` method on the `User` class?
+That's because SQLAlchemy adds an implicit constructor to all model
+classes which accepts keyword arguments for all its columns and
+relationships.  If you decide to override the constructor for any
+reason, make sure to keep accepting ``**kwargs`` and call the super
+constructor with those ``**kwargs`` to preserve this behavior::
 
 Simple Relationships
 --------------------
@@ -82,19 +85,11 @@ application that uses two tables that have a relationship to each other::
         id = db.Column(db.Integer, primary_key=True)
         title = db.Column(db.String(80))
         body = db.Column(db.Text)
-        pub_date = db.Column(db.DateTime)
+        pub_date = db.Column(db.DateTime, default=datetime.utcnow)
 
         category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
         category = db.relationship('Category',
             backref=db.backref('posts', lazy=True))
-
-        def __init__(self, title, body, category, pub_date=None):
-            self.title = title
-            self.body = body
-            if pub_date is None:
-                pub_date = datetime.utcnow()
-            self.pub_date = pub_date
-            self.category = category
 
         def __repr__(self):
             return '<Post %r>' % self.title
@@ -104,24 +99,24 @@ application that uses two tables that have a relationship to each other::
         id = db.Column(db.Integer, primary_key=True)
         name = db.Column(db.String(50))
 
-        def __init__(self, name):
-            self.name = name
-
         def __repr__(self):
             return '<Category %r>' % self.name
 
 First let's create some objects::
 
-    >>> py = Category('Python')
-    >>> p = Post('Hello Python!', 'Python is pretty cool', py)
-    >>> p2 = Post('Snakes', 'Ssssssss', py)
+    >>> py = Category(name='Python')
+    >>> Post(title='Hello Python!', body='Python is pretty cool', category=py)
+    >>> p = Post(title='Snakes', body='Ssssssss')
+    >>> py.posts.append(p)
     >>> db.session.add(py)
 
 As you can see, there is no need to add the `Post` objects to the
 session. Since the `Category` is part of the session all objects
 associated with it through relationships will be added too.  It does
 not matter whether ``db.session.add()`` is called before or after
-creating these objects.
+creating these objects.  The association can also be done on either
+side of the relationship - so a post can be created with a category
+or it can be added to the list of posts of the category.
 
 Let's look at the posts. Accessing them will load them from the database
 since the relationship is lazy-loaded, but you will probably not notice
