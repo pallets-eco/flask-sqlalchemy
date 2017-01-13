@@ -108,7 +108,8 @@ when SQLAlchemy will load the data from the database:
     the same query as the parent using a `JOIN` statement.
 -   ``'subquery'`` works like ``'joined'`` but instead SQLAlchemy will
     use a subquery.
--   ``'dynamic'`` is special and can be useful if you have many items.
+-   ``'dynamic'`` is special and can be useful if you have many items
+    and always want to apply additional SQL filters to them.
     Instead of loading the items SQLAlchemy will return another query
     object which you can further refine before loading the items.
     Note that this cannot be turned into a different loading strategy
@@ -147,17 +148,17 @@ is strongly recommended to *not* use a model but an actual table::
     class Tag(db.Model):
         id = db.Column(db.Integer, primary_key=True)
 
-Here we configured `Page.tags` to be loaded immediately after loading
+Here we configured ``Page.tags`` to be loaded immediately after loading
 a Page, but using a separate query.  This always results in two
 queries when retrieving a Page, but when querying for multiple pages
 you will not get additional queries.
 
 The list of pages for a tag on the other hand is something that's
-rarely needed - for sure not when you just get the tags e.g. for a
-specific page.  For this reason the backref is set to be lazy-loaded.
-That way accessing it for the first time will trigger a query to get
-the list of pages for that tag.  If you need to apply further query
-options on that list, you could either switch to the ``'dynamic'``
-strategy - with the drawbacks mentioned above - or get a query object
-using ``Page.query.with_parent(some_tag)`` and then use it exactly
-as you would with the query object from a dynamic relaationship.
+rarely needed. For example, you won't need that list when retrieving
+the tags for a specific page.  Therefore, the backref is set to be
+lazy-loaded so that accessing it for the first time will trigger a
+query to get the list of pages for that tag.  If you need to apply
+further query options on that list, you could either switch to the
+``'dynamic'`` strategy - with the drawbacks mentioned above - or get
+a query object using ``Page.query.with_parent(some_tag)`` and then use
+it exactly as you would with the query object from a dynamic relationship.
