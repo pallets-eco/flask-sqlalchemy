@@ -82,7 +82,7 @@ function.  However the foreign key has to be separately declared with the
 
     class Address(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        email = db.Column(db.String(50))
+        email = db.Column(db.String(120))
         person_id = db.Column(db.Integer, db.ForeignKey('person.id'))
 
 What does ``db.relationship()`` do?  That function returns a new property
