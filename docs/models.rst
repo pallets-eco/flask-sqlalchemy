@@ -76,13 +76,12 @@ function.  However the foreign key has to be separately declared with the
 
     class Person(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(db.String(50))
-        addresses = db.relationship('Address', backref='person',
-                                    lazy='dynamic')
+        name = db.Column(db.String(50), nullable=False)
+        addresses = db.relationship('Address', backref='person', lazy=True)
 
     class Address(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        email = db.Column(db.String(120))
+        email = db.Column(db.String(120), nullable=False)
         person_id = db.Column(db.Integer, db.ForeignKey('person.id'))
 
 What does ``db.relationship()`` do?  That function returns a new property
@@ -93,22 +92,34 @@ default from your declaration.  If you would want to have a one-to-one
 relationship you can pass ``uselist=False`` to
 :func:`~sqlalchemy.orm.relationship`.
 
+Since a person with no name or an email address with no address associated
+makes no sense, ``nullable=False`` tells SQLAlchemy to create the column
+as ``NOT NULL``. This is implied for primary key columns, but it's a good
+idea to specify it for all other columns to make it clear to other people
+working on your code that you did actually want a nullable column and did
+not just forget to add it.
+
 So what do `backref` and `lazy` mean?  `backref` is a simple way to also
 declare a new property on the `Address` class.  You can then also use
 ``my_address.person`` to get to the person at that address.  `lazy` defines
 when SQLAlchemy will load the data from the database:
 
--   ``'select'`` (which is the default) means that SQLAlchemy will load
-    the data as necessary in one go using a standard select statement.
--   ``'joined'`` tells SQLAlchemy to load the relationship in the same
-    query as the parent using a `JOIN` statement.
+-   ``'select'`` / ``True`` (which is the default, but explicit is better
+    than implicit) means that SQLAlchemy will load the data as necessary
+    in one go using a standard select statement.
+-   ``'joined'`` / ``False`` tells SQLAlchemy to load the relationship in
+    the same query as the parent using a `JOIN` statement.
 -   ``'subquery'`` works like ``'joined'`` but instead SQLAlchemy will
     use a subquery.
--   ``'dynamic'`` is special and useful if you have many items.  Instead of
-    loading the items SQLAlchemy will return another query object which
-    you can further refine before loading the items.  This is usually
-    what you want if you expect more than a handful of items for this
-    relationship.
+-   ``'dynamic'`` is special and can be useful if you have many items.
+    Instead of loading the items SQLAlchemy will return another query
+    object which you can further refine before loading the items.
+    Note that this cannot be turned into a different loading strategy
+    when querying so it's often a good idea to avoid using this in
+    favor of ``lazy=True``.  A query object equivalent to a dynamic
+    ``user.addresses`` relationship can be created using
+    ``Address.query.with_parent(user)`` while still being able to use
+    lazy or eager loading on the relationship itself as necessary.
 
 How do you define the lazy status for backrefs?  By using the
 :func:`~sqlalchemy.orm.backref` function::
@@ -116,8 +127,8 @@ How do you define the lazy status for backrefs?  By using the
     class User(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         name = db.Column(db.String(50))
-        addresses = db.relationship('Address',
-            backref=db.backref('person', lazy='joined'), lazy='dynamic')
+        addresses = db.relationship('Address', lazy='select',
+            backref=db.backref('person', lazy='joined'))
 
 Many-to-Many Relationships
 --------------------------
@@ -133,13 +144,23 @@ is strongly recommended to *not* use a model but an actual table::
 
     class Page(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        tags = db.relationship('Tag', secondary=tags,
-            backref=db.backref('pages', lazy='dynamic'))
+        tags = db.relationship('Tag', secondary=tags, lazy='subquery',
+            backref=db.backref('pages', lazy=True))
 
     class Tag(db.Model):
         id = db.Column(db.Integer, primary_key=True)
 
-Here we configured `Page.tags` to be a list of tags once loaded because we
-don't expect too many tags per page.  The list of pages per tag
-(`Tag.pages`) however is a dynamic backref.  As mentioned above this means
-that you will get a query object back you can use to fire a select yourself.
+Here we configured `Page.tags` to be loaded immediately after loading
+a Page, but using a separate query.  This always results in two
+queries when retrieving a Page, but when querying for multiple pages
+you will not get additional queries.
+
+The list of pages for a tag on the other hand is something that's
+rarely needed - for sure not when you just get the tags e.g. for a
+specific page.  For this reason the backref is set to be lazy-loaded.
+That way accessing it for the first time will trigger a query to get
+the list of pages for that tag.  If you need to apply further query
+options on that list, you could either switch to the ``'dynamic'``
+strategy - with the drawbacks mentioned above - or get a query object
+using ``Page.query.with_parent(some_tag)`` and then use it exactly
+as you would with the query object from a dynamic relaationship.

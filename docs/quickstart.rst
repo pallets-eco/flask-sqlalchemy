@@ -86,7 +86,7 @@ application that uses two tables that have a relationship to each other::
 
         category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
         category = db.relationship('Category',
-            backref=db.backref('posts', lazy='dynamic'))
+            backref=db.backref('posts', lazy=True))
 
         def __init__(self, title, body, category, pub_date=None):
             self.title = title
@@ -114,19 +114,30 @@ First let's create some objects::
 
     >>> py = Category('Python')
     >>> p = Post('Hello Python!', 'Python is pretty cool', py)
+    >>> p2 = Post('Snakes', 'Ssssssss', py)
     >>> db.session.add(py)
-    >>> db.session.add(p)
 
-Now because we declared ``posts`` as dynamic relationship in the backref
-it shows up as query::
+As you can see, there is no need to add the `Post` objects to the
+session. Since the `Category` is part of the session all objects
+associated with it through relationships will be added too.  It does
+not matter whether ``db.session.add()`` is called before or after
+creating these objects.
+
+Let's look at the posts. Accessing them will load them from the database
+since the relationship is lazy-loaded, but you will probably not notice
+the difference - loading a list is quite fast. Just don't do it when
+looping over many objects (in such a case you would rather use the
+``'subquery'`` or ``'joined'`` loading strategy in the model or as a
+query option)::
 
     >>> py.posts
-    <sqlalchemy.orm.dynamic.AppenderBaseQuery object at 0x1027d37d0>
+    [<Post 'Hello Python!'>, <Post 'Snakes'>]
 
-It behaves like a regular query object so we can ask it for all posts that
-are associated with our "Python" category::
+If you want to get a query object for that relationship, you can do so
+using ``with_parent``.  Let's exclude that post about Snakes for
+example::
 
-    >>> py.posts.all()
+    >>> Post.query.with_parent(py).filter(Post.title != 'Snakes').all()
     [<Post 'Hello Python!'>]
 
 
