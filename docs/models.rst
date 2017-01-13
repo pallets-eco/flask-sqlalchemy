@@ -28,8 +28,8 @@ A very simple example::
 
     class User(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        username = db.Column(db.String(80), unique=True)
-        email = db.Column(db.String(120), unique=True)
+        username = db.Column(db.String(80), unique=True, nullable=False)
+        email = db.Column(db.String(120), unique=True, nullable=False)
 
         def __repr__(self):
             return '<User %r>' % self.username
@@ -78,7 +78,8 @@ function.  However the foreign key has to be separately declared with the
     class Address(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         email = db.Column(db.String(120), nullable=False)
-        person_id = db.Column(db.Integer, db.ForeignKey('person.id'))
+        person_id = db.Column(db.Integer, db.ForeignKey('person.id'),
+            nullable=False)
 
 What does ``db.relationship()`` do?  That function returns a new property
 that can do multiple things.  In this case we told it to point to the
@@ -122,7 +123,7 @@ How do you define the lazy status for backrefs?  By using the
 
     class User(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(db.String(50))
+        name = db.Column(db.String(50), nullable=False)
         addresses = db.relationship('Address', lazy='select',
             backref=db.backref('person', lazy='joined'))
 
@@ -134,8 +135,8 @@ helper table that is used for the relationship.  For this helper table it
 is strongly recommended to *not* use a model but an actual table::
 
     tags = db.Table('tags',
-        db.Column('tag_id', db.Integer, db.ForeignKey('tag.id')),
-        db.Column('page_id', db.Integer, db.ForeignKey('page.id'))
+        db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), nullable=False),
+        db.Column('page_id', db.Integer, db.ForeignKey('page.id'), nullable=False)
     )
 
     class Page(db.Model):
