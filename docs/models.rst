@@ -12,14 +12,14 @@ most common use cases are also documented here.
 
 Things to keep in mind:
 
--   The baseclass for all your models is called `db.Model`.  It's stored
+-   The baseclass for all your models is called ``db.Model``.  It's stored
     on the SQLAlchemy instance you have to create.  See :ref:`quickstart`
     for more details.
 -   Some parts that are required in SQLAlchemy are optional in
     Flask-SQLAlchemy.  For instance the table name is automatically set
     for you unless overridden.  It's derived from the class name converted
     to lowercase and with “CamelCase” converted to “camel_case”.  To override
-    the table name, set the `__tablename__` class attribute.
+    the table name, set the ``__tablename__`` class attribute.
 
 Simple Example
 --------------
@@ -34,7 +34,7 @@ A very simple example::
         def __repr__(self):
             return '<User %r>' % self.username
 
-Use :class:`~sqlalchemy.Column` to define a column.  The name of the
+Use :class:`~sqlalchemy.schema.Column` to define a column.  The name of the
 column is the name you assign it to.  If you want to use a different name
 in the table you can provide an optional first argument which is a string
 with the desired column name.  Primary keys are marked with
@@ -42,33 +42,35 @@ with the desired column name.  Primary keys are marked with
 which case they become a compound primary key.
 
 The types of the column are the first argument to
-:class:`~sqlalchemy.Column`.  You can either provide them directly or call
-them to further specify them (like providing a length).  The following
-types are the most common:
+:class:`~sqlalchemy.schema.Column`.  You can either provide them directly
+or call them to further specify them (like providing a length).  The
+following types are the most common:
 
-=================== =====================================
-`Integer`           an integer
-`String` (size)     a string with a maximum length
-`Text`              some longer unicode text
-`DateTime`          date and time expressed as Python
-                    :mod:`~datetime.datetime` object.
-`Float`             stores floating point values
-`Boolean`           stores a boolean value
-`PickleType`        stores a pickled Python object
-`LargeBinary`       stores large arbitrary binary data
-=================== =====================================
+================================================ =====================================
+:class:`~sqlalchemy.types.Integer`               an integer
+:class:`String(size) <sqlalchemy.types.String>`  a string with a maximum length
+                                                 (optional in some databases, e.g.
+                                                 PostgreSQL)
+:class:`~sqlalchemy.types.Text`                  some longer unicode text
+:class:`~sqlalchemy.types.DateTime`              date and time expressed as Python
+                                                 :class:`~datetime.datetime` object.
+:class:`~sqlalchemy.types.Float`                 stores floating point values
+:class:`~sqlalchemy.types.Boolean`               stores a boolean value
+:class:`~sqlalchemy.types.PickleType`            stores a pickled Python object
+:class:`~sqlalchemy.types.LargeBinary`           stores large arbitrary binary data
+================================================ =====================================
 
 One-to-Many Relationships
 -------------------------
 
 The most common relationships are one-to-many relationships.  Because
 relationships are declared before they are established you can use strings
-to refer to classes that are not created yet (for instance if `Person`
-defines a relationship to `Address` which is declared later in the file).
+to refer to classes that are not created yet (for instance if ``Person``
+defines a relationship to ``Address`` which is declared later in the file).
 
 Relationships are expressed with the :func:`~sqlalchemy.orm.relationship`
 function.  However the foreign key has to be separately declared with the
-:class:`sqlalchemy.schema.ForeignKey` class::
+:class:`~sqlalchemy.schema.ForeignKey` class::
 
     class Person(db.Model):
         id = db.Column(db.Integer, primary_key=True)
@@ -81,13 +83,13 @@ function.  However the foreign key has to be separately declared with the
         person_id = db.Column(db.Integer, db.ForeignKey('person.id'),
             nullable=False)
 
-What does ``db.relationship()`` do?  That function returns a new property
-that can do multiple things.  In this case we told it to point to the
-`Address` class and load multiple of those.  How does it know that this
-will return more than one address?  Because SQLAlchemy guesses a useful
-default from your declaration.  If you would want to have a one-to-one
-relationship you can pass ``uselist=False`` to
-:func:`~sqlalchemy.orm.relationship`.
+What does :func:`db.relationship() <sqlalchemy.orm.relationship>` do?
+That function returns a new property that can do multiple things.
+In this case we told it to point to the ``Address`` class and load
+multiple of those.  How does it know that this will return more than
+one address?  Because SQLAlchemy guesses a useful default from your
+declaration.  If you would want to have a one-to-one relationship you
+can pass ``uselist=False`` to :func:`~sqlalchemy.orm.relationship`.
 
 Since a person with no name or an email address with no address associated
 makes no sense, ``nullable=False`` tells SQLAlchemy to create the column
@@ -96,16 +98,16 @@ idea to specify it for all other columns to make it clear to other people
 working on your code that you did actually want a nullable column and did
 not just forget to add it.
 
-So what do `backref` and `lazy` mean?  `backref` is a simple way to also
-declare a new property on the `Address` class.  You can then also use
-``my_address.person`` to get to the person at that address.  `lazy` defines
+So what do ``backref`` and ``lazy`` mean?  ``backref`` is a simple way to also
+declare a new property on the ``Address`` class.  You can then also use
+``my_address.person`` to get to the person at that address.  ``lazy`` defines
 when SQLAlchemy will load the data from the database:
 
 -   ``'select'`` / ``True`` (which is the default, but explicit is better
     than implicit) means that SQLAlchemy will load the data as necessary
     in one go using a standard select statement.
 -   ``'joined'`` / ``False`` tells SQLAlchemy to load the relationship in
-    the same query as the parent using a `JOIN` statement.
+    the same query as the parent using a ``JOIN`` statement.
 -   ``'subquery'`` works like ``'joined'`` but instead SQLAlchemy will
     use a subquery.
 -   ``'dynamic'`` is special and can be useful if you have many items
