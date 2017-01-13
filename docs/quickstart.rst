@@ -128,13 +128,23 @@ or it can be added to the list of posts of the category.
 
 Let's look at the posts. Accessing them will load them from the database
 since the relationship is lazy-loaded, but you will probably not notice
-the difference - loading a list is quite fast. Just don't do it when
-looping over many objects (in such a case you would rather use the
-``'subquery'`` or ``'joined'`` loading strategy in the model or as a
-query option)::
+the difference - loading a list is quite fast::
 
     >>> py.posts
     [<Post 'Hello Python!'>, <Post 'Snakes'>]
+
+While lazy-loading a relationship is fast, it can easily become a major
+bottleneck when you end up triggering extra queries in a loop for more
+than a few objects.  For this case, SQLAlchemy lets you override the
+loading strategy on the query level. If you wanted a single query to
+load all categories and their posts, you could do it like this::
+
+    >>> from sqlalchemy.orm import joinedload
+    >>> query = Category.query.options(joinedload('posts'))
+    >>> for category in query:
+    ...     print category, category.posts
+    <Category u'Python'> [<Post u'Hello Python!'>, <Post u'Snakes'>]
+
 
 If you want to get a query object for that relationship, you can do so
 using :func:`~sqlalchemy.orm.query.Query.with_parent`.  Let's exclude
