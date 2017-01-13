@@ -71,6 +71,12 @@ relationships.  If you decide to override the constructor for any
 reason, make sure to keep accepting ``**kwargs`` and call the super
 constructor with those ``**kwargs`` to preserve this behavior::
 
+    class Foo(db.Model):
+        # ...
+        def __init__(**kwargs):
+            super(Foo, self).__init__(**kwargs)
+            # do custom stuff
+
 Simple Relationships
 --------------------
 
