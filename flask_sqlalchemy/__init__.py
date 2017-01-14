@@ -508,6 +508,7 @@ def _record_queries(app):
 
 
 class _EngineConnector(object):
+    default_options = {}
 
     def __init__(self, sa, app, bind=None):
         self._sa = sa
@@ -533,7 +534,8 @@ class _EngineConnector(object):
             if (uri, echo) == self._connected_for:
                 return self._engine
             info = make_url(uri)
-            options = {'convert_unicode': True}
+            options = dict(self.default_options)
+            options['convert_unicode'] = True
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
@@ -544,6 +546,10 @@ class _EngineConnector(object):
                                              self._app.import_name).register()
             self._connected_for = (uri, echo)
             return rv
+
+
+def register_default_create_engine_options(**options):
+    _EngineConnector.default_options.update(options)
 
 
 def _should_set_tablename(bases, d):
@@ -835,7 +841,8 @@ class SQLAlchemy(object):
         def shutdown_session(response_or_exc):
             if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
                 if response_or_exc is None:
-                    self.session.commit()
+                    if self.session.is_active:
+                        self.session.commit()
             self.session.remove()
             return response_or_exc
 
