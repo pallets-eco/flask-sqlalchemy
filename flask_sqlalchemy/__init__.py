@@ -9,24 +9,29 @@
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import absolute_import
+
+import functools
 import os
 import re
 import sys
 import time
-import functools
 import warnings
-import sqlalchemy
 from math import ceil
-from flask import _request_ctx_stack, abort, has_request_context, request, current_app
-from flask.signals import Namespace
 from operator import itemgetter
 from threading import Lock
-from sqlalchemy import orm, event, inspect
+
+import sqlalchemy
+from flask import _app_ctx_stack, abort, current_app, g, request
+from flask.signals import Namespace
+from sqlalchemy import event, inspect, orm
+from sqlalchemy.engine.url import make_url
+from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
-from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
-from flask_sqlalchemy._compat import iteritems, itervalues, xrange, string_types
+
+from ._compat import itervalues, string_types, xrange
+
+__version__ = '3.0-dev'
 
 # the best timer function for the platform
 if sys.platform == 'win32':
@@ -34,23 +39,9 @@ if sys.platform == 'win32':
 else:
     _timer = time.time
 
-try:
-    from flask import _app_ctx_stack
-except ImportError:
-    _app_ctx_stack = None
-
-
-__version__ = '3.0-dev'
-
-
-# Which stack should we use?  _app_ctx_stack is new in 0.9
-connection_stack = _app_ctx_stack or _request_ctx_stack
-
-
 _camelcase_re = re.compile(r'([A-Z]+)(?=[a-z0-9])')
+
 _signals = Namespace()
-
-
 models_committed = _signals.signal('models-committed')
 before_models_committed = _signals.signal('before-models-committed')
 
@@ -240,32 +231,38 @@ class _SessionSignalEvents(object):
 
 
 class _EngineDebuggingSignalEvents(object):
-    """Sets up handlers for two events that let us track the execution time of queries."""
+    """Sets up handlers for two events that let us track the execution time of
+    queries."""
 
     def __init__(self, engine, import_name):
         self.engine = engine
         self.app_package = import_name
 
     def register(self):
-        event.listen(self.engine, 'before_cursor_execute', self.before_cursor_execute)
-        event.listen(self.engine, 'after_cursor_execute', self.after_cursor_execute)
+        event.listen(
+            self.engine, 'before_cursor_execute', self.before_cursor_execute
+        )
+        event.listen(
+            self.engine, 'after_cursor_execute', self.after_cursor_execute
+        )
 
-    def before_cursor_execute(self, conn, cursor, statement,
-                              parameters, context, executemany):
-        if connection_stack.top is not None:
+    def before_cursor_execute(
+        self, conn, cursor, statement, parameters, context, executemany
+    ):
+        if current_app:
             context._query_start_time = _timer()
 
-    def after_cursor_execute(self, conn, cursor, statement,
-                             parameters, context, executemany):
-        ctx = connection_stack.top
-        if ctx is not None:
-            queries = getattr(ctx, 'sqlalchemy_queries', None)
-            if queries is None:
-                queries = []
-                setattr(ctx, 'sqlalchemy_queries', queries)
-            queries.append(_DebugQueryTuple((
+    def after_cursor_execute(
+        self, conn, cursor, statement, parameters, context, executemany
+    ):
+        if current_app:
+            if 'sqlalchemy_queries' not in g:
+                g.sqlalchemy_queries = []
+
+            g.sqlalchemy_queries.append(_DebugQueryTuple((
                 statement, parameters, context._query_start_time, _timer(),
-                _calling_context(self.app_package))))
+                _calling_context(self.app_package)
+            )))
 
 
 def get_debug_queries():
@@ -300,7 +297,7 @@ def get_debug_queries():
         query was issued.  The exact format is undefined so don't try
         to reconstruct filename or function name.
     """
-    return getattr(connection_stack.top, 'sqlalchemy_queries', [])
+    return g.get('sqlalchemy_queries', ())
 
 
 class Pagination(object):
@@ -432,17 +429,21 @@ class BaseQuery(orm.Query):
     def paginate(self, page=None, per_page=None, error_out=True):
         """Returns ``per_page`` items from page ``page``.
 
-        If no items are found and ``page`` is greater than 1, or if page is less than 1, it aborts with 404.
+        If no items are found and ``page`` is greater than 1, or if page is
+        less than 1, it aborts with 404.
         This behavior can be disabled by passing ``error_out=False``.
 
-        If ``page`` or ``per_page`` are ``None``, they will be retrieved from the request query.
-        If the values are not ints and ``error_out`` is ``True``, it aborts with 404.
-        If there is no request or they aren't in the query, they default to 1 and 20 respectively.
+        If ``page`` or ``per_page`` are ``None``, they will be retrieved from
+        the request query.
+        If the values are not ints and ``error_out`` is ``True``, it aborts
+        with 404.
+        If there is no request or they aren't in the query, they default to 1
+        and 20 respectively.
 
         Returns a :class:`Pagination` object.
         """
 
-        if has_request_context():
+        if request:
             if page is None:
                 try:
                     page = int(request.args.get('page', 1))
@@ -751,20 +752,24 @@ class SQLAlchemy(object):
         """Create a :class:`~sqlalchemy.orm.scoping.scoped_session`
         on the factory from :meth:`create_session`.
 
-        An extra key ``'scopefunc'`` can be set on the ``options`` dict to specify a custom
-        scope function.  If it's not provided, Flask's app context stack identity is used.
-        This will ensure that sessions are created and removed with the request/response cycle,
-        and should be fine in most cases.
+        An extra key ``'scopefunc'`` can be set on the ``options`` dict to
+        specify a custom scope function.  If it's not provided, Flask's app
+        context stack identity is used. This will ensure that sessions are
+        created and removed with the request/response cycle, and should be fine
+        in most cases.
 
-        :param options: dict of keyword arguments passed to session class  in ``create_session``
+        :param options: dict of keyword arguments passed to session class  in
+            ``create_session``
         """
 
         if options is None:
             options = {}
 
-        scopefunc = options.pop('scopefunc', connection_stack.__ident_func__)
+        scopefunc = options.pop('scopefunc', _app_ctx_stack.__ident_func__)
         options.setdefault('query_cls', self.Query)
-        return orm.scoped_session(self.create_session(options), scopefunc=scopefunc)
+        return orm.scoped_session(
+            self.create_session(options), scopefunc=scopefunc
+        )
 
     def create_session(self, options):
         """Create the session factory used by :meth:`create_scoped_session`.
@@ -810,32 +815,25 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
-        track_modifications = app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', None)
+        track_modifications = app.config.setdefault(
+            'SQLALCHEMY_TRACK_MODIFICATIONS', None
+        )
 
         if track_modifications is None:
-            warnings.warn(FSADeprecationWarning('SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and will be disabled by default in the future.  Set it to True or False to suppress this warning.'))
+            warnings.warn(FSADeprecationWarning(
+                'SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and '
+                'will be disabled by default in the future.  Set it to True '
+                'or False to suppress this warning.'
+            ))
 
-        if not hasattr(app, 'extensions'):
-            app.extensions = {}
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
 
-        # 0.9 and later
-        if hasattr(app, 'teardown_appcontext'):
-            teardown = app.teardown_appcontext
-        # 0.7 to 0.8
-        elif hasattr(app, 'teardown_request'):
-            teardown = app.teardown_request
-        # Older Flask versions
-        else:
-            if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
-                raise RuntimeError("Commit on teardown requires Flask >= 0.7")
-            teardown = app.after_request
-
-        @teardown
+        @app.teardown_appcontext
         def shutdown_session(response_or_exc):
             if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
                 if response_or_exc is None:
                     self.session.commit()
+
             self.session.remove()
             return response_or_exc
 
@@ -928,20 +926,22 @@ class SQLAlchemy(object):
             return connector.get_engine()
 
     def get_app(self, reference_app=None):
-        """Helper method that implements the logic to look up an application."""
+        """Helper method that implements the logic to look up an
+        application."""
 
         if reference_app is not None:
             return reference_app
 
-        ctx = connection_stack.top
-
-        if ctx is not None:
-            return ctx.app
+        if current_app:
+            return current_app
 
         if self.app is not None:
             return self.app
 
-        raise RuntimeError('application not registered on db instance and no application bound to current context')
+        raise RuntimeError(
+            'application not registered on db instance and no application'
+            'bound to current context'
+        )
 
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""

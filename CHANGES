@@ -13,6 +13,8 @@ In development, codename Dubnium
   to the ``SQLAlchemy`` constructor.
 - Fix minimum SQLAlchemy version requirement (0.8 or above), due to use
   of ``sqlalchemy.inspect``.
+- Drop support of Flask < 0.10. This means the db session is always tied to
+  the app context and its teardown event.
 
 Version 2.1
 -----------
