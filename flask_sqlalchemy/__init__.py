@@ -805,7 +805,13 @@ class SQLAlchemy(object):
         of an application not initialized that way or connections will
         leak.
         """
-        app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite://')
+        if 'SQLALCHEMY_DATABASE_URI' not in app.config:
+            warnings.warn(
+                'SQLALCHEMY_DATABASE_URI not set. Defaulting to '
+                '"sqlite:///:memory:".'
+            )
+
+        app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///:memory:')
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
