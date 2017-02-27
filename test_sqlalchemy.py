@@ -300,7 +300,7 @@ class TablenameTestCase(unittest.TestCase):
         class Duck(Base):
             pass
 
-        self.assertFalse(hasattr(Base, '__tablename__'))
+        self.assertEqual(Base.__tablename__, 'base')
         self.assertEqual(Duck.__tablename__, 'duck')
 
     def test_complex_inheritance(self):
@@ -321,6 +321,53 @@ class TablenameTestCase(unittest.TestCase):
             pass
 
         self.assertEqual(RubberDuck.__tablename__, 'rubber_duck')
+
+    def test_manual_name(self):
+        app = flask.Flask(__name__)
+        db = fsa.SQLAlchemy(app)
+
+        class Duck(db.Model):
+            __tablename__ = 'DUCK'
+            id = db.Column(db.Integer, primary_key=True)
+
+        class Daffy(Duck):
+            id = db.Column(db.Integer, db.ForeignKey(Duck.id), primary_key=True)
+
+        self.assertEqual(Duck.__tablename__, 'DUCK')
+        self.assertEqual(Daffy.__tablename__, 'daffy')
+
+    def test_no_access_to_class_property(self):
+        app = flask.Flask(__name__)
+        db = fsa.SQLAlchemy(app)
+
+        class class_property(object):
+            def __init__(self, f):
+                self.f = f
+
+            def __get__(self, instance, owner):
+                return self.f(owner)
+
+        class Duck(db.Model):
+            id = db.Column(db.Integer, primary_key=True)
+
+        class ns(object):
+            accessed = False
+
+        # Since there's no id provided by the following model,
+        # _should_set_tablename will scan all attributes. If it's working
+        # properly, it won't access the class property, but will access the
+        # declared_attr.
+
+        class Witch(Duck):
+            @declared_attr
+            def is_duck(self):
+                ns.accessed = True
+
+            @class_property
+            def floats(self):
+                assert False
+
+        self.assertTrue(ns.accessed)
 
 
 class PaginationTestCase(unittest.TestCase):
@@ -486,13 +533,9 @@ class CustomQueryClassTestCase(unittest.TestCase):
         class CustomQueryClass(fsa.BaseQuery):
             pass
 
-        class MyModelClass(object):
-            pass
-
         app = flask.Flask(__name__)
         app.config['TESTING'] = True
-        db = fsa.SQLAlchemy(app, query_class=CustomQueryClass,
-                            model_class=MyModelClass)
+        db = fsa.SQLAlchemy(app, query_class=CustomQueryClass)
 
         class Parent(db.Model):
             id = db.Column(db.Integer, primary_key=True)
