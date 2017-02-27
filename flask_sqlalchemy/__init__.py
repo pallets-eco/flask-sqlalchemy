@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    flaskext.sqlalchemy
-    ~~~~~~~~~~~~~~~~~~~
+    flask_sqlalchemy
+    ~~~~~~~~~~~~~~~~
 
     Adds basic SQLAlchemy support to your application.
 
