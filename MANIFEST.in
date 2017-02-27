@@ -1,6 +1,6 @@
-include LICENSE CHANGES *.py
-recursive-include docs *
-recursive-exclude docs *.pyc
-recursive-exclude docs *.pyo
+include LICENSE CHANGES tox.ini test_sqlalchemy.py
+graft docs
 prune docs/_build
 prune docs/_themes/.git
+recursive-exclude docs *.pyc
+recursive-exclude docs *.pyo
