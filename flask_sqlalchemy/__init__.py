@@ -25,11 +25,12 @@ from flask import _app_ctx_stack, abort, current_app, g, request
 from flask.signals import Namespace
 from sqlalchemy import event, inspect, orm
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base, \
+    declared_attr
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
-from ._compat import itervalues, string_types, xrange
+from ._compat import iteritems, itervalues, string_types, xrange
 
 __version__ = '3.0-dev'
 
@@ -547,18 +548,9 @@ class _EngineConnector(object):
             return rv
 
 
-def _should_set_tablename(bases, d):
-    """Check what values are set by a class and its bases to determine if a
-    tablename should be automatically generated.
-
-    The class and its bases are checked in order of precedence: the class
-    itself then each base in the order they were given at class definition.
-
-    Abstract classes do not generate a tablename, although they may have set
-    or inherited a tablename elsewhere.
-
-    If a class defines a tablename or table, a new one will not be generated.
-    Otherwise, if the class defines a primary key, a new name will be generated.
+def _should_set_tablename(cls):
+    """Traverse the model's MRO. If a primary key column is found before a
+    table or tablename, then a new tablename should be generated.
 
     This supports:
 
@@ -566,44 +558,49 @@ def _should_set_tablename(bases, d):
     * Single table inheritance.
     * Inheriting from mixins or abstract models.
 
-    :param bases: base classes of new class
-    :param d: new class dict
+    :param cls: model to check
     :return: True if tablename should be set
     """
 
-    if '__tablename__' in d or '__table__' in d or '__abstract__' in d:
-        return False
+    for base in cls.__mro__:
+        d = base.__dict__
 
-    if any(v.primary_key for v in itervalues(d) if isinstance(v, sqlalchemy.Column)):
-        return True
-
-    for base in bases:
-        if hasattr(base, '__tablename__') or hasattr(base, '__table__'):
+        if '__tablename__' in d or '__table__' in d:
             return False
 
-        for name in dir(base):
-            attr = getattr(base, name)
+        for name, obj in iteritems(d):
+            if isinstance(obj, declared_attr):
+                obj = getattr(cls, name)
 
-            if isinstance(attr, sqlalchemy.Column) and attr.primary_key:
+            if isinstance(obj, sqlalchemy.Column) and obj.primary_key:
                 return True
 
 
-class _BoundDeclarativeMeta(DeclarativeMeta):
+def camel_to_snake_case(name):
+    def _join(match):
+        word = match.group()
 
+        if len(word) > 1:
+            return ('_%s_%s' % (word[:-1], word[-1])).lower()
+
+        return '_' + word.lower()
+
+    return _camelcase_re.sub(_join, name).lstrip('_')
+
+
+class _BoundDeclarativeMeta(DeclarativeMeta):
     def __new__(cls, name, bases, d):
-        if _should_set_tablename(bases, d):
-            def _join(match):
-                word = match.group()
-                if len(word) > 1:
-                    return ('_%s_%s' % (word[:-1], word[-1])).lower()
-                return '_' + word.lower()
-            d['__tablename__'] = _camelcase_re.sub(_join, name).lstrip('_')
+        # if tablename is set explicitly, move it to the cache attribute so
+        # that future subclasses still have auto behavior
+        if '__tablename__' in d:
+            d['_cached_tablename'] = d.pop('__tablename__')
 
         return DeclarativeMeta.__new__(cls, name, bases, d)
 
     def __init__(self, name, bases, d):
         bind_key = d.pop('__bind_key__', None) or getattr(self, '__bind_key__', None)
         DeclarativeMeta.__init__(self, name, bases, d)
+
         if bind_key is not None and hasattr(self, '__table__'):
             self.__table__.info['bind_key'] = bind_key
 
@@ -638,6 +635,18 @@ class Model(object):
     #: Convenience property to query the database for instances of this model using the current session.
     #: Equivalent to ``db.session.query(Model)`` unless :attr:`query_class` has been changed.
     query = None
+
+    _cached_tablename = None
+
+    @declared_attr
+    def __tablename__(cls):
+        if (
+            '_cached_tablename' not in cls.__dict__ and
+            _should_set_tablename(cls)
+        ):
+            cls._cached_tablename = camel_to_snake_case(cls.__name__)
+
+        return cls._cached_tablename
 
 
 class SQLAlchemy(object):
