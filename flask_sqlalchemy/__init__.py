@@ -605,6 +605,13 @@ class _BoundDeclarativeMeta(DeclarativeMeta):
             self.__table__.info['bind_key'] = bind_key
 
 
+class _NoAutoBoundDeclarativeMeta(_BoundDeclarativeMeta):
+    def __new__(cls, name, bases, d):
+        d['__no_auto_tablename__'] = True
+        # skip _BoundDeclarativeMeta.__new__
+        return DeclarativeMeta.__new__(cls, name, bases, d)
+
+
 def get_state(app):
     """Gets the state for the application"""
     assert 'sqlalchemy' in app.extensions, \
@@ -640,6 +647,9 @@ class Model(object):
 
     @declared_attr
     def __tablename__(cls):
+        if hasattr(cls, '__no_auto_tablename__'):
+            del cls.__no_auto_tablename__
+            return
         if (
             '_cached_tablename' not in cls.__dict__ and
             _should_set_tablename(cls)
@@ -730,6 +740,11 @@ class SQLAlchemy(object):
 
     .. versionchanged:: 2.2
        Utilise the same query class across `session`, `Model.query` and `Query`.
+
+    ..versionadded:: 2.2
+       The `auto_table_names` parameter was added. This allows disabling the
+       table name generation logic and causes models with no name to fail as
+       it is the case in vanilla SQLAlchemy.
     """
 
     #: Default query class used by :attr:`Model.query` and other queries.
@@ -738,12 +753,14 @@ class SQLAlchemy(object):
     Query = None
 
     def __init__(self, app=None, use_native_unicode=True, session_options=None,
-                 metadata=None, query_class=BaseQuery, model_class=Model):
+                 metadata=None, query_class=BaseQuery, model_class=Model,
+                 auto_table_names=True):
 
         self.use_native_unicode = use_native_unicode
         self.Query = query_class
         self.session = self.create_scoped_session(session_options)
-        self.Model = self.make_declarative_base(model_class, metadata)
+        self.Model = self.make_declarative_base(model_class, metadata,
+                                                auto_table_names)
         self._engine_lock = Lock()
         self.app = app
         _include_sqlalchemy(self, query_class)
@@ -796,11 +813,13 @@ class SQLAlchemy(object):
 
         return orm.sessionmaker(class_=SignallingSession, db=self, **options)
 
-    def make_declarative_base(self, model, metadata=None):
+    def make_declarative_base(self, model, metadata=None, auto_table_names=True):
         """Creates the declarative base."""
+        metaclass = (_BoundDeclarativeMeta if auto_table_names
+                     else _NoAutoBoundDeclarativeMeta)
         base = declarative_base(cls=model, name='Model',
                                 metadata=metadata,
-                                metaclass=_BoundDeclarativeMeta)
+                                metaclass=metaclass)
 
         if not getattr(base, 'query_class', None):
             base.query_class = self.Query

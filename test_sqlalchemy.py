@@ -6,6 +6,7 @@ from datetime import datetime
 
 import flask
 import sqlalchemy as sa
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import sessionmaker
 
@@ -368,6 +369,16 @@ class TablenameTestCase(unittest.TestCase):
                 assert False
 
         self.assertTrue(ns.accessed)
+
+    def test_no_auto_generation(self):
+        app = flask.Flask(__name__)
+        db = fsa.SQLAlchemy(app, auto_table_names=False)
+
+        def _fn():
+            class Unnamed(db.Model):
+                id = db.Column(db.Integer, primary_key=True)
+
+        self.assertRaises(InvalidRequestError, _fn)
 
 
 class PaginationTestCase(unittest.TestCase):

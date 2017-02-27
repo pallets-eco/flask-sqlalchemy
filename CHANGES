@@ -18,6 +18,8 @@ Released on February 27, 2017, codename Dubnium
   the app context and its teardown event. (`#461`_)
 - Tablename generation logic no longer accesses class properties unless they
   are ``declared_attr``. (`#467`_)
+- Added the ``auto_table_names`` arg to the ``SQLAlchemy`` constructor
+  which can be used to disable table name generation. (`#476`_)
 
 .. _#328: https://github.com/mitsuhiko/flask-sqlalchemy/pull/328
 .. _#364: https://github.com/mitsuhiko/flask-sqlalchemy/pull/364
@@ -27,6 +29,7 @@ Released on February 27, 2017, codename Dubnium
 .. _#460: https://github.com/mitsuhiko/flask-sqlalchemy/pull/460
 .. _#461: https://github.com/mitsuhiko/flask-sqlalchemy/pull/461
 .. _#467: https://github.com/mitsuhiko/flask-sqlalchemy/pull/467
+.. _#476: https://github.com/mitsuhiko/flask-sqlalchemy/pull/476
 
 Version 2.1
 -----------
