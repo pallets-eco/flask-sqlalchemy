@@ -32,7 +32,7 @@ from sqlalchemy.orm.session import Session as SessionBase
 
 from ._compat import iteritems, itervalues, string_types, xrange
 
-__version__ = '2.2'
+__version__ = '2.2.1'
 
 # the best timer function for the platform
 if sys.platform == 'win32':
