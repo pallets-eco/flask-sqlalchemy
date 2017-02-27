@@ -21,7 +21,7 @@ from operator import itemgetter
 from threading import Lock
 
 import sqlalchemy
-from flask import _app_ctx_stack, abort, current_app, g, request
+from flask import _app_ctx_stack, abort, current_app, request
 from flask.signals import Namespace
 from sqlalchemy import event, inspect, orm
 from sqlalchemy.engine.url import make_url
@@ -257,10 +257,12 @@ class _EngineDebuggingSignalEvents(object):
         self, conn, cursor, statement, parameters, context, executemany
     ):
         if current_app:
-            if 'sqlalchemy_queries' not in g:
-                g.sqlalchemy_queries = []
+            try:
+                queries = _app_ctx_stack.top.sqlalchemy_queries
+            except AttributeError:
+                queries = _app_ctx_stack.top.sqlalchemy_queries = []
 
-            g.sqlalchemy_queries.append(_DebugQueryTuple((
+            queries.append(_DebugQueryTuple((
                 statement, parameters, context._query_start_time, _timer(),
                 _calling_context(self.app_package)
             )))
@@ -298,7 +300,7 @@ def get_debug_queries():
         query was issued.  The exact format is undefined so don't try
         to reconstruct filename or function name.
     """
-    return g.get('sqlalchemy_queries', ())
+    return getattr(_app_ctx_stack.top, 'sqlalchemy_queries', [])
 
 
 class Pagination(object):
