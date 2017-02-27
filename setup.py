@@ -17,7 +17,7 @@ from setuptools import setup
 
 setup(
     name='Flask-SQLAlchemy',
-    version='3.0',
+    use_scm_version=True,
     url='http://github.com/mitsuhiko/flask-sqlalchemy',
     license='BSD',
     author='Armin Ronacher',
@@ -32,6 +32,9 @@ setup(
     install_requires=[
         'Flask>=0.10',
         'SQLAlchemy>=0.8.0'
+    ],
+    setup_requires=[
+        'setuptools_scm',
     ],
     test_suite='test_sqlalchemy.suite',
     classifiers=[
