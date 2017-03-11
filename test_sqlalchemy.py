@@ -68,14 +68,22 @@ class BasicAppTestCase(unittest.TestCase):
         with self.app.test_request_context():
             todo = self.Todo('Test 1', 'test')
             self.db.session.add(todo)
+            self.db.session.flush()
+            todo.done = True
             self.db.session.commit()
 
             queries = fsa.get_debug_queries()
-            self.assertEqual(len(queries), 1)
+            self.assertEqual(len(queries), 2)
             query = queries[0]
             self.assertTrue('insert into' in query.statement.lower())
             self.assertEqual(query.parameters[0], 'Test 1')
             self.assertEqual(query.parameters[1], 'test')
+            self.assertTrue('test_sqlalchemy.py' in query.context)
+            self.assertTrue('test_query_recording' in query.context)
+            query = queries[1]
+            self.assertTrue('update' in query.statement.lower())
+            self.assertEqual(query.parameters[0], 1)
+            self.assertEqual(query.parameters[1], 1)
             self.assertTrue('test_sqlalchemy.py' in query.context)
             self.assertTrue('test_query_recording' in query.context)
 
