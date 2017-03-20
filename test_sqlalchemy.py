@@ -385,6 +385,17 @@ class PaginationTestCase(unittest.TestCase):
         self.assertEqual(list(p.iter_pages()),
                          [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25])
 
+    def test_as_dict_method(self):
+        p = fsa.Pagination(None, 1, 20, 500, [1, 2, 3, 4, 5])
+        self.assertEqual(
+            p.as_dict(),
+            {'items': p.items,
+             'next_num': p.next_num,
+             'page': p.page,
+             'prev_num': p.prev_num,
+             'total': p.total}
+        )
+
     def test_pagination_pages_when_0_items_per_page(self):
         p = fsa.Pagination(None, 1, 0, 500, [])
         self.assertEqual(p.pages, 0)

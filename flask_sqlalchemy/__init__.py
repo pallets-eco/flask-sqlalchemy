@@ -403,6 +403,11 @@ class Pagination(object):
                 yield num
                 last = num
 
+    def as_dict(self):
+        """Returns dict representation of the object"""
+        return dict(items=self.items, page=self.page, total=self.total,
+                    prev_num=self.prev_num, next_num=self.next_num)
+
 
 class BaseQuery(orm.Query):
     """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with convenience methods for querying in a web application.
