@@ -904,6 +904,14 @@ class SQLAlchemy(object):
             # if it's not an in memory database we make the path absolute.
             if not detected_in_memory:
                 info.database = os.path.join(app.root_path, info.database)
+        elif 'psycopg2' in info.drivername:
+            # if pool size is None or explicitly set to 0 we assume the
+            # user did not want a queue for this sqlite connection and
+            # hook in the null pool.
+            if options.get('pool_size') == 0:
+                from sqlalchemy.pool import NullPool
+                options.pop('pool_size')
+                options['poolclass'] = NullPool
 
         unu = app.config['SQLALCHEMY_NATIVE_UNICODE']
         if unu is None:
