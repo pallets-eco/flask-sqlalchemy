@@ -503,6 +503,16 @@ class BindsTestCase(unittest.TestCase):
         self.assertEqual(len(metadata.tables), 1)
         self.assertTrue('foo_bound_model' in metadata.tables)
 
+    def test_extended_engine_options(self):
+        app = flask.Flask(__name__)
+        app.config['SQLALCHEMY_BINDS'] = {
+            'foo': 'sqlite://'
+        }
+        db = fsa.SQLAlchemy(app, engine_options=dict(echo=True))
+        db.create_all()
+
+        self.assertTrue(db.engine.echo)
+
 
 class DefaultQueryClassTestCase(unittest.TestCase):
     def test_default_query_class(self):

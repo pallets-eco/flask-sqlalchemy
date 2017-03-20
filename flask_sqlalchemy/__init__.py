@@ -540,6 +540,7 @@ class _EngineConnector(object):
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
                 options['echo'] = echo
+            options.update(self._sa.engine_options)
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
@@ -710,6 +711,10 @@ class SQLAlchemy(object):
     to be passed to the session constructor.  See :class:`~sqlalchemy.orm.session.Session`
     for the standard options.
 
+    The ``engine_options`` parameter, if provided, is a dict of parameters
+    to be passed to the engine constructor.  See :class:`~sqlalchemy.create_engine`
+    for the standard options.
+
     .. versionadded:: 0.10
        The `session_options` parameter was added.
 
@@ -738,7 +743,8 @@ class SQLAlchemy(object):
     Query = None
 
     def __init__(self, app=None, use_native_unicode=True, session_options=None,
-                 metadata=None, query_class=BaseQuery, model_class=Model):
+                 metadata=None, query_class=BaseQuery, model_class=Model,
+                 engine_options=None):
 
         self.use_native_unicode = use_native_unicode
         self.Query = query_class
@@ -746,6 +752,7 @@ class SQLAlchemy(object):
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
         self.app = app
+        self.engine_options = engine_options or {}
         _include_sqlalchemy(self, query_class)
 
         if app is not None:
