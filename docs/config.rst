@@ -117,8 +117,6 @@ SQLite (note the number of leading slashes)::
     sqlite:////absolute/path/to/foo.db
     # Windows
     sqlite:///absolute\\path\\to\\foo.db
-    # Windows alternative using raw string
-    r'sqlite:///absolute\path\to\foo.db'
 
 Using custom MetaData and naming conventions
 --------------------------------------------
