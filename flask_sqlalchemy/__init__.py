@@ -814,7 +814,6 @@ class SQLAlchemy(object):
         of an application not initialized that way or connections will
         leak.
         """
-        assert app is not None, "app can't be None"
         if 'SQLALCHEMY_DATABASE_URI' not in app.config:
             warnings.warn(
                 'SQLALCHEMY_DATABASE_URI not set. Defaulting to '
