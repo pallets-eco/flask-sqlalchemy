@@ -814,6 +814,7 @@ class SQLAlchemy(object):
         of an application not initialized that way or connections will
         leak.
         """
+        assert app is not None, "app can't be None"
         if 'SQLALCHEMY_DATABASE_URI' not in app.config:
             warnings.warn(
                 'SQLALCHEMY_DATABASE_URI not set. Defaulting to '
@@ -842,6 +843,7 @@ class SQLAlchemy(object):
             ))
 
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
+        self.app = app
 
         @app.teardown_appcontext
         def shutdown_session(response_or_exc):
