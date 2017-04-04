@@ -404,9 +404,15 @@ class Pagination(object):
                 last = num
 
     def as_dict(self):
-        """Returns dict representation of the object"""
-        return dict(items=self.items, page=self.page, total=self.total,
-                    prev_num=self.prev_num, next_num=self.next_num)
+        """Create a dict with the pagination fields for use as a JSON response."""
+
+        return {
+            'items': self.items,
+            'page': self.page,
+            'total': self.total,
+            'prev_num': self.prev_num,
+            'next_num': self.next_num
+        }
 
 
 class BaseQuery(orm.Query):

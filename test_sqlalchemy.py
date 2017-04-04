@@ -389,11 +389,13 @@ class PaginationTestCase(unittest.TestCase):
         p = fsa.Pagination(None, 1, 20, 500, [1, 2, 3, 4, 5])
         self.assertEqual(
             p.as_dict(),
-            {'items': p.items,
-             'next_num': p.next_num,
-             'page': p.page,
-             'prev_num': p.prev_num,
-             'total': p.total}
+            {
+                'items': p.items,
+                'next_num': p.next_num,
+                'page': p.page,
+                'prev_num': p.prev_num,
+                'total': p.total
+            }
         )
 
     def test_pagination_pages_when_0_items_per_page(self):
