@@ -38,7 +38,9 @@ A list of configuration keys currently understood by the extension:
                                    improper database defaults that specify
                                    encoding-less databases.
 ``SQLALCHEMY_POOL_SIZE``           The size of the database pool.  Defaults
-                                   to the engine's default (usually 5)
+                                   to the engine's default (usually 5). Set
+                                   this to None or zero to disable
+                                   pooling.
 ``SQLALCHEMY_POOL_TIMEOUT``        Specifies the connection timeout for the
                                    pool.  Defaults to 10.
 ``SQLALCHEMY_POOL_RECYCLE``        Number of seconds after which a
