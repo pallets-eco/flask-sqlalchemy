@@ -120,9 +120,11 @@ class _DebugQueryTuple(tuple):
 
 def _calling_context(app_path):
     frm = sys._getframe(1)
+    app_path_root = app_path.split('.')[0]
     while frm.f_back is not None:
         name = frm.f_globals.get('__name__')
-        if name and (name == app_path or name.startswith(app_path + '.')):
+        if name and (
+                name == app_path_root or name.startswith(app_path_root + '.')):
             funcname = frm.f_code.co_name
             return '%s:%s (%s)' % (
                 frm.f_code.co_filename,
