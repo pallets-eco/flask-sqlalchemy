@@ -115,10 +115,11 @@ SQLite (note that platform path conventions apply)::
 
     #Unix/Mac (note the four leading slashes)
     sqlite:////absolute/path/to/foo.db
-    #Windows using backslash escape
+    #Windows (note 3 leading forward slashes and backslash escapes)
     sqlite:///C:\\absolute\\path\\to\\foo.db
-    #Windows alternative using raw string
+    #Windows (alternative using raw string)
     r'sqlite:///C:\absolute\path\to\foo.db'
+
 Using custom MetaData and naming conventions
 --------------------------------------------
 
