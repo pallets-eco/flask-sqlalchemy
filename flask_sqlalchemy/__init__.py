@@ -842,6 +842,7 @@ class SQLAlchemy(object):
             ))
 
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
+        self.app = app
 
         @app.teardown_appcontext
         def shutdown_session(response_or_exc):
