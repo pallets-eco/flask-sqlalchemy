@@ -882,8 +882,8 @@ class SQLAlchemy(object):
             detected_in_memory = False
             if info.database in (None, '', ':memory:'):
                 detected_in_memory = True
-                from sqlalchemy.pool import StaticPool
-                options['poolclass'] = StaticPool
+                from sqlalchemy.pool import SingletonThreadPool
+                options['poolclass'] = SingletonThreadPool
                 if 'connect_args' not in options:
                     options['connect_args'] = {}
                 options['connect_args']['check_same_thread'] = False
