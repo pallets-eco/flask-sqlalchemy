@@ -19,7 +19,9 @@ then create the :class:`SQLAlchemy` object by passing it the application.
 Once created, that object then contains all the functions and helpers
 from both :mod:`sqlalchemy` and :mod:`sqlalchemy.orm`.  Furthermore it
 provides a class called ``Model`` that is a declarative base which can be
-used to declare models::
+used to declare models. Warning! Postgres has a reserved table called user.
+To avoid accidentally retrieving that table, make sure any sql queries
+use quotes (i.e. SELECT * FROM "USER")::
 
     from flask import Flask
     from flask_sqlalchemy import SQLAlchemy
