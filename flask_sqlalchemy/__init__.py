@@ -532,7 +532,8 @@ class _EngineConnector(object):
         with self._lock:
             uri = self.get_uri()
             echo = self._app.config['SQLALCHEMY_ECHO']
-            if (uri, echo) == self._connected_for:
+            module_overload = self._app.config.get('SQLALCHEMY_MODULE_OVERLOAD', None)
+            if (uri, echo, module_overload) == self._connected_for:
                 return self._engine
             info = make_url(uri)
             options = {'convert_unicode': True}
@@ -540,11 +541,13 @@ class _EngineConnector(object):
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
                 options['echo'] = echo
+            if module_overload:
+                options['module'] = module_overload
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
                                              self._app.import_name).register()
-            self._connected_for = (uri, echo)
+            self._connected_for = (uri, echo, module_overload)
             return rv
 
 
