@@ -740,6 +740,7 @@ class SQLAlchemy(object):
     def __init__(self, app=None, use_native_unicode=True, session_options=None,
                  metadata=None, query_class=BaseQuery, model_class=Model):
 
+        self.scoped_sessions = []
         self.use_native_unicode = use_native_unicode
         self.Query = query_class
         self.session = self.create_scoped_session(session_options)
@@ -767,6 +768,10 @@ class SQLAlchemy(object):
         created and removed with the request/response cycle, and should be fine
         in most cases.
 
+        When sessions are added to the Flask request context, they are kept in
+        storage for proper removal. To remove them from storage, you must call
+        :meth:`scoped_sessions.remove` using the returned session.
+
         :param options: dict of keyword arguments passed to session class  in
             ``create_session``
         """
@@ -776,9 +781,12 @@ class SQLAlchemy(object):
 
         scopefunc = options.pop('scopefunc', _app_ctx_stack.__ident_func__)
         options.setdefault('query_cls', self.Query)
-        return orm.scoped_session(
+        session = orm.scoped_session(
             self.create_session(options), scopefunc=scopefunc
         )
+        if scopefunc == _app_ctx_stack.__ident_func__:
+            self.scoped_sessions.append(session)
+        return session
 
     def create_session(self, options):
         """Create the session factory used by :meth:`create_scoped_session`.
@@ -847,9 +855,12 @@ class SQLAlchemy(object):
         def shutdown_session(response_or_exc):
             if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
                 if response_or_exc is None:
-                    self.session.commit()
+                    for session in self.scoped_sessions:
+                        session.commit()
 
-            self.session.remove()
+            for session in self.scoped_sessions:
+                session.remove()
+
             return response_or_exc
 
     def apply_pool_defaults(self, app, options):
