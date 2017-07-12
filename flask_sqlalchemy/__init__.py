@@ -947,11 +947,11 @@ class SQLAlchemy(object):
         if reference_app is not None:
             return reference_app
 
-        if current_app:
-            return current_app
-
         if self.app is not None:
             return self.app
+
+        if current_app:
+            return current_app
 
         raise RuntimeError(
             'application not registered on db instance and no application'
