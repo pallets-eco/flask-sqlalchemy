@@ -1,7 +1,7 @@
 import pytest
 pytest.importorskip("click")
 
-from flask_sqlalchemy.cli import db_create, db_drop, db_binds
+from flask_sqlalchemy.cli import db_create, db_drop
 
 
 def test_cli_create(clirunner, db, script_info, mocker):
@@ -46,15 +46,3 @@ def test_cli_drop_abort(clirunner, db, script_info, mocker):
     )
     assert not mock_execute.called
     assert "Database dropped successfully." not in result.output
-
-
-def test_cli_binds(clirunner, script_info, Todo):
-    result = clirunner.invoke(db_binds, obj=script_info)
-    assert result.exit_code == 0
-    assert "todos -> sqlite:///:memory:" in result.output
-
-
-def test_cli_binds_empty_db(clirunner, db, script_info):
-    result = clirunner.invoke(db_binds, obj=script_info)
-    assert result.exit_code == 1
-    assert "Error: No database tables found." in result.output
