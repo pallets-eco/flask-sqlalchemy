@@ -46,6 +46,7 @@ def db():
 def db_create(bind):
     """Creates database tables."""
     state.db.create_all(bind=bind)
+    click.secho('Database created successfully.', fg='green')
 
 
 @db.command('drop')
@@ -59,3 +60,18 @@ def db_create(bind):
 def db_drop(bind):
     """Drops database tables."""
     state.db.drop_all(bind=bind)
+    click.secho('Database dropped successfully.', fg='green')
+
+
+@db.command('binds')
+@with_appcontext
+def db_binds():
+    """List database binds."""
+    binds = state.db.get_binds()
+    if not binds:
+        raise click.ClickException('No database tables found.')
+    else:
+        for table, engine in binds.items():
+            click.echo("{table.name} -> {engine.url}".format(
+                table=table, engine=engine
+            ))
