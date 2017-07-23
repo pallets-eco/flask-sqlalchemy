@@ -73,7 +73,7 @@ def mock_engines(mocker):
         if info.drivername == 'sqlite':
             return real_create_engine(info, **options)
         # every other engine has dependencies, so we'll mock them
-        return mocker.Mock(name="{} engine".format(info.drivername))
+        return mocker.Mock(name="{info.drivername} engine".format(info=info))
 
     def mock_debugging_signals(engine, import_name):
         if isinstance(engine, mocker.Mock):
