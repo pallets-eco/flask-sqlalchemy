@@ -15,10 +15,13 @@ env:
   - REQUIREMENTS=current
 
 install:
-  - pip install tox
+  - pip install tox codecov
 
 script:
   - tox -e py-$REQUIREMENTS
+
+after_success:
+  - codecov
 
 notifications:
   email: false
