@@ -1,5 +1,6 @@
 import pytest
-from click.testing import CliRunner
+pytest.importorskip("click")
+
 from flask_sqlalchemy.cli import db_create, db_drop, db_binds
 
 

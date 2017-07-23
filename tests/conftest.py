@@ -2,7 +2,6 @@ from datetime import datetime
 
 import flask
 import pytest
-from click.testing import CliRunner
 
 import sqlalchemy
 import flask_sqlalchemy as fsa
@@ -48,6 +47,7 @@ def Todo(db):
 
 @pytest.fixture
 def clirunner():
+    from click.testing import CliRunner
     return CliRunner()
 
 
