@@ -780,6 +780,7 @@ class SQLAlchemy(object):
             )
 
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///:memory:')
+        app.config.setdefault('SQLALCHEMY_CLI_DB_NAME', 'db')
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
@@ -801,6 +802,12 @@ class SQLAlchemy(object):
             ))
 
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
+
+        if hasattr(app, 'cli'):
+            from .cli import db
+            cli_name = app.config['SQLALCHEMY_CLI_DB_NAME']
+            if cli_name:
+                app.cli.add_command(db, cli_name)
 
         @app.teardown_appcontext
         def shutdown_session(response_or_exc):
