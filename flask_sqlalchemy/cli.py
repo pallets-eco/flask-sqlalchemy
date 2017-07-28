@@ -47,17 +47,3 @@ def db_create(bind):
     """Creates database tables."""
     state.db.create_all(bind=bind)
     click.secho('Database created successfully.', fg='green')
-
-
-@db.command('drop')
-@click.option('--bind', default='__all__')
-@click.confirmation_option(prompt=(
-    "This will destroy all the data in your database. "
-    "Do you want to continue?"
-))
-@with_appcontext
-@commit
-def db_drop(bind):
-    """Drops database tables."""
-    state.db.drop_all(bind=bind)
-    click.secho('Database dropped successfully.', fg='green')
