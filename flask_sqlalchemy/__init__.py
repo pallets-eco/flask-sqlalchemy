@@ -536,7 +536,11 @@ class _EngineConnector(object):
                 return self._engine
             info = make_url(uri)
             options = {'convert_unicode': True}
-            self._sa.apply_pool_defaults(self._app, options)
+            pool = self._app.config['SQLALCHEMY_POOL']
+            if pool:
+                options['pool'] = pool
+            else:
+                self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
                 options['echo'] = echo
@@ -830,6 +834,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
+        app.config.setdefault('SQLALCHEMY_POOL', None)
         track_modifications = app.config.setdefault(
             'SQLALCHEMY_TRACK_MODIFICATIONS', None
         )

@@ -63,6 +63,12 @@ A list of configuration keys currently understood by the extension:
                                    that it will be disabled by default in
                                    the future.  This requires extra memory
                                    and should be disabled if not needed.
+``SQLALCHEMY_POOL``                A reference to a SQLAlchemy Pool object,
+                                   when used, other pool-related
+                                   configuration elements will be
+                                   disregarded in favor of this pool object.
+                                   This allows for the full flexibility
+                                   that SQLAlchemy provides around pools.
 ================================== =========================================
 
 .. versionadded:: 0.8
