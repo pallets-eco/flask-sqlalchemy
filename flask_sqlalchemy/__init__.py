@@ -827,8 +827,6 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
-        app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
-        app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
         track_modifications = app.config.setdefault(
             'SQLALCHEMY_TRACK_MODIFICATIONS', None
@@ -854,7 +852,7 @@ class SQLAlchemy(object):
 
     def apply_pool_defaults(self, app, options):
         def _setdefault(optionkey, configkey):
-            value = app.config[configkey]
+            value = app.config.get(configkey)
             if value is not None:
                 options[optionkey] = value
         _setdefault('pool_size', 'SQLALCHEMY_POOL_SIZE')
@@ -1034,3 +1032,4 @@ class FSADeprecationWarning(DeprecationWarning):
 
 
 warnings.simplefilter('always', FSADeprecationWarning)
+
