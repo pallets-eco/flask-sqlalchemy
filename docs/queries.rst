@@ -121,7 +121,7 @@ Flask-SQLAlchemy provides helpers for this exact purpose.
 Instead of :meth:`~sqlalchemy.orm.query.Query.get` one can use
 :meth:`~Query.get_or_404`, instead of 
 :meth:`~sqlalchemy.orm.query.Query.first` use :meth:`~Query.first_or_404`,
-and instead of `~sqlalchemy.orm.query.Query.one_or_none` use 
+and instead of :meth:`~sqlalchemy.orm.query.Query.one_or_none` use 
 :meth:`~Query.one_or_404`.
 
 These methods will raise 404 errors instead of returning `None`::
