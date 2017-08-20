@@ -662,6 +662,11 @@ class Model(object):
     #: Equivalent to ``db.session.query(Model)`` unless :attr:`query_class` has been changed.
     query = None
 
+    def __repr__(self):
+        pks = inspect(self).identity_key[1]
+        pretty_pk = pks[0] if len(pks) == 1 else ', '.join(map(str, pks))
+        return '<{0}({1})>'.format(type(self).__name__, pretty_pk)
+
 
 class SQLAlchemy(object):
     """This class is used to control the SQLAlchemy integration to one
