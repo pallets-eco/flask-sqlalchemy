@@ -427,12 +427,17 @@ class BaseQuery(orm.Query):
             abort(404)
         return rv
 
-    def paginate(self, page=None, per_page=None, error_out=True):
+    def paginate(self, page=None, per_page=None, error_out=True,
+                 first_page_404=False):
         """Returns ``per_page`` items from page ``page``.
 
         If no items are found and ``page`` is greater than 1, or if page is
         less than 1, it aborts with 404.
         This behavior can be disabled by passing ``error_out=False``.
+
+        If no items are found and ``page`` equals 1 it aborts with 404.
+        This behavior can be disabled by passing ``first_page_404=False``or
+        ``error_out`` False.
 
         If ``page`` or ``per_page`` are ``None``, they will be retrieved from
         the request query.
@@ -474,7 +479,10 @@ class BaseQuery(orm.Query):
 
         items = self.limit(per_page).offset((page - 1) * per_page).all()
 
-        if not items and error_out:
+        if not items and page != 1 and error_out:
+            abort(404)
+
+        if not items and page == 1 and error_out and first_page_404:
             abort(404)
 
         # No need to count if we're on the first page and there are fewer
