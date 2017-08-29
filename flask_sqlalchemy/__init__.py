@@ -474,7 +474,7 @@ class BaseQuery(orm.Query):
 
         items = self.limit(per_page).offset((page - 1) * per_page).all()
 
-        if not items and page != 1 and error_out:
+        if not items and error_out:
             abort(404)
 
         # No need to count if we're on the first page and there are fewer
