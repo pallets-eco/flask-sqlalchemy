@@ -248,9 +248,16 @@ class TablenameTestCase(unittest.TestCase):
             __tablename__ = 'spam'
             id = db.Column(db.Integer, primary_key=True)
 
+        class Dog(db.Model):
+            __table_args__ = (
+                db.PrimaryKeyConstraint('id', name='dog'),
+            )
+            id = db.Column(db.Integer)
+
         self.assertEqual(FOOBar.__tablename__, 'foo_bar')
         self.assertEqual(BazBar.__tablename__, 'baz_bar')
         self.assertEqual(Ham.__tablename__, 'spam')
+        self.assertEqual(Dog.__tablename__, 'dog')
 
     def test_single_name(self):
         """Single table inheritance should not set a new name."""
