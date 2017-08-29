@@ -250,7 +250,7 @@ class TablenameTestCase(unittest.TestCase):
 
         class Dog(db.Model):
             __table_args__ = (
-                db.PrimaryKeyConstraint('id', name='dog'),
+                db.PrimaryKeyConstraint('id', name='pk_dog'),
             )
             id = db.Column(db.Integer)
 
