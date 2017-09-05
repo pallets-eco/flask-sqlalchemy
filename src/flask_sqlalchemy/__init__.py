@@ -884,7 +884,7 @@ class SQLAlchemy:
 
             # if it's not an in memory database we make the path absolute.
             if not detected_in_memory:
-                sa_url.database = os.path.join(app.root_path, sa_url.database)
+                sa_url.database = os.path.join(app.instance_path, sa_url.database)
 
     @property
     def engine(self):
