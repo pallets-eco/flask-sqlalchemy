@@ -27,16 +27,24 @@ def test_query_recording(app, db, Todo):
     with app.test_request_context():
         todo = Todo('Test 1', 'test')
         db.session.add(todo)
+        db.session.flush()
+        todo.done = True
         db.session.commit()
 
         queries = fsa.get_debug_queries()
-        assert len(queries) == 1
+        assert len(queries) == 2
+
         query = queries[0]
         assert 'insert into' in query.statement.lower()
         assert query.parameters[0] == 'Test 1'
         assert query.parameters[1] == 'test'
         assert 'test_basic_app.py' in query.context
         assert 'test_query_recording' in query.context
+
+        query = queries[1]
+        assert 'update' in query.statement.lower()
+        assert query.parameters[0] == 1
+        assert query.parameters[1] == 1
 
 
 def test_helper_api(db):

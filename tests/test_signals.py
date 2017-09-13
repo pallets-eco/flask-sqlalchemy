@@ -10,7 +10,13 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_before_committed(db, Todo):
+@pytest.fixture()
+def app(app):
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+    return app
+
+
+def test_before_committed(app, db, Todo):
     class Namespace(object):
         is_received = False
 

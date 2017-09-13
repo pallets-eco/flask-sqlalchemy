@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    flaskext.sqlalchemy._compat
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    flask_sqlalchemy._compat
+    ~~~~~~~~~~~~~~~~~~~~~~~~
 
     Internal Python 2.x/3.x compatibility layer.
 
