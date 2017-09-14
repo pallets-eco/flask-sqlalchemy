@@ -121,3 +121,13 @@ def test_no_access_to_class_property(db):
             assert False
 
     assert ns.accessed
+
+
+def test_name_when_pk_defined_in_table_args(db):
+    class Dog(db.Model):
+        __table_args__ = (
+            db.PrimaryKeyConstraint('id', name='pk_dog'),
+        )
+        id = db.Column(db.Integer)
+
+    assert Dog.__tablename__ == 'dog'
