@@ -571,6 +571,12 @@ def _should_set_tablename(cls):
             return False
 
         for name, obj in iteritems(d):
+            # check if the primary key is defined in __table_args__
+            if name == '__table_args__' and isinstance(obj, tuple):
+                for table_arg in obj:
+                    if isinstance(table_arg, sqlalchemy.PrimaryKeyConstraint):
+                        return True
+
             if isinstance(obj, declared_attr):
                 obj = getattr(cls, name)
 
