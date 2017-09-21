@@ -41,3 +41,18 @@ def test_query_paginate(app, db, Todo):
         # query default
         p = Todo.query.paginate()
         assert p.total == 100
+
+
+def test_query_paginate_more_than_20(app, db, Todo):
+    with app.app_context():
+        db.session.add_all([Todo('', '') for _ in range(100)])
+        db.session.commit()
+
+    @app.route('/')
+    def index():
+        p = Todo.query.paginate(max_per_page=20)
+        return '{0} items retrieved'.format(len(p.items))
+
+    c = app.test_client()
+    r = c.get('/?per_page=500')
+    assert r.data.decode('utf8') == '20 items retrieved'
