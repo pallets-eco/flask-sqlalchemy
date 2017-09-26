@@ -3,7 +3,7 @@
 all: test
 
 test:
-	@python test_sqlalchemy.py
+	pytest
 
 clean: clean-pyc
 

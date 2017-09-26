@@ -9,8 +9,8 @@
 
     ~ What's the latest version?
 
-      2.1 is the most recent stable version.
-      
+      2.3 is the most recent stable version.
+
     ~ What do I need?
 
       SQLAlchemy, and Flask 0.10 or later. `pip` or `easy_install` will
@@ -26,20 +26,14 @@
 
     ~ Where are the tests?
 
-      Good that you're asking. To run the tests use the
-      `test_sqlalchemy.py` file:
+      Good that you're asking. To run the tests use `pytest`:
 
-        $ python test_sqlalchemy.py
+        $ pytest
 
-      If you just want one particular testcase to run you can provide
-      it on the command line:
-
-        $ python test_sqlalchemy.py PaginationTestCase
-        
       In case you have `tox` installed, you can also run that to have
       virtualenvs created automatically and tests run inside of them
       at your convenience. Running just `tox` is enough:
-      
+
         $ tox
 
     ~ Where can I get help?
