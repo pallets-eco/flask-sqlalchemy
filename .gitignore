@@ -8,3 +8,6 @@ docs/_build
 *.egg
 .idea/
 .cache/
+htmlcov
+.coverage
+.coverage.*
