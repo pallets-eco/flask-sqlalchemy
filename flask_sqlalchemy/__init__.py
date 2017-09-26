@@ -30,7 +30,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base, \
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
-from ._compat import itervalues, string_types, xrange
+from ._compat import itervalues, string_types, xrange, to_str
 
 __version__ = '2.2.1'
 
@@ -661,6 +661,10 @@ class Model(object):
     #: Convenience property to query the database for instances of this model using the current session.
     #: Equivalent to ``db.session.query(Model)`` unless :attr:`query_class` has been changed.
     query = None
+
+    def __repr__(self):
+        pk = ', '.join(to_str(value) for value in inspect(self).identity)
+        return '<{0} {1}>'.format(type(self).__name__, pk)
 
 
 class SQLAlchemy(object):
