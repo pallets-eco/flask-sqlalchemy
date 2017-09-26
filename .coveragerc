@@ -1,0 +1,11 @@
+[run]
+branch = True
+source =
+    flask_sqlalchemy
+    tests
+
+[paths]
+source =
+    flask_sqlalchemy
+    .tox/*/lib/python*/site-packages/flask_sqlalchemy
+    .tox/pypy/site-packages/flask_sqlalchemy
