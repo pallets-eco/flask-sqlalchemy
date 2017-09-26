@@ -663,9 +663,8 @@ class Model(object):
     query = None
 
     def __repr__(self):
-        pks = inspect(self).identity_key[1]
-        pretty_pk = pks[0] if len(pks) == 1 else ', '.join(map(str, pks))
-        return '<{0}({1})>'.format(type(self).__name__, pretty_pk)
+        pk = ', '.join(str(value) for value in inspect(self).identity)
+        return '<{0} {1}>'.format(self.__class__.__name__, pk)
 
 
 class SQLAlchemy(object):
