@@ -1,4 +1,6 @@
+# coding=utf8
 import flask_sqlalchemy as fsa
+from flask_sqlalchemy._compat import to_str
 
 
 def test_custom_query_class(app):
@@ -28,6 +30,12 @@ def test_repr(db):
     db.session.flush()
     assert repr(u) == '<User test>'
     assert repr(u) == str(u)
+
+    u2 = User(name=u'🐍')
+    db.session.add(u2)
+    db.session.flush()
+    assert repr(u2) == to_str(u'<User 🐍>')
+    assert repr(u2) == str(u2)
 
     r = Report(id=2, user_name=u.name)
     db.session.add(r)
