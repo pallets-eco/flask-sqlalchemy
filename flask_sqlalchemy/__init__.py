@@ -30,9 +30,9 @@ from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base, \
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
-from ._compat import itervalues, string_types, xrange, to_str
+from ._compat import itervalues, string_types, to_str, xrange
 
-__version__ = '2.2.1'
+__version__ = '2.3.0'
 
 # the best timer function for the platform
 if sys.platform == 'win32':
