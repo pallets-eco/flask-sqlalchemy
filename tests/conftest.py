@@ -12,6 +12,8 @@ def app(request):
     app.testing = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    from sqlalchemy.pool import NullPool
+    app.config['SQLALCHEMY_POOL_CLASS'] = NullPool
     return app
 
 
