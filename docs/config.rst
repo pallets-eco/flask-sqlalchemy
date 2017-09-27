@@ -38,7 +38,7 @@ A list of configuration keys currently understood by the extension:
                                    improper database defaults that specify
                                    encoding-less databases.
 ``SQLALCHEMY_POOL_CLASS``          This argument accepts a class imported from
-                                   the sqlalchemy.pool module. Common options include specifying QueuePool or NullPool
+                                   the sqlalchemy.pool module. Such as Pool, QueuePool, SingletonThreadPool, StaticPool or NullPool
 ``SQLALCHEMY_POOL_SIZE``           The size of the database pool.  Defaults
                                    to the engine's default (usually 5)
 ``SQLALCHEMY_POOL_TIMEOUT``        Specifies the connection timeout for the
