@@ -1,6 +1,39 @@
 Changelog
 =========
 
+
+Version 2.3.0
+-------------
+
+Released on September 28, 2017
+
+- Multiple bugs with ``__tablename__`` generation are fixed. Names will be
+  generated for models that define a primary key, but not for single-table
+  inheritance subclasses. Names will not override a ``declared_attr``.
+  ``PrimaryKeyConstraint`` is detected. (`#541`_)
+- Passing an existing ``declarative_base()`` as ``model_class`` to
+  ``SQLAlchemy.__init__`` will use this as the base class instead of creating
+  one. This allows customizing the metaclass used to construct the base.
+  (`#546`_)
+- The undocumented ``DeclarativeMeta`` internals that the extension uses for
+  binds and table name generation have been refactored to work as mixins.
+  Documentation is added about how to create a custom metaclass that does not
+  do table name generation. (`#546`_)
+- Model and metaclass code has been moved to a new ``models`` module.
+  ``_BoundDeclarativeMeta`` is renamed to ``DefaultMeta``; the old name will be
+  removed in 3.0. (`#546`_)
+- Models have a default ``repr`` that shows the model name and primary key.
+  (`#530`_)
+- Fixed a bug where using ``init_app`` would cause connectors to always use the
+  ``current_app`` rather than the app they were created for. This caused issues
+  when multiple apps were registered with the extension. (`#547`_)
+
+.. _#530: https://github.com/mitsuhiko/flask-sqlalchemy/pull/530
+.. _#541: https://github.com/mitsuhiko/flask-sqlalchemy/pull/541
+.. _#546: https://github.com/mitsuhiko/flask-sqlalchemy/pull/546
+.. _#547: https://github.com/mitsuhiko/flask-sqlalchemy/pull/547
+
+
 Version 2.2
 -----------
 
