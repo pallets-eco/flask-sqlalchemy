@@ -1,18 +1,35 @@
 # coding=utf8
+import pytest
+from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+
 import flask_sqlalchemy as fsa
 from flask_sqlalchemy._compat import to_str
+from flask_sqlalchemy.model import BindMetaMixin
 
 
-def test_custom_query_class(app):
+def test_custom_model_class():
     class CustomModelClass(fsa.Model):
         pass
 
-    db = fsa.SQLAlchemy(app, model_class=CustomModelClass)
+    db = fsa.SQLAlchemy(model_class=CustomModelClass)
 
     class SomeModel(db.Model):
         id = db.Column(db.Integer, primary_key=True)
 
     assert isinstance(SomeModel(), CustomModelClass)
+
+
+def test_no_table_name():
+    class NoNameMeta(BindMetaMixin, DeclarativeMeta):
+        pass
+
+    db = fsa.SQLAlchemy(model_class=declarative_base(
+        cls=fsa.Model, metaclass=NoNameMeta, name='Model'))
+
+    with pytest.raises(InvalidRequestError):
+        class User(db.Model):
+            pass
 
 
 def test_repr(db):
@@ -42,3 +59,11 @@ def test_repr(db):
     db.session.flush()
     assert repr(r) == '<Report 2, test>'
     assert repr(u) == str(u)
+
+
+def test_deprecated_meta():
+    class OldMeta(fsa._BoundDeclarativeMeta):
+        pass
+
+    with pytest.warns(fsa.FSADeprecationWarning):
+        declarative_base(cls=fsa.Model, metaclass=OldMeta)

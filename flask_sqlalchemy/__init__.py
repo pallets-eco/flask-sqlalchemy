@@ -12,7 +12,6 @@ from __future__ import absolute_import
 
 import functools
 import os
-import re
 import sys
 import time
 import warnings
@@ -25,12 +24,13 @@ from flask import _app_ctx_stack, abort, current_app, request
 from flask.signals import Namespace
 from sqlalchemy import event, inspect, orm
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base, \
-    declared_attr
+from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
+from flask_sqlalchemy.model import Model
 from ._compat import itervalues, string_types, to_str, xrange
+from .model import DefaultMeta
 
 __version__ = '2.3.0'
 
@@ -39,8 +39,6 @@ if sys.platform == 'win32':
     _timer = time.clock
 else:
     _timer = time.time
-
-_camelcase_re = re.compile(r'([A-Z]+)(?=[a-z0-9])')
 
 _signals = Namespace()
 models_committed = _signals.signal('models-committed')
@@ -550,87 +548,6 @@ class _EngineConnector(object):
             return rv
 
 
-def _should_set_tablename(cls):
-    """Determine whether ``__tablename__`` should be automatically generated
-    for a model.
-
-    * If no class in the MRO sets a name, one should be generated.
-    * If a declared attr is found, it should be used instead.
-    * If a name is found, it should be used if the class is a mixin, otherwise
-      one should be generated.
-    * Abstract models should not have one generated.
-
-    Later, :meth:`._BoundDeclarativeMeta.__table_cls__` will determine if the
-    model looks like single or joined-table inheritance. If no primary key is
-    found, the name will be unset.
-    """
-    if (
-        cls.__dict__.get('__abstract__', False)
-        or not any(isinstance(b, DeclarativeMeta) for b in cls.__mro__[1:])
-    ):
-        return False
-
-    for base in cls.__mro__:
-        if '__tablename__' not in base.__dict__:
-            continue
-
-        if isinstance(base.__dict__['__tablename__'], declared_attr):
-            return False
-
-        return not (
-            base is cls
-            or base.__dict__.get('__abstract__', False)
-            or not isinstance(base, DeclarativeMeta)
-        )
-
-    return True
-
-
-def camel_to_snake_case(name):
-    def _join(match):
-        word = match.group()
-
-        if len(word) > 1:
-            return ('_%s_%s' % (word[:-1], word[-1])).lower()
-
-        return '_' + word.lower()
-
-    return _camelcase_re.sub(_join, name).lstrip('_')
-
-
-class _BoundDeclarativeMeta(DeclarativeMeta):
-    def __init__(cls, name, bases, d):
-        if _should_set_tablename(cls):
-            cls.__tablename__ = camel_to_snake_case(cls.__name__)
-
-        bind_key = (
-            d.pop('__bind_key__', None)
-            or getattr(cls, '__bind_key__', None)
-        )
-
-        super(_BoundDeclarativeMeta, cls).__init__(name, bases, d)
-
-        if bind_key is not None and hasattr(cls, '__table__'):
-            cls.__table__.info['bind_key'] = bind_key
-
-    def __table_cls__(cls, *args, **kwargs):
-        """This is called by SQLAlchemy during mapper setup. It determines the
-        final table object that the model will use.
-
-        If no primary key is found, that indicates single-table inheritance,
-        so no table will be created and ``__tablename__`` will be unset.
-        """
-        for arg in args:
-            if (
-                (isinstance(arg, sqlalchemy.Column) and arg.primary_key)
-                or isinstance(arg, sqlalchemy.PrimaryKeyConstraint)
-            ):
-                return sqlalchemy.Table(*args, **kwargs)
-
-        if '__tablename__' in cls.__dict__:
-            del cls.__tablename__
-
-
 def get_state(app):
     """Gets the state for the application"""
     assert 'sqlalchemy' in app.extensions, \
@@ -645,26 +562,6 @@ class _SQLAlchemyState(object):
     def __init__(self, db):
         self.db = db
         self.connectors = {}
-
-
-class Model(object):
-    """Base class for SQLAlchemy declarative base model.
-
-    To define models, subclass :attr:`db.Model <SQLAlchemy.Model>`, not this class.
-    To customize ``db.Model``, subclass this and pass it as ``model_class`` to :func:`SQLAlchemy`.
-    """
-
-    #: Query class used by :attr:`query`.
-    #: Defaults to :class:`SQLAlchemy.Query`, which defaults to :class:`BaseQuery`.
-    query_class = None
-
-    #: Convenience property to query the database for instances of this model using the current session.
-    #: Equivalent to ``db.session.query(Model)`` unless :attr:`query_class` has been changed.
-    query = None
-
-    def __repr__(self):
-        pk = ', '.join(to_str(value) for value in inspect(self).identity)
-        return '<{0} {1}>'.format(type(self).__name__, pk)
 
 
 class SQLAlchemy(object):
@@ -815,16 +712,37 @@ class SQLAlchemy(object):
         return orm.sessionmaker(class_=SignallingSession, db=self, **options)
 
     def make_declarative_base(self, model, metadata=None):
-        """Creates the declarative base."""
-        base = declarative_base(cls=model, name='Model',
-                                metadata=metadata,
-                                metaclass=_BoundDeclarativeMeta)
+        """Creates the declarative base that all models will inherit from.
 
-        if not getattr(base, 'query_class', None):
-            base.query_class = self.Query
+        :param model: base model class (or a tuple of base classes) to pass
+            to :func:`~sqlalchemy.ext.declarative.declarative_base`. Or a class
+            returned from ``declarative_base``, in which case a new base class
+            is not created.
+        :param: metadata: :class:`~sqlalchemy.MetaData` instance to use, or
+            none to use SQLAlchemy's default.
 
-        base.query = _QueryProperty(self)
-        return base
+        .. versionchanged 2.3.0::
+            ``model`` can be an existing declarative base in order to support
+            complex customization such as changing the metaclass.
+        """
+        if not isinstance(model, DeclarativeMeta):
+            model = declarative_base(
+                cls=model,
+                name='Model',
+                metadata=metadata,
+                metaclass=DefaultMeta
+            )
+
+        # if user passed in a declarative base and a metaclass for some reason,
+        # make sure the base uses the metaclass
+        if metadata is not None and model.metadata is not metadata:
+            model.metadata = metadata
+
+        if not getattr(model, 'query_class', None):
+            model.query_class = self.Query
+
+        model.query = _QueryProperty(self)
+        return model
 
     def init_app(self, app):
         """This callback can be used to initialize an application for the
@@ -1048,6 +966,15 @@ class SQLAlchemy(object):
             self.__class__.__name__,
             self.engine.url if self.app or current_app else None
         )
+
+
+class _BoundDeclarativeMeta(DefaultMeta):
+    def __init__(cls, name, bases, d):
+        warnings.warn(FSADeprecationWarning(
+            '"_BoundDeclarativeMeta" has been renamed to "DefaultMeta". The'
+            ' old name will be removed in 3.0.'
+        ), stacklevel=3)
+        super(_BoundDeclarativeMeta, cls).__init__(name, bases, d)
 
 
 class FSADeprecationWarning(DeprecationWarning):

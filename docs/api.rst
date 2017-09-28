@@ -3,9 +3,6 @@ API
 
 .. module:: flask_sqlalchemy
 
-This part of the documentation documents all the public classes and
-functions in Flask-SQLAlchemy.
-
 Configuration
 `````````````
 
@@ -16,33 +13,33 @@ Models
 ``````
 
 .. autoclass:: Model
-   :members:
+    :members:
 
-   .. attribute:: __bind_key__
+    .. attribute:: __bind_key__
 
-      Optionally declares the bind to use.  `None` refers to the default
-      bind.  For more information see :ref:`binds`.
+        Optionally declares the bind to use. ``None`` refers to the default
+        bind. For more information see :ref:`binds`.
 
-   .. attribute:: __tablename__
+    .. attribute:: __tablename__
 
-      The name of the table in the database.  This is required by SQLAlchemy;
-      however, Flask-SQLAlchemy will set it automatically if a model has a
-      primary key defined.  If the ``__table__`` or ``__tablename__`` is set
-      explicitly, that will be used instead.
+        The name of the table in the database. This is required by SQLAlchemy;
+        however, Flask-SQLAlchemy will set it automatically if a model has a
+        primary key defined. If the ``__table__`` or ``__tablename__`` is set
+        explicitly, that will be used instead.
 
 .. autoclass:: BaseQuery
-   :members:
+    :members:
 
 Sessions
 ````````
 
 .. autoclass:: SignallingSession
-   :members:
+    :members:
 
 Utilities
 `````````
 
 .. autoclass:: Pagination
-   :members:
+    :members:
 
 .. autofunction:: get_debug_queries
