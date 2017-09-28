@@ -1,6 +1,7 @@
 Changelog
 =========
 
+
 Version 2.3.0
 -------------
 
@@ -23,10 +24,15 @@ In development
   removed in 3.0. (`#546`_)
 - Models have a default ``repr`` that shows the model name and primary key.
   (`#530`_)
+- Fixed a bug where using ``init_app`` would cause connectors to always use the
+  ``current_app`` rather than the app they were created for. This caused issues
+  when multiple apps were registered with the extension. (`#547`_)
 
 .. _#530: https://github.com/mitsuhiko/flask-sqlalchemy/pull/530
 .. _#541: https://github.com/mitsuhiko/flask-sqlalchemy/pull/541
 .. _#546: https://github.com/mitsuhiko/flask-sqlalchemy/pull/546
+.. _#547: https://github.com/mitsuhiko/flask-sqlalchemy/pull/547
+
 
 Version 2.2
 -----------

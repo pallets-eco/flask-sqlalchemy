@@ -1,3 +1,5 @@
+import flask_sqlalchemy as fsa
+
 
 def test_basic_binds(app, db):
     app.config['SQLALCHEMY_BINDS'] = {
@@ -78,3 +80,14 @@ def test_abstract_binds(app, db):
     metadata.reflect(bind=db.get_engine(app, 'foo'))
     assert len(metadata.tables) == 1
     assert 'foo_bound_model' in metadata.tables
+
+
+def test_connector_cache(app):
+    db = fsa.SQLAlchemy()
+    db.init_app(app)
+
+    with app.app_context():
+        db.get_engine()
+
+    connector = fsa.get_state(app).connectors[None]
+    assert connector._app is app
