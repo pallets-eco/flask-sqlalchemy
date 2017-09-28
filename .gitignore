@@ -3,9 +3,9 @@
 *.pyo
 *.egg-info
 dist/
+build/
 docs/_build
 .tox/
-*.egg
 .idea/
 .cache/
 htmlcov

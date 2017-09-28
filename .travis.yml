@@ -12,7 +12,7 @@ matrix:
     - python: 3.3
       env: TOXENV=py,py-lowest,codecov
     - python: 2.7
-      env: TOXENV=py,py,codecov
+      env: TOXENV=py,codecov
     - python: 2.6
       env: TOXENV=py,py-lowest,codecov
     - python: pypy

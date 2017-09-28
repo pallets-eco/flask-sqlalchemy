@@ -1,6 +1,7 @@
-include LICENSE CHANGES tox.ini test_sqlalchemy.py
+include CHANGES LICENSE
 graft docs
 prune docs/_build
-prune docs/_themes/.git
+recursive-exclude docs/_themes .git*
 recursive-exclude docs *.pyc
-recursive-exclude docs *.pyo
+graft tests
+recursive-exclude tests *.pyc
