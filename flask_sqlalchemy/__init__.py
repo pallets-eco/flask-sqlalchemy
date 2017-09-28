@@ -887,14 +887,14 @@ class SQLAlchemy(object):
             return reference_app
 
         if current_app:
-            return current_app
+            return current_app._get_current_object()
 
         if self.app is not None:
             return self.app
 
         raise RuntimeError(
-            'application not registered on db instance and no application'
-            'bound to current context'
+            'No application found. Either work inside a view function or push'
+            ' an application context.'
         )
 
     def get_tables_for_bind(self, bind=None):
