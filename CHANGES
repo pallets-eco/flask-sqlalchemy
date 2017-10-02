@@ -2,6 +2,18 @@ Changelog
 =========
 
 
+Version 2.3.1
+-------------
+
+In development
+
+- If a model has a table name that matches an existing table in the metadata,
+  use that table. Fixes a regression where reflected tables were not picked up
+  by models. (`#551`_)
+
+.. _#551: https://github.com/mitsuhiko/flask-sqlalchemy/pull/551
+
+
 Version 2.3.0
 -------------
 

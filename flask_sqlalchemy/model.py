@@ -3,6 +3,7 @@ import re
 import sqlalchemy as sa
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative import DeclarativeMeta, declared_attr
+from sqlalchemy.schema import _get_table_key
 
 from ._compat import to_str
 
@@ -72,6 +73,11 @@ class NameMetaMixin(object):
         If no primary key is found, that indicates single-table inheritance,
         so no table will be created and ``__tablename__`` will be unset.
         """
+        key = _get_table_key(args[0], kwargs.get('schema'))
+
+        if key in cls.metadata.tables:
+            return sa.Table(*args, **kwargs)
+
         for arg in args:
             if (
                 (isinstance(arg, sa.Column) and arg.primary_key)
