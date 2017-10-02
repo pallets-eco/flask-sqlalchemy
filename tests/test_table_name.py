@@ -191,3 +191,15 @@ def test_no_access_to_class_property(db):
             assert False
 
     assert ns.accessed
+
+
+def test_metadata_has_table(db):
+    user = db.Table(
+        'user',
+        db.Column('id', db.Integer, primary_key=True),
+    )
+
+    class User(db.Model):
+        pass
+
+    assert User.__table__ is user
