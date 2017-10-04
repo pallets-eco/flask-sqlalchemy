@@ -1,4 +1,4 @@
-include CHANGES LICENSE
+include CHANGES.rst LICENSE
 graft docs
 prune docs/_build
 recursive-exclude docs/_themes .git*

@@ -32,7 +32,7 @@ from flask_sqlalchemy.model import Model
 from ._compat import itervalues, string_types, to_str, xrange
 from .model import DefaultMeta
 
-__version__ = '2.3.0'
+__version__ = '2.3.1'
 
 # the best timer function for the platform
 if sys.platform == 'win32':
@@ -427,19 +427,23 @@ class BaseQuery(orm.Query):
             abort(404)
         return rv
 
-    def paginate(self, page=None, per_page=None, error_out=True):
+    def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None):
         """Returns ``per_page`` items from page ``page``.
 
-        If no items are found and ``page`` is greater than 1, or if page is
-        less than 1, it aborts with 404.
-        This behavior can be disabled by passing ``error_out=False``.
-
         If ``page`` or ``per_page`` are ``None``, they will be retrieved from
-        the request query.
-        If the values are not ints and ``error_out`` is ``True``, it aborts
-        with 404.
-        If there is no request or they aren't in the query, they default to 1
-        and 20 respectively.
+        the request query. If ``max_per_page`` is specified, ``per_page`` will
+        be limited to that value. If there is no request or they aren't in the
+        query, they default to 1 and 20 respectively.
+
+        When ``error_out`` is ``True`` (default), the following rules will
+        cause a 404 response:
+
+        * No items are found and ``page`` is not 1.
+        * ``page`` is less than 1, or ``per_page`` is negative.
+        * ``page`` or ``per_page`` are not ints.
+
+        When ``error_out`` is ``False``, ``page`` and ``per_page`` default to
+        1 and 20 respectively.
 
         Returns a :class:`Pagination` object.
         """
@@ -469,8 +473,20 @@ class BaseQuery(orm.Query):
             if per_page is None:
                 per_page = 20
 
-        if error_out and page < 1:
-            abort(404)
+        if max_per_page is not None:
+            per_page = min(per_page, max_per_page)
+
+        if page < 1:
+            if error_out:
+                abort(404)
+            else:
+                page = 1
+
+        if per_page < 0:
+            if error_out:
+                abort(404)
+            else:
+                per_page = 20
 
         items = self.limit(per_page).offset((page - 1) * per_page).all()
 
@@ -894,7 +910,8 @@ class SQLAlchemy(object):
 
         raise RuntimeError(
             'No application found. Either work inside a view function or push'
-            ' an application context.'
+            ' an application context. See'
+            ' http://flask-sqlalchemy.pocoo.org/contexts/.'
         )
 
     def get_tables_for_bind(self, bind=None):

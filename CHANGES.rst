@@ -2,6 +2,30 @@ Changelog
 =========
 
 
+Version 2.3.1
+-------------
+
+Released on October 5, 2017
+
+- If a model has a table name that matches an existing table in the metadata,
+  use that table. Fixes a regression where reflected tables were not picked up
+  by models. (`#551`_)
+- Raise the correct error when a model has a table name but no primary key.
+  (`#556`_)
+- Fix ``repr`` on models that don't have an identity because they have not been
+  flushed yet. (`#555`_)
+- Allow specifying a ``max_per_page`` limit for pagination, to avoid users
+  specifying high values in the request args. (`#542`_)
+- For ``paginate`` with ``error_out=False``, the minimum value for ``page`` is
+  1 and ``per_page`` is 0. (`#558`_)
+
+.. _#542: https://github.com/mitsuhiko/flask-sqlalchemy/pull/542
+.. _#551: https://github.com/mitsuhiko/flask-sqlalchemy/pull/551
+.. _#555: https://github.com/mitsuhiko/flask-sqlalchemy/pull/555
+.. _#556: https://github.com/mitsuhiko/flask-sqlalchemy/pull/556
+.. _#558: https://github.com/mitsuhiko/flask-sqlalchemy/pull/558
+
+
 Version 2.3.0
 -------------
 
