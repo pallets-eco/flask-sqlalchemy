@@ -43,6 +43,7 @@ def test_repr(db):
     db.create_all()
 
     u = User(name='test')
+    assert repr(u).startswith("<User (transient ")
     db.session.add(u)
     db.session.flush()
     assert repr(u) == '<User test>'
