@@ -137,5 +137,9 @@ class Model(object):
     query = None
 
     def __repr__(self):
-        pk = ', '.join(to_str(value) for value in inspect(self).identity)
+        identity = inspect(self).identity
+        if identity is None:
+            pk = "(transient {0})".format(id(self))
+        else:
+            pk = ', '.join(to_str(value) for value in identity)
         return '<{0} {1}>'.format(type(self).__name__, pk)
