@@ -39,17 +39,17 @@ A list of configuration keys currently understood by the extension:
                                    encoding-less databases.
 ``SQLALCHEMY_POOL_SIZE``           The size of the database pool.  Defaults
                                    to the engine's default (usually 5)
-``SQLALCHEMY_POOL_TIMEOUT``        Specifies the connection timeout for the
-                                   pool.  Defaults to 10.
+``SQLALCHEMY_POOL_TIMEOUT``        Specifies the connection timeout in seconds
+                                   for the pool.
 ``SQLALCHEMY_POOL_RECYCLE``        Number of seconds after which a
                                    connection is automatically recycled.
                                    This is required for MySQL, which removes
                                    connections after 8 hours idle by
                                    default.  Note that Flask-SQLAlchemy
                                    automatically sets this to 2 hours if
-                                   MySQL is used. Some backends may use a 
-                                   different default timeout value. For more 
-                                   information about timeouts see 
+                                   MySQL is used. Some backends may use a
+                                   different default timeout value. For more
+                                   information about timeouts see
                                    :ref:`timeouts`.
 ``SQLALCHEMY_MAX_OVERFLOW``        Controls the number of connections that
                                    can be created after the pool reached
@@ -158,14 +158,14 @@ For more info about :class:`~sqlalchemy.schema.MetaData`,
 Timeouts
 --------
 
-Certain database backends may impose different inactive connection timeouts, 
-which interferes with Flask-SQLAlchemy's connection pooling. 
+Certain database backends may impose different inactive connection timeouts,
+which interferes with Flask-SQLAlchemy's connection pooling.
 
-By default, MariaDB is configured to have a 600 second timeout. This often 
+By default, MariaDB is configured to have a 600 second timeout. This often
 surfaces hard to debug, production environment only exceptions like ``2013: Lost connection to MySQL server during query``.
 
-If you are using a backend (or a pre-configured database-as-a-service) with a 
-lower connection timeout, it is recommended that you set 
+If you are using a backend (or a pre-configured database-as-a-service) with a
+lower connection timeout, it is recommended that you set
 `SQLALCHEMY_POOL_RECYCLE` to a value less than your backend's timeout.
 
 
