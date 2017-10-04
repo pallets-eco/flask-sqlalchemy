@@ -10,8 +10,11 @@ In development
 - If a model has a table name that matches an existing table in the metadata,
   use that table. Fixes a regression where reflected tables were not picked up
   by models. (`#551`_)
+- Raise the correct error when a model has a table name but no primary key.
+  (`#556`_)
 
 .. _#551: https://github.com/mitsuhiko/flask-sqlalchemy/pull/551
+.. _#556: https://github.com/mitsuhiko/flask-sqlalchemy/pull/556
 
 
 Version 2.3.0
