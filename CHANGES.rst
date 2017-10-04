@@ -12,11 +12,14 @@ In development
   by models. (`#551`_)
 - Raise the correct error when a model has a table name but no primary key.
   (`#556`_)
+- Fix ``repr`` on models that don't have an identity because they have not been
+  flushed yet. (`#555`_)
 - Allow specifying a ``max_per_page`` limit for pagination, to avoid users
   specifying high values in the request args. (`#542`_)
 
 .. _#542: https://github.com/mitsuhiko/flask-sqlalchemy/pull/542
 .. _#551: https://github.com/mitsuhiko/flask-sqlalchemy/pull/551
+.. _#555: https://github.com/mitsuhiko/flask-sqlalchemy/pull/555
 .. _#556: https://github.com/mitsuhiko/flask-sqlalchemy/pull/556
 
 
