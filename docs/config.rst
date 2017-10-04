@@ -111,9 +111,12 @@ Oracle::
 
     oracle://scott:tiger@127.0.0.1:1521/sidname
 
-SQLite (note the four leading slashes)::
+SQLite (note the number of leading slashes)::
 
+    # Unix
     sqlite:////absolute/path/to/foo.db
+    # Windows
+    sqlite:///absolute\\path\\to\\foo.db
 
 Using custom MetaData and naming conventions
 --------------------------------------------
