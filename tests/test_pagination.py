@@ -1,3 +1,6 @@
+import pytest
+from werkzeug.exceptions import NotFound
+
 import flask_sqlalchemy as fsa
 
 
@@ -49,3 +52,19 @@ def test_query_paginate_more_than_20(app, db, Todo):
         db.session.commit()
 
     assert len(Todo.query.paginate(max_per_page=10).items) == 10
+
+
+def test_paginate_min(app, db, Todo):
+    with app.app_context():
+        db.session.add_all(Todo(str(x), '') for x in range(20))
+        db.session.commit()
+
+    assert Todo.query.paginate(error_out=False, page=-1).items[0].title == '0'
+    assert len(Todo.query.paginate(error_out=False, per_page=0).items) == 0
+    assert len(Todo.query.paginate(error_out=False, per_page=-1).items) == 20
+
+    with pytest.raises(NotFound):
+        Todo.query.paginate(page=0)
+
+    with pytest.raises(NotFound):
+        Todo.query.paginate(per_page=-1)

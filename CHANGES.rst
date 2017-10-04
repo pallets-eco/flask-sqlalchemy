@@ -16,11 +16,14 @@ In development
   flushed yet. (`#555`_)
 - Allow specifying a ``max_per_page`` limit for pagination, to avoid users
   specifying high values in the request args. (`#542`_)
+- For ``paginate`` with ``error_out=False``, the minimum value for ``page`` is
+  1 and ``per_page`` is 0. (`#558`_)
 
 .. _#542: https://github.com/mitsuhiko/flask-sqlalchemy/pull/542
 .. _#551: https://github.com/mitsuhiko/flask-sqlalchemy/pull/551
 .. _#555: https://github.com/mitsuhiko/flask-sqlalchemy/pull/555
 .. _#556: https://github.com/mitsuhiko/flask-sqlalchemy/pull/556
+.. _#558: https://github.com/mitsuhiko/flask-sqlalchemy/pull/558
 
 
 Version 2.3.0
