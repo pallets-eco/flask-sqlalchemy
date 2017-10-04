@@ -5,7 +5,7 @@ Changelog
 Version 2.3.1
 -------------
 
-In development
+Released on October 5, 2017
 
 - If a model has a table name that matches an existing table in the metadata,
   use that table. Fixes a regression where reflected tables were not picked up
