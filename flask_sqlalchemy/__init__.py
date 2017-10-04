@@ -427,7 +427,7 @@ class BaseQuery(orm.Query):
             abort(404)
         return rv
 
-    def paginate(self, page=None, per_page=None, error_out=True):
+    def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None):
         """Returns ``per_page`` items from page ``page``.
 
         If no items are found and ``page`` is greater than 1, or if page is
@@ -468,6 +468,9 @@ class BaseQuery(orm.Query):
 
             if per_page is None:
                 per_page = 20
+
+        if max_per_page is not None:
+            per_page = min(per_page, max_per_page)
 
         if error_out and page < 1:
             abort(404)

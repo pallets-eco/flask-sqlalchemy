@@ -41,3 +41,11 @@ def test_query_paginate(app, db, Todo):
         # query default
         p = Todo.query.paginate()
         assert p.total == 100
+
+
+def test_query_paginate_more_than_20(app, db, Todo):
+    with app.app_context():
+        db.session.add_all(Todo('', '') for _ in range(20))
+        db.session.commit()
+
+    assert len(Todo.query.paginate(max_per_page=10).items) == 10
