@@ -120,7 +120,7 @@ class Model(object):
     def __repr__(self):
         identity = inspect(self).identity
         if identity is None:
-            pk = None
+            pk = "(transient) {0}".format(id(self))
         else:
             pk = ', '.join(to_str(value) for value in identity)
         return '<{0} {1}>'.format(type(self).__name__, pk)
