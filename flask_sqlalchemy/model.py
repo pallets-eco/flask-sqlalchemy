@@ -66,6 +66,15 @@ class NameMetaMixin(object):
 
         super(NameMetaMixin, cls).__init__(name, bases, d)
 
+        # __table_cls__ has run at this point
+        # if no table was created, use the parent table
+        if (
+            '__tablename__' not in cls.__dict__
+            and '__table__' in cls.__dict__
+            and cls.__dict__['__table__'] is None
+        ):
+            del cls.__table__
+
     def __table_cls__(cls, *args, **kwargs):
         """This is called by SQLAlchemy during mapper setup. It determines the
         final table object that the model will use.

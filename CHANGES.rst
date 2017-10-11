@@ -2,6 +2,16 @@ Changelog
 =========
 
 
+Version 2.3.2
+-------------
+
+Released on October 11, 2017
+
+- Don't mask the parent table for single-table inheritance models. (`#561`_)
+
+.. _#561: https://github.com/mitsuhiko/flask-sqlalchemy/pull/561
+
+
 Version 2.3.1
 -------------
 
