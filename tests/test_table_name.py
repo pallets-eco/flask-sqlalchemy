@@ -213,3 +213,14 @@ def test_correct_error_for_no_primary_key(db):
             pass
 
     assert 'could not assemble any primary key' in str(info.value)
+
+
+def test_single_has_parent_table(db):
+    class Duck(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+
+    class Call(Duck):
+        pass
+
+    assert Call.__table__ is Duck.__table__
+    assert '__table__' not in Call.__dict__
