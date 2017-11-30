@@ -551,7 +551,10 @@ class _EngineConnector(object):
             if (uri, echo) == self._connected_for:
                 return self._engine
             info = make_url(uri)
-            options = {'convert_unicode': True}
+            options = {
+                'convert_unicode': True,
+                'connect_args': self._app.config['SQLALCHEMY_CONNECT_ARGS'].copy()
+            }
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
@@ -785,6 +788,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
+        app.config.setdefault('SQLALCHEMY_CONNECT_ARGS', {})
         track_modifications = app.config.setdefault(
             'SQLALCHEMY_TRACK_MODIFICATIONS', None
         )
@@ -839,9 +843,7 @@ class SQLAlchemy(object):
                 detected_in_memory = True
                 from sqlalchemy.pool import StaticPool
                 options['poolclass'] = StaticPool
-                if 'connect_args' not in options:
-                    options['connect_args'] = {}
-                options['connect_args']['check_same_thread'] = False
+                options['connect_args'].setdefault('check_same_thread', False)
 
                 # we go to memory and the pool size was explicitly set
                 # to 0 which is fail.  Let the user know that
