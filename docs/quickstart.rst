@@ -160,10 +160,11 @@ Road to Enlightenment
 
 The only things you need to know compared to plain SQLAlchemy are:
 
-1.  :class:`SQLAlchemy` gives you access to the following things:
+1.  The :class:`SQLAlchemy` extension instance gives you access to the
+    following things:
 
-    -   all the functions and classes from :mod:`sqlalchemy` and
-        :mod:`sqlalchemy.orm`
+    -   All the functions and classes from the :mod:`sqlalchemy` and
+        :mod:`sqlalchemy.orm` modules.
     -   a preconfigured scoped session called ``session``
     -   the :attr:`~SQLAlchemy.metadata`
     -   the :attr:`~SQLAlchemy.engine`
