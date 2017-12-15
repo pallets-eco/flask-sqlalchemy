@@ -326,7 +326,7 @@ class Pagination(object):
     def pages(self):
         """The total number of pages"""
         if self.per_page == 0:
-            pages = 0
+            pages = 1
         else:
             pages = int(ceil(self.total / float(self.per_page)))
         return pages
@@ -435,6 +435,8 @@ class BaseQuery(orm.Query):
         be limited to that value. If there is no request or they aren't in the
         query, they default to 1 and 20 respectively.
 
+        When ``per_page`` is 0, all elements are retrieved. It can be limited with ``max_per_page``.
+
         When ``error_out`` is ``True`` (default), the following rules will
         cause a 404 response:
 
@@ -487,10 +489,15 @@ class BaseQuery(orm.Query):
                 abort(404)
             else:
                 per_page = 20
+        elif per_page == 0 and max_per_page is not None:
+            per_page = max_per_page
 
-        items = self.limit(per_page).offset((page - 1) * per_page).all()
+        if per_page == 0:
+            items = self.all()
+        else:
+            items = self.limit(per_page).offset((page - 1) * per_page).all()
 
-        if not items and page != 1 and error_out:
+        if not items or per_page == 0 and page != 1 and error_out:
             abort(404)
 
         # No need to count if we're on the first page and there are fewer
