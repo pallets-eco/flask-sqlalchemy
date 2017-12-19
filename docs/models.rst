@@ -105,7 +105,7 @@ when SQLAlchemy will load the data from the database:
 
 -   ``'select'`` / ``True`` (which is the default, but explicit is better
     than implicit) means that SQLAlchemy will load the data as necessary
-    in one go using a standard select statement.
+    in one go using a standard ``SELECT`` statement.
 -   ``'joined'`` / ``False`` tells SQLAlchemy to load the relationship in
     the same query as the parent using a ``JOIN`` statement.
 -   ``'subquery'`` works like ``'joined'`` but instead SQLAlchemy will
