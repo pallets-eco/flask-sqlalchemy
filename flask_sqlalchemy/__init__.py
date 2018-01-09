@@ -322,6 +322,12 @@ class Pagination(object):
         #: the items for the current page
         self.items = items
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def keys(self):
+        return ('page', 'pages', 'total', 'has_prev', 'next_num', 'has_next', 'items')
+
     @property
     def pages(self):
         """The total number of pages"""
