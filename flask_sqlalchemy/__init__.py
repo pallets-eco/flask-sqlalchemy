@@ -498,7 +498,9 @@ class BaseQuery(orm.Query):
         if page == 1 and len(items) < per_page:
             total = len(items)
         else:
-            total = self.order_by(None).count()
+            total = self.session.execute(
+              self.statement.with_only_columns(
+                [sql.expression.func.count()]).order_by(None)).scalar()
 
         return Pagination(self, page, per_page, total, items)
 
