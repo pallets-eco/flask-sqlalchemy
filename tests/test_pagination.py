@@ -68,3 +68,15 @@ def test_paginate_min(app, db, Todo):
 
     with pytest.raises(NotFound):
         Todo.query.paginate(per_page=-1)
+
+def test_pagination_first(app, db, Todo):
+    p = fsa.Pagination(None, 3, 20, 500, [])
+    assert p.first == 41
+    p = fsa.Pagination(None, 1, 20, 500, [])
+    assert p.first == 1
+
+def test_pagination_last(app, db, Todo):
+    p = fsa.Pagination(None, 3, 20, 500, [])
+    assert p.last == 60
+    p = fsa.Pagination(None, 2, 20, 40, [])
+    assert p.last == 40

@@ -406,6 +406,23 @@ class Pagination(object):
                 yield num
                 last = num
 
+    @property
+    def first(self):
+        """ Number of the first element in the pagination. 0 if No elements """
+        if self.total == 0:
+            first = 0
+        else:
+            first = ((self.page - 1) * self.per_page) + 1
+        return first
+
+    @property
+    def last(self):
+        """ Number of the last element in the pagination """
+        if self.page == self.pages:
+            last = self.total
+        else:
+            last = self.page * self.per_page
+        return last
 
 class BaseQuery(orm.Query):
     """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with convenience methods for querying in a web application.
