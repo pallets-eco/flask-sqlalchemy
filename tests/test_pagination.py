@@ -30,7 +30,7 @@ def test_query_paginate(app, db, Todo):
     @app.route('/')
     def index():
         p = Todo.query.paginate()
-        return '{0} items retrieved'.format(len(p.items))
+        return '{} items retrieved'.format(len(p.items))
 
     c = app.test_client()
     # request default
