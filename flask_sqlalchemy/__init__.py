@@ -29,7 +29,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
 from flask_sqlalchemy.model import Model
-from ._compat import itervalues, string_types, to_str, xrange
+from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
 
 __version__ = '2.3.2'
