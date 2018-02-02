@@ -60,9 +60,9 @@ But they are not yet in the database, so let's make sure they are::
 Accessing the data in database is easy as a pie::
 
     >>> User.query.all()
-    [<User u'admin'>, <User u'guest'>]
+    [<User 'admin'>, <User 'guest'>]
     >>> User.query.filter_by(username='admin').first()
-    <User u'admin'>
+    <User 'admin'>
 
 Note how we never defined a ``__init__`` method on the ``User`` class?
 That's because SQLAlchemy adds an implicit constructor to all model
@@ -143,8 +143,8 @@ load all categories and their posts, you could do it like this::
     >>> from sqlalchemy.orm import joinedload
     >>> query = Category.query.options(joinedload('posts'))
     >>> for category in query:
-    ...     print category, category.posts
-    <Category u'Python'> [<Post u'Hello Python!'>, <Post u'Snakes'>]
+    ...     print(category, category.posts)
+    <Category 'Python'> [<Post 'Hello Python!'>, <Post 'Snakes'>]
 
 
 If you want to get a query object for that relationship, you can do so
