@@ -31,7 +31,8 @@ setup(
     platforms='any',
     install_requires=[
         'Flask>=0.10',
-        'SQLAlchemy>=0.8.0'
+        'SQLAlchemy>=0.8.0; python_version>="2.7"',
+        'SQLAlchemy<1.2; python_version<"2.7"',
     ],
     test_suite='test_sqlalchemy.suite',
     classifiers=[
