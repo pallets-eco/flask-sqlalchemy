@@ -552,11 +552,17 @@ class _EngineConnector(object):
                 return self._engine
             info = make_url(uri)
             options = {'convert_unicode': True}
-            self._sa.apply_pool_defaults(self._app, options)
+            self._sa.apply_engine_params(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
+
             if echo:
                 options['echo'] = echo
-            self._engine = rv = sqlalchemy.create_engine(info, **options)
+            try:
+                self._engine = rv = sqlalchemy.create_engine(info, **options)
+            except TypeError as e:
+                # this is raised once keyword in options variable is not acceptable for create_engine
+                raise TypeError("Wrong keyword in SQLAlchemy.engine_params. Original exception: {e}".format(e=e))
+
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
                                              self._app.import_name).register()
@@ -641,6 +647,13 @@ class SQLAlchemy(object):
     to be passed to the session constructor.  See :class:`~sqlalchemy.orm.session.Session`
     for the standard options.
 
+    The ``engine_params``` is an optional parameter, that is used to pass some more specific
+    engine parameters directly to :func:`sqlalchemy.create_engine`. For example::
+
+        from sqlalchemy.pool import StaticPool
+
+        db = SQLAlchemy(engine_params={'isolation_level': 'READ_UNCOMMITED', 'poolclass': StaticPool})
+
     .. versionadded:: 0.10
        The `session_options` parameter was added.
 
@@ -669,7 +682,7 @@ class SQLAlchemy(object):
     Query = None
 
     def __init__(self, app=None, use_native_unicode=True, session_options=None,
-                 metadata=None, query_class=BaseQuery, model_class=Model):
+                 metadata=None, query_class=BaseQuery, model_class=Model, engine_params=None):
 
         self.use_native_unicode = use_native_unicode
         self.Query = query_class
@@ -677,6 +690,8 @@ class SQLAlchemy(object):
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
         self.app = app
+        self.engine_params = dict() if engine_params is None else engine_params
+
         _include_sqlalchemy(self, query_class)
 
         if app is not None:
@@ -806,6 +821,10 @@ class SQLAlchemy(object):
 
             self.session.remove()
             return response_or_exc
+
+    def apply_engine_params(self, app, options):
+        self.apply_pool_defaults(app, options)
+        options.update(self.engine_params)
 
     def apply_pool_defaults(self, app, options):
         def _setdefault(optionkey, configkey):
