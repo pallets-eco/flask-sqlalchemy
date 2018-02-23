@@ -26,7 +26,7 @@ It is essentially a beefed up version of a database transaction.  This is
 how it works:
 
 >>> from yourapp import User
->>> me = User('admin', 'admin@example.com')
+>>> me = User(username='admin', email='admin@example.com')
 >>> db.session.add(me)
 >>> db.session.commit()
 
