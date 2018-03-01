@@ -51,6 +51,16 @@ A list of configuration keys currently understood by the extension:
                                    different default timeout value. For more
                                    information about timeouts see
                                    :ref:`timeouts`.
+``SQLALCHEMY_POOL_PRE_PING``       The “pre ping” feature will normally emit
+                                   SQL equivalent to “SELECT 1” each time a
+                                   connection is checked out from the pool;
+                                   if an error is raised that is detected as
+                                   a “disconnect” situation, the connection
+                                   will be immediately recycled, and all other
+                                   pooled connections older than the current
+                                   time are invalidated, so that the next time
+                                   they are checked out, they will also be
+                                   recycled before use.
 ``SQLALCHEMY_MAX_OVERFLOW``        Controls the number of connections that
                                    can be created after the pool reached
                                    its maximum size.  When those additional

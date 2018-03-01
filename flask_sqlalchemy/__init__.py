@@ -783,6 +783,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
+        app.config.setdefault('SQLALCHEMY_POOL_PRE_PING', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
         track_modifications = app.config.setdefault(
@@ -815,6 +816,7 @@ class SQLAlchemy(object):
         _setdefault('pool_size', 'SQLALCHEMY_POOL_SIZE')
         _setdefault('pool_timeout', 'SQLALCHEMY_POOL_TIMEOUT')
         _setdefault('pool_recycle', 'SQLALCHEMY_POOL_RECYCLE')
+        _setdefault('pool_pre_ping', 'SQLALCHEMY_POOL_PRE_PING')
         _setdefault('max_overflow', 'SQLALCHEMY_MAX_OVERFLOW')
 
     def apply_driver_hacks(self, app, info, options):
