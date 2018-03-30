@@ -325,7 +325,7 @@ class Pagination(object):
     @property
     def pages(self):
         """The total number of pages"""
-        if self.per_page == 0:
+        if self.per_page == 0 or self.total is None:
             pages = 0
         else:
             pages = int(ceil(self.total / float(self.per_page)))
@@ -427,13 +427,14 @@ class BaseQuery(orm.Query):
             abort(404)
         return rv
 
-    def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None):
+    def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None, count=True):
         """Returns ``per_page`` items from page ``page``.
 
         If ``page`` or ``per_page`` are ``None``, they will be retrieved from
         the request query. If ``max_per_page`` is specified, ``per_page`` will
         be limited to that value. If there is no request or they aren't in the
-        query, they default to 1 and 20 respectively.
+        query, they default to 1 and 20 respectively. If ``count`` is ``False``,
+        no query to help determine total page count will be run.
 
         When ``error_out`` is ``True`` (default), the following rules will
         cause a 404 response:
@@ -494,8 +495,11 @@ class BaseQuery(orm.Query):
             abort(404)
 
         # No need to count if we're on the first page and there are fewer
-        # items than we expected.
-        if page == 1 and len(items) < per_page:
+        # items than we expected or if count is disabled.
+
+        if not count:
+            total = None
+        elif page == 1 and len(items) < per_page:
             total = len(items)
         else:
             total = self.order_by(None).count()

@@ -22,6 +22,11 @@ def test_pagination_pages_when_0_items_per_page():
     assert p.pages == 0
 
 
+def test_pagination_pages_when_total_is_none():
+    p = fsa.Pagination(None, 1, 100, None, [])
+    assert p.pages == 0
+
+
 def test_query_paginate(app, db, Todo):
     with app.app_context():
         db.session.add_all([Todo('', '') for _ in range(100)])
@@ -68,3 +73,11 @@ def test_paginate_min(app, db, Todo):
 
     with pytest.raises(NotFound):
         Todo.query.paginate(per_page=-1)
+
+
+def test_paginate_without_count(app, db, Todo):
+    with app.app_context():
+        db.session.add_all(Todo('', '') for _ in range(20))
+        db.session.commit()
+
+    assert len(Todo.query.paginate(count=False, page=1, per_page=10).items) == 10
