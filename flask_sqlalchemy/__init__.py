@@ -433,7 +433,8 @@ class BaseQuery(orm.Query):
         If ``page`` or ``per_page`` are ``None``, they will be retrieved from
         the request query. If ``max_per_page`` is specified, ``per_page`` will
         be limited to that value. If there is no request or they aren't in the
-        query, they default to 1 and 20 respectively.
+        query, they default to 1 and 20 respectively. If ``count`` is ``False``,
+        no query to help determine total page count will be run.
 
         When ``error_out`` is ``True`` (default), the following rules will
         cause a 404 response:
