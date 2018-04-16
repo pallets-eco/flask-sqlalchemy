@@ -51,6 +51,15 @@ A list of configuration keys currently understood by the extension:
                                    different default timeout value. For more
                                    information about timeouts see
                                    :ref:`timeouts`.
+``SQLALCHEMY_POOL_PRE_PING``       Native "pessimistic disconnection" handling
+                                   to the Pool object.  This emits a simple
+                                   statement, typically "SELECT 1",
+                                   to test the connection for liveness.
+                                   If the existing connection is no longer able
+                                   to respond to commands, the connection is
+                                   transparently recycled, and all other
+                                   connections made prior to the current
+                                   timestamp are invalidated.
 ``SQLALCHEMY_MAX_OVERFLOW``        Controls the number of connections that
                                    can be created after the pool reached
                                    its maximum size.  When those additional
