@@ -214,6 +214,12 @@ def test_correct_error_for_no_primary_key(db):
 
     assert 'could not assemble any primary key' in str(info.value)
 
+def test_name_case(db):
+    class LONGName4TestingCamelCase2snake_caseALGORithm22BBQ2(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+
+    assert (LONGName4TestingCamelCase2snake_caseALGORithm22BBQ2.__tablename__
+            == 'long_name_4_testing_camel_case2snake_case_algo_rithm_22bbq2')
 
 def test_single_has_parent_table(db):
     class Duck(db.Model):

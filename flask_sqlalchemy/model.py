@@ -23,8 +23,8 @@ def should_set_tablename(cls):
     found, the name will be unset.
     """
     if (
-        cls.__dict__.get('__abstract__', False)
-        or not any(isinstance(b, DeclarativeMeta) for b in cls.__mro__[1:])
+            cls.__dict__.get('__abstract__', False)
+            or not any(isinstance(b, DeclarativeMeta) for b in cls.__mro__[1:])
     ):
         return False
 
@@ -44,19 +44,22 @@ def should_set_tablename(cls):
     return True
 
 
-camelcase_re = re.compile(r'([A-Z]+)(?=[a-z0-9])')
-
-
 def camel_to_snake_case(name):
-    def _join(match):
-        word = match.group()
-
-        if len(word) > 1:
-            return ('_%s_%s' % (word[:-1], word[-1])).lower()
-
-        return '_' + word.lower()
-
-    return camelcase_re.sub(_join, name).lstrip('_')
+    """ Convert a CamelCase string to snake_case """
+    if not name:
+        return ""
+    if len(name) == 1:
+        return name.lower()
+    return (name[0]
+            + "".join([("_" + c) \
+                       if prev.islower() and c.isupper() \
+                       or prev.islower() and c.isdigit() and (next.isdigit() or next.isupper()) \
+                       or (prev.isdigit() or prev.isupper()) and c.isupper() and next.islower() \
+                       else c \
+                       for prev, c, next in zip(name[:-2], name[1:-1], name[2:])])
+            + ("_" + name[-1]
+               if name[-2:-1].islower() and (name[-1].isupper() or name[-1].isdigit())
+               else name[-1])).lower()
 
 
 class NameMetaMixin(object):
@@ -69,9 +72,9 @@ class NameMetaMixin(object):
         # __table_cls__ has run at this point
         # if no table was created, use the parent table
         if (
-            '__tablename__' not in cls.__dict__
-            and '__table__' in cls.__dict__
-            and cls.__dict__['__table__'] is None
+                '__tablename__' not in cls.__dict__
+                and '__table__' in cls.__dict__
+                and cls.__dict__['__table__'] is None
         ):
             del cls.__table__
 
@@ -93,8 +96,8 @@ class NameMetaMixin(object):
         # joined-table inheritance
         for arg in args:
             if (
-                (isinstance(arg, sa.Column) and arg.primary_key)
-                or isinstance(arg, sa.PrimaryKeyConstraint)
+                    (isinstance(arg, sa.Column) and arg.primary_key)
+                    or isinstance(arg, sa.PrimaryKeyConstraint)
             ):
                 return sa.Table(*args, **kwargs)
 
