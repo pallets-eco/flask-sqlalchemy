@@ -271,13 +271,12 @@ class _EngineDebuggingSignalEvents:
 
 
 def get_debug_queries():
-    """In debug mode Flask-SQLAlchemy will log all the SQL queries sent
-    to the database.  This information is available until the end of request
-    which makes it possible to easily ensure that the SQL generated is the
-    one expected on errors or in unittesting.  If you don't want to enable
-    the DEBUG mode for your unittests you can also enable the query
-    recording by setting the ``'SQLALCHEMY_RECORD_QUERIES'`` config variable
-    to `True`.  This is automatically enabled if Flask is in testing mode.
+    """In debug mode or testing mode, Flask-SQLAlchemy will log all the SQL
+    queries sent to the database. This information is available until the end
+    of request which makes it possible to easily ensure that the SQL generated
+    is the one expected on errors or in unittesting. Alternatively, you can also
+    enable the query recording by setting the ``'SQLALCHEMY_RECORD_QUERIES'``
+    config variable to `True`.
 
     The value returned will be a list of named tuples with the following
     attributes:
