@@ -73,7 +73,7 @@ constructor with those ``**kwargs`` to preserve this behavior::
 
     class Foo(db.Model):
         # ...
-        def __init__(**kwargs):
+        def __init__(self, **kwargs):
             super(Foo, self).__init__(**kwargs)
             # do custom stuff
 
