@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import Flask, request, flash, url_for, redirect, \
-     render_template, abort
+     render_template
 from flask_sqlalchemy import SQLAlchemy
 
 

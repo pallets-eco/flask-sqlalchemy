@@ -45,7 +45,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Flask-SQLAlchemy'
-copyright = u'2010 - {0}, Armin Ronacher'.format(datetime.utcnow().year)
+copyright = u'2010 - {}, Armin Ronacher'.format(datetime.utcnow().year)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
