@@ -64,7 +64,7 @@ def script_info(app, db):
 @pytest.fixture(autouse=True)
 def mock_engines(mocker):
     """Mock all SQLAlchemy engines, except SQLite
-    (which requires no dependencies"""
+    (which requires no dependencies)"""
     real_create_engine = sqlalchemy.create_engine
     real_EngineDebuggingSignalEvents = fsa._EngineDebuggingSignalEvents
 
