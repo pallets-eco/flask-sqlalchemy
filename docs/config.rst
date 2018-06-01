@@ -51,6 +51,8 @@ A list of configuration keys currently understood by the extension:
                                    different default timeout value. For more
                                    information about timeouts see
                                    :ref:`timeouts`.
+``SQLALCHEMY_POOL_PRE_PING``       Checks whether a connection is still viable
+                                   at pool checkout.
 ``SQLALCHEMY_MAX_OVERFLOW``        Controls the number of connections that
                                    can be created after the pool reached
                                    its maximum size.  When those additional
@@ -80,6 +82,8 @@ A list of configuration keys currently understood by the extension:
    The ``SQLALCHEMY_TRACK_MODIFICATIONS`` configuration key was added.
 .. versionchanged:: 2.1
    ``SQLALCHEMY_TRACK_MODIFICATIONS`` will warn if unset.
+.. versionadded:: 2.4
+   The ``SQLALCHEMY_POOL_PRE_PING`` configuration key was added.
 
 Connection URI Format
 ---------------------
