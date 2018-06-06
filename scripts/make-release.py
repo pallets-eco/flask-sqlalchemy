@@ -26,7 +26,6 @@ def parse_changelog():
             match = re.search('^Version\s+(.*)', line.strip())
             if match is None:
                 continue
-            length = len(match.group(1))
             version = match.group(1).strip()
             if lineiter.next().count('-') != len(match.group(0)):
                 continue
