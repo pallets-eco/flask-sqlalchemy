@@ -188,3 +188,108 @@ generation can be disabled by defining a custom metaclass. ::
 
 This creates a base that still supports the ``__bind_key__`` feature but does
 not generate table names.
+
+
+Using pure SQLAlchemy models and combining them with Flask-SQLAlchemy
+---------------------------------------------------------------------
+
+In some cases you might want to use only the session handling from
+Flask-SQLAlchemy, but use pure SQLAlchemy for your models and querying.
+
+This would allow you to use the same models and code in Python applications
+other than Flask, but keep the Flask-specific features for Flask applications.
+
+To achieve that, create your ``Base`` class using pure SQLAlchemy::
+
+    # Inside app/db/base.py
+    # There should also be an empty file app/db/__init__.py
+
+    from sqlalchemy.ext.declarative import declarative_base, declared_attr
+
+
+    class CustomBase(object):
+        # Generate __tablename__ automatically
+        @declared_attr
+        def __tablename__(cls):
+            return cls.__name__.lower()
+
+
+    Base = declarative_base(cls=CustomBase)
+
+
+Then create your model using that ``Base``::
+
+    # Inside app/models/user.py
+    # There should also be an empty file app/models/__init__.py
+
+    from sqlalchemy import Column, Integer, String
+    from ..db.base import Base
+
+
+    class User(Base):
+        id = Column(Integer, primary_key=True, index=True)
+        name = Column(String, index=True)
+        email = Column(String, unique=True, index=True)
+
+
+Now you can create a (non-Flask) Python script that can interact with
+your pure SQLAlchemy code, for example, creating some users::
+
+    # Inside app/nonflask.py
+    # There should also be an empty file app/__init__.py
+
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import scoped_session, sessionmaker
+    from .models.user import User
+    from .db.base import Base
+
+    engine = create_engine('sqlite:////tmp/test.db')
+
+    db_session = scoped_session(sessionmaker(bind=engine))
+
+    Base.metadata.create_all(engine)
+
+    db_session.add(User(
+        name='alice',
+        email='alice@example.com',
+    ))
+
+    db_session.add(User(
+        name='bob',
+        email='bob@example.com',
+    ))
+
+    db_session.commit()
+
+
+You can execute that "module" with::
+
+    python -m app.nonflask
+
+
+And then, in your Flask-specific code, import the same ``Base`` and create your
+Flask-SQLAlchemy instance, to be used inside Flask::
+
+    # Inside app/main.py
+    # There should also be an empty file app/__init__.py
+
+    from flask_sqlalchemy import SQLAlchemy
+    from flask import Flask
+    from .db.base import Base
+    # Import User so that Base knows it exists
+    from .models.user import User
+
+    app = Flask(__name__)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
+    db = SQLAlchemy(app, model_class=Base)
+
+    # Use db.session as normally inside Flask code
+
+    @app.route('/')
+    def root():
+        users = db.session.query(User).all()
+        user_names = []
+        for user in users:
+            user_names.append(user.name)
+        return ', '.join(user_names)
