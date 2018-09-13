@@ -552,7 +552,8 @@ class _EngineConnector(object):
         with self._lock:
             uri = self.get_uri()
             echo = self._app.config['SQLALCHEMY_ECHO']
-            if (uri, echo) == self._connected_for:
+            extra_options = self._app.config['SQLALCHEMY_EXTRA_OPTIONS']
+            if (uri, echo, extra_options) == self._connected_for:
                 return self._engine
             info = make_url(uri)
             options = {'convert_unicode': True}
@@ -560,11 +561,12 @@ class _EngineConnector(object):
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
                 options['echo'] = echo
+            options.update(extra_options or {})
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
                                              self._app.import_name).register()
-            self._connected_for = (uri, echo)
+            self._connected_for = (uri, echo, extra_options)
             return rv
 
 
@@ -783,6 +785,7 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
+        app.config.setdefault('SQLALCHEMY_EXTRA_OPTIONS', None)
         app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
         app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
         app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
