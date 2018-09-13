@@ -126,3 +126,8 @@ This will raise 404 errors instead of returning `None`::
     def show_user(username):
         user = User.query.filter_by(username=username).first_or_404()
         return render_template('show_user.html', user=user)
+
+
+Also, if you want to add a description with abort(), you can use it as argument as well.
+
+>>> User.query.filter_by(username=username).first_or_404(description='There is no data with {}'.format(username))
