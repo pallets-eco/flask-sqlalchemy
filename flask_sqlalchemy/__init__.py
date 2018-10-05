@@ -766,6 +766,8 @@ class SQLAlchemy(object):
         of an application not initialized that way or connections will
         leak.
         """
+        self.app = app
+
         if (
             'SQLALCHEMY_DATABASE_URI' not in app.config and
             'SQLALCHEMY_BINDS' not in app.config
