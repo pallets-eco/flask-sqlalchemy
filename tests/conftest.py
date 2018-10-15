@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import flask
+import os
 import pytest
 
 import flask_sqlalchemy as fsa
@@ -10,7 +11,11 @@ import flask_sqlalchemy as fsa
 def app(request):
     app = flask.Flask(request.module.__name__)
     app.testing = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app._is_postgresql = 'postgresql' in os.environ.get('DB_ENGINE', '')
+    if app._is_postgresql:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:@localhost:5432/travis_ci_test'
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     return app
 
@@ -37,4 +42,5 @@ def Todo(db):
             self.pub_date = datetime.utcnow()
     db.create_all()
     yield Todo
+    db.session.rollback()
     db.drop_all()
