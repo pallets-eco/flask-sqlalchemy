@@ -4,22 +4,28 @@ language: python
 matrix:
   include:
     - python: 3.6
-      env: TOXENV=py,codecov
+      env: TOXENV=py,postgresql,codecov
     - python: 3.5
-      env: TOXENV=py,codecov
+      env: TOXENV=py,postgresql,codecov
     - python: 3.4
-      env: TOXENV=py,codecov
+      env: TOXENV=py,postgresql,codecov
     - python: 2.7
-      env: TOXENV=py,codecov
+      env: TOXENV=py,postgresql,codecov
     - python: pypy
-      env: TOXENV=py,codecov
+      env: TOXENV=py,postgresql,codecov
     - python: nightly
-      env: TOXENV=py,codecov
+      env: TOXENV=py,postgresql,codecov
     - python: 3.6
       env: TOXENV=docs_html
 
 install:
   - pip install tox
+
+services:
+  - postgresql
+
+before_script:
+  - psql -c 'create database travis_ci_test;' -U postgres
 
 script:
   - tox

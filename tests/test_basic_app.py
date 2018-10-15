@@ -36,15 +36,26 @@ def test_query_recording(app, db, Todo):
 
         query = queries[0]
         assert 'insert into' in query.statement.lower()
-        assert query.parameters[0] == 'Test 1'
-        assert query.parameters[1] == 'test'
+        parameters = []
+        if app._is_postgresql:
+            parameters.append(query.parameters['title'])
+            parameters.append(query.parameters['text'])
+        else:
+            parameters.append(query.parameters[0])
+            parameters.append(query.parameters[1])
+        assert parameters[0] == 'Test 1'
+        assert parameters[1] == 'test'
         assert 'test_basic_app.py' in query.context
         assert 'test_query_recording' in query.context
 
         query = queries[1]
         assert 'update' in query.statement.lower()
-        assert query.parameters[0] == 1
-        assert query.parameters[1] == 1
+        if app._is_postgresql:
+            assert query.parameters['todos_todo_id'] == 1
+            assert query.parameters['done'] == True
+        else:
+            assert query.parameters[0] == 1
+            assert query.parameters[1] == 1
 
 
 def test_helper_api(db):
