@@ -166,13 +166,14 @@ class _SessionSignalEvents(object):
     @classmethod
     def register(cls, session):
         if not hasattr(session, '_model_changes'):
-            session._model_changes = {}
+            session._model_changes = []
 
         event.listen(session, 'before_flush', cls.record_ops)
         event.listen(session, 'before_commit', cls.record_ops)
         event.listen(session, 'before_commit', cls.before_commit)
         event.listen(session, 'after_commit', cls.after_commit)
         event.listen(session, 'after_rollback', cls.after_rollback)
+        event.listen(session, 'after_transaction_create', cls.after_transaction_create)
 
     @classmethod
     def unregister(cls, session):
@@ -184,6 +185,7 @@ class _SessionSignalEvents(object):
         event.remove(session, 'before_commit', cls.before_commit)
         event.remove(session, 'after_commit', cls.after_commit)
         event.remove(session, 'after_rollback', cls.after_rollback)
+        event.remove(session, 'after_transaction_create', cls.after_transaction_create)
 
     @staticmethod
     def record_ops(session, flush_context=None, instances=None):
@@ -196,28 +198,54 @@ class _SessionSignalEvents(object):
             for target in targets:
                 state = inspect(target)
                 key = state.identity_key if state.has_identity else id(target)
-                d[key] = (target, operation)
+                d[-1][key] = (target, operation)
+
+    @staticmethod
+    def after_transaction_create(session, transaction):
+        if transaction.parent and not transaction.nested:
+            return
+
+        try:
+            d = session._model_changes
+        except AttributeError:
+            return
+
+        d.append({})
 
     @staticmethod
     def before_commit(session):
+        if session.transaction.nested:
+            return
+
         try:
             d = session._model_changes
         except AttributeError:
             return
 
         if d:
-            before_models_committed.send(session.app, changes=list(d.values()))
+            for level in d[1:]:
+                d[0].update(level)
+
+            if d[0]:
+                before_models_committed.send(session.app, changes=list(d[0].values()))
 
     @staticmethod
     def after_commit(session):
+        if session.transaction.nested:
+            return
+
         try:
             d = session._model_changes
         except AttributeError:
             return
 
         if d:
-            models_committed.send(session.app, changes=list(d.values()))
-            d.clear()
+            for level in d[1:]:
+                d[0].update(level)
+
+            if d[0]:
+                models_committed.send(session.app, changes=list(d[0].values()))
+            del d[:]
 
     @staticmethod
     def after_rollback(session):
@@ -226,7 +254,10 @@ class _SessionSignalEvents(object):
         except AttributeError:
             return
 
-        d.clear()
+        try:
+            del d[-1]
+        except IndexError:
+            pass
 
 
 class _EngineDebuggingSignalEvents(object):
