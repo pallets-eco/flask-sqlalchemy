@@ -517,7 +517,7 @@ class _QueryProperty(object):
         self.sa = sa
 
     def __get__(self, obj, type):
-        if obj is not None and obj.__class__.__bases__[0].query is None:
+        if obj is not None:
             raise AttributeError('The query property is only accessible from '
                                  'a model class, not an instance.')
 

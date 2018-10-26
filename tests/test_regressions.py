@@ -64,7 +64,7 @@ def test_joined_inheritance_relation(db):
     db.session.add(base)
     db.session.commit()
 
-    base = base.query.one()
+    base = Base.query.one()
 
 
 def test_connection_binds(db):
