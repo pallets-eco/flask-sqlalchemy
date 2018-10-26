@@ -36,7 +36,7 @@ def test_query_forbidden_from_result_row(db, Todo):
     db.session.add(todo)
     db.session.commit()
     row = Todo.query.first()
-    with pytest.raises(RuntimeError):
+    with pytest.raises(AttributeError):
         row.query.first()
 
 

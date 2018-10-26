@@ -517,17 +517,16 @@ class _QueryProperty(object):
         self.sa = sa
 
     def __get__(self, obj, type):
+        if obj is not None and obj.__class__.__bases__[0].query is None:
+            raise AttributeError('The query property is only accessible from '
+                                 'a model class, not an instance.')
+
         try:
             mapper = orm.class_mapper(type)
             if mapper:
-                query = type.query_class(mapper, session=self.sa.session())
+                return type.query_class(mapper, session=self.sa.session())
         except UnmappedClassError:
-            query = None
-
-        if obj is not None and not obj.__class__.__bases__[0].query:
-            raise RuntimeError('Only use BaseQuery helper from a model class.')
-
-        return query
+            return None
 
 
 def _record_queries(app):
