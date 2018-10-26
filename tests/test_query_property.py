@@ -31,6 +31,15 @@ def test_app_bound(db, Todo):
     assert len(Todo.query.all()) == 1
 
 
+def test_query_forbidden_from_result_row(db, Todo):
+    todo = Todo('Test', 'test')
+    db.session.add(todo)
+    db.session.commit()
+    row = Todo.query.first()
+    with pytest.raises(RuntimeError):
+        row.query.first()
+
+
 def test_get_or_404(Todo):
     with pytest.raises(NotFound):
         Todo.query.get_or_404(1)

@@ -520,9 +520,14 @@ class _QueryProperty(object):
         try:
             mapper = orm.class_mapper(type)
             if mapper:
-                return type.query_class(mapper, session=self.sa.session())
+                query = type.query_class(mapper, session=self.sa.session())
         except UnmappedClassError:
-            return None
+            query = None
+
+        if obj is not None and not obj.__class__.__bases__[0].query:
+            raise RuntimeError('Only use BaseQuery helper from a model class.')
+
+        return query
 
 
 def _record_queries(app):
