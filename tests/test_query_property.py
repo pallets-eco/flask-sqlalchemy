@@ -31,12 +31,12 @@ def test_app_bound(db, Todo):
     assert len(Todo.query.all()) == 1
 
 
-def test_query_forbidden_from_result_row(db, Todo):
+def test_query_on_instance_deprecated(db, Todo):
     todo = Todo('Test', 'test')
     db.session.add(todo)
     db.session.commit()
     row = Todo.query.first()
-    with pytest.raises(AttributeError):
+    with pytest.warns(fsa.FSADeprecationWarning):
         row.query.first()
 
 

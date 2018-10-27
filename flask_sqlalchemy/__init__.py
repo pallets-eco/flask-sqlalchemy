@@ -518,8 +518,10 @@ class _QueryProperty(object):
 
     def __get__(self, obj, type):
         if obj is not None:
-            raise AttributeError('The query property is only accessible from '
-                                 'a model class, not an instance.')
+            warnings.warn(FSADeprecationWarning(
+                'The query property is only accessible from a model class, '
+                'not an instance.'
+            ))
 
         try:
             mapper = orm.class_mapper(type)
