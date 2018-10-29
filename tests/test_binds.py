@@ -1,5 +1,5 @@
 import flask_sqlalchemy as fsa
-
+from sqlalchemy.ext.declarative import declared_attr
 
 def test_basic_binds(app, db):
     app.config['SQLALCHEMY_BINDS'] = {
@@ -91,3 +91,35 @@ def test_connector_cache(app):
 
     connector = fsa.get_state(app).connectors[None]
     assert connector._app is app
+
+
+def test_polymorphic_bind(app, db):
+    bind_key = 'polymorphic_bind_key'
+
+    app.config['SQLALCHEMY_BINDS'] = {
+        bind_key: 'sqlite:///:memory',
+    }
+
+    class Base(db.Model):
+        __bind_key__ = bind_key
+
+        __tablename__ = 'base'
+
+        id = db.Column(db.Integer, primary_key=True)
+
+        p_type = db.Column(db.String(50))
+
+        __mapper_args__ = {
+            'polymorphic_identity': 'base',
+            'polymorphic_on': p_type
+        }
+
+    class Child1(Base):
+
+        child_1_data = db.Column(db.String(50))
+        __mapper_args__ = {
+            'polymorphic_identity': 'child_1',
+        }
+
+    assert Base.__table__.info['bind_key'] == bind_key
+    assert Child1.__table__.info['bind_key'] == bind_key

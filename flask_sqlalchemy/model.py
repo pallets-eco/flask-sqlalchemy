@@ -120,7 +120,7 @@ class BindMetaMixin(object):
 
         super(BindMetaMixin, cls).__init__(name, bases, d)
 
-        if bind_key is not None and hasattr(cls, '__table__'):
+        if bind_key is not None and getattr(cls, '__table__', None) is not None:
             cls.__table__.info['bind_key'] = bind_key
 
 
