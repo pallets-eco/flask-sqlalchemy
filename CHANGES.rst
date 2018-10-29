@@ -1,6 +1,13 @@
 Changelog
 =========
 
+Version 2.3.3
+-------------
+
+Fix "AttributeError: 'NoneType' object has no attribute 'info'", when using polymorphic models. (`#651`_)
+
+.. _#651: https://github.com/mitsuhiko/flask-sqlalchemy/pull/651
+
 
 Version 2.3.2
 -------------
