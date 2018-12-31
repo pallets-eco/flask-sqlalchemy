@@ -36,7 +36,11 @@ __version__ = '2.3.2'
 
 # the best timer function for the platform
 if sys.platform == 'win32':
-    _timer = time.clock
+    # time.clock has been deprecated in Python 3.3 and will be removed from Python 3.8
+    if sys.version_info >= (3, 3):
+        _timer = time.perf_counter
+    else:
+        _timer = time.clock
 else:
     _timer = time.time
 
