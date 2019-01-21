@@ -680,7 +680,6 @@ class SQLAlchemy(object):
         self.session = self.create_scoped_session(session_options)
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
-        self.app = app
         _include_sqlalchemy(self, query_class)
 
         if app is not None:
@@ -770,6 +769,8 @@ class SQLAlchemy(object):
         of an application not initialized that way or connections will
         leak.
         """
+        self.app = app
+        
         if (
             'SQLALCHEMY_DATABASE_URI' not in app.config and
             'SQLALCHEMY_BINDS' not in app.config
