@@ -51,6 +51,10 @@ A list of configuration keys currently understood by the extension:
                                    different default timeout value. For more
                                    information about timeouts see
                                    :ref:`timeouts`.
+``SQLALCHEMY_POOL_PRE_PING``       Test the connection is alive with a
+                                   dialect specific ping, typically
+                                   ``SELECT 1``. When not alive, the connection
+                                   will be transparently reconnected.
 ``SQLALCHEMY_MAX_OVERFLOW``        Controls the number of connections that
                                    can be created after the pool reached
                                    its maximum size.  When those additional
