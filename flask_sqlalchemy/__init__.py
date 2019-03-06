@@ -560,7 +560,7 @@ class _EngineConnector(object):
             if (uri, echo) == self._connected_for:
                 return self._engine
             info = make_url(uri)
-            options = {'convert_unicode': True}
+            options = {}
             self._sa.apply_pool_defaults(self._app, options)
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
