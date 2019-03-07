@@ -4,7 +4,9 @@ language: python
 matrix:
   include:
     - python: 3.6
-      env: TOXENV=py,codecov
+      env: TOXENV=py-sqla1.2,codecov
+    - python: 3.6
+      env: TOXENV=py-sqla1.3,codecov
     - python: 3.5
       env: TOXENV=py,codecov
     - python: 3.4
