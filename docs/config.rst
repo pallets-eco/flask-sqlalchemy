@@ -1,3 +1,5 @@
+.. currentmodule:: flask_sqlalchemy
+
 Configuration
 =============
 
@@ -63,6 +65,9 @@ A list of configuration keys currently understood by the extension:
                                    that it will be disabled by default in
                                    the future.  This requires extra memory
                                    and should be disabled if not needed.
+``SQLALCHEMY_ENGINE_OPTIONS``      A dictionary of keyword args to send to
+                                   :func:`~sqlalchemy.create_engine`.  See
+                                   also ``engine_options`` to :class:`SQLAlchemy`.
 ================================== =========================================
 
 .. versionadded:: 0.8
@@ -78,8 +83,12 @@ A list of configuration keys currently understood by the extension:
 
 .. versionadded:: 2.0
    The ``SQLALCHEMY_TRACK_MODIFICATIONS`` configuration key was added.
+
 .. versionchanged:: 2.1
    ``SQLALCHEMY_TRACK_MODIFICATIONS`` will warn if unset.
+
+.. versionchanged:: 2.4
+   ``SQLALCHEMY_ENGINE_OPTIONS`` configuration key was added.
 
 Connection URI Format
 ---------------------
