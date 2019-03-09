@@ -1,6 +1,25 @@
 Flask-SQLAlchemy
 ################
 
+.. image:: https://travis-ci.org/pallets/flask-sqlalchemy.svg?branch=2.x-maintenance
+    :target: https://travis-ci.org/pallets/flask-sqlalchemy
+
+.. image:: https://codecov.io/github/level12/flask-sqlalchemy/coverage.svg?branch=2.x-maintenance
+    :target: https://codecov.io/github/level12/flask-sqlalchemy?branch=2.x-maintenance
+
+.. image:: https://img.shields.io/pypi/v/flask-sqlalchemy.svg
+    :target: https://pypi.org/project/Flask-SQLAlchemy
+
+.. image:: https://img.shields.io/pypi/pyversions/flask-sqlalchemy.svg
+    :target: https://pypi.org/project/Flask-SQLAlchemy
+
+.. image:: https://img.shields.io/pypi/l/flask-sqlalchemy.svg
+    :target: https://pypi.org/project/Flask-SQLAlchemy
+
+.. image:: https://img.shields.io/pypi/status/flask-sqlalchemy.svg
+    :target: https://pypi.org/project/Flask-SQLAlchemy
+
+
 Flask-SQLAlchemy is a Flask_ extension which adds support for the SQLAlchemy_ ORM/toolkit.
 
 

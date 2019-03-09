@@ -33,6 +33,7 @@ setup(
     ],
     test_suite='test_sqlalchemy.suite',
     classifiers=[
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
