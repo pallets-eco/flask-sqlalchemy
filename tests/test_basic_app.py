@@ -49,3 +49,13 @@ def test_query_recording(app, db, Todo):
 
 def test_helper_api(db):
     assert db.metadata == db.Model.metadata
+
+
+def test_persist_selectable(app, db, Todo, recwarn):
+    """ In SA 1.3, mapper.mapped_table should be replaced with mapper.persist_selectable """
+    with app.test_request_context():
+        todo = Todo('Test 1', 'test')
+        db.session.add(todo)
+        db.session.commit()
+
+    assert len(recwarn) == 0
