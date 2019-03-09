@@ -1,7 +1,8 @@
-import flask_sqlalchemy as fsa
-
 import mock
 import pytest
+from sqlalchemy.pool import NullPool
+
+import flask_sqlalchemy as fsa
 
 
 class TestConfigKeys:
@@ -65,6 +66,12 @@ class TestConfigKeys:
                  ' "sqlite:///:memory:".'
         assert recwarn[0].message.args[0] == expect
 
+    def test_engine_creation_ok(self, app):
+        """ create_engine() isn't called until needed.  Let's make sure we can do that without
+            errors.
+        """
+        assert fsa.SQLAlchemy(app).get_engine()
+
 
 @pytest.fixture
 def app_nr(app):
@@ -114,3 +121,24 @@ class TestCreateEngine:
 
         args, options = m_create_engine.call_args
         assert options['bar'] == 'baz'
+
+    def test_pool_class_default(self, m_create_engine, app_nr):
+        fsa.SQLAlchemy(app_nr).get_engine()
+
+        args, options = m_create_engine.call_args
+        assert options['poolclass'].__name__ == 'StaticPool'
+
+    def test_pool_class_with_pool_size_zero(self, m_create_engine, app_nr):
+        app_nr.config['SQLALCHEMY_POOL_SIZE'] = 0
+        with pytest.raises(RuntimeError) as exc_info:
+            fsa.SQLAlchemy(app_nr).get_engine()
+        expected = 'SQLite in memory database with an empty queue not possible due to data loss.'
+        assert exc_info.value.args[0] == expected
+
+    def test_pool_class_nullpool(self, m_create_engine, app_nr):
+        engine_options = {'poolclass': NullPool}
+        fsa.SQLAlchemy(app_nr, engine_options=engine_options).get_engine()
+
+        args, options = m_create_engine.call_args
+        assert options['poolclass'].__name__ == 'NullPool'
+        assert 'pool_size' not in options
