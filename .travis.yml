@@ -19,7 +19,7 @@ matrix:
     - python: nightly
     - python: pypy3.5-6.0
   allow_failures:
-    # ToDo: why test these at all if they aren't going to fail the build?
+    # Why test these at all if they aren't going to fail the build?  Answered at:
     # https://github.com/pallets/flask-sqlalchemy/issues/689
     - python: nightly
     - python: pypy3.5-6.0
