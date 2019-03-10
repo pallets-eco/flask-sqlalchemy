@@ -552,7 +552,8 @@ class _EngineConnector(object):
         with self._lock:
             uri = self.get_uri()
             echo = self._app.config['SQLALCHEMY_ECHO']
-            if (uri, echo) == self._connected_for:
+            pool_pre_ping = self._app.config['SQLALCHEMY_POOL_PRE_PING']
+            if (uri, echo, pool_pre_ping) == self._connected_for:
                 return self._engine
             info = make_url(uri)
             options = {'convert_unicode': True}
@@ -560,11 +561,13 @@ class _EngineConnector(object):
             self._sa.apply_driver_hacks(self._app, info, options)
             if echo:
                 options['echo'] = echo
+            if pool_pre_ping:
+                options['pool_pre_ping'] = pool_pre_ping
             self._engine = rv = sqlalchemy.create_engine(info, **options)
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
                                              self._app.import_name).register()
-            self._connected_for = (uri, echo)
+            self._connected_for = (uri, echo, pool_pre_ping)
             return rv
 
 
