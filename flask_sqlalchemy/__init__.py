@@ -36,7 +36,7 @@ __version__ = '2.3.2'
 
 # the best timer function for the platform
 if sys.platform == 'win32':
-    _timer = time.clock
+    _timer = time.perf_counter
 else:
     _timer = time.time
 
