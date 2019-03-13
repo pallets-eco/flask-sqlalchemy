@@ -1,9 +1,28 @@
 import random
 
 import pytest
+from sqlalchemy import event
 from sqlalchemy.exc import InvalidRequestError
 
 import flask_sqlalchemy as fsa
+
+
+def fix_pysqlite(engine):
+    """This ugly mess is a known issue with pysqlite and how it does
+    Serializable isolation / Savepoints / Transactional DDL:
+    http://docs.sqlalchemy.org/en/rel_1_0/dialects/sqlite.html#pysqlite-serializable
+    """
+
+    @event.listens_for(engine, "connect")
+    def do_connect(dbapi_connection, connection_record):
+        # disable pysqlite's emitting of the BEGIN statement entirely.
+        # also stops it from emitting COMMIT before any DDL.
+        dbapi_connection.isolation_level = None
+
+    @event.listens_for(engine, "begin")
+    def do_begin(conn):
+        # emit our own BEGIN
+        conn.execute("BEGIN")
 
 
 @pytest.fixture(params=(True, False), ids=('nested transaction', 'savepoint'))
@@ -15,6 +34,7 @@ def app(app, request):
 @pytest.fixture(params=(True, False), ids=('autocommit', 'no autocommit'))
 def db(app, request):
     db = fsa.SQLAlchemy(app, session_options={'autocommit': request.param})
+    fix_pysqlite(db.engine)
     return db
 
 
