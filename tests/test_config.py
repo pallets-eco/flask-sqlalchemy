@@ -3,6 +3,7 @@ import pytest
 from sqlalchemy.pool import NullPool
 
 import flask_sqlalchemy as fsa
+from flask_sqlalchemy import _compat, utils
 
 
 class TestConfigKeys:
@@ -71,7 +72,14 @@ class TestConfigKeys:
             errors or warnings.
         """
         assert fsa.SQLAlchemy(app).get_engine()
-        assert len(recwarn) == 0
+        if utils.sqlalchemy_version('==', '0.8.0') and not _compat.PY2:
+            # In CI, we test Python 3.6 and SA 0.8.0, which produces a warning for
+            # inspect.getargspec()
+            expected_warnings = 1
+        else:
+            expected_warnings = 0
+
+        assert len(recwarn) == expected_warnings
 
 
 @pytest.fixture
