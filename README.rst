@@ -1,30 +1,13 @@
+.. default-role:: code
+
 Flask-SQLAlchemy
-################
+================
 
-.. image:: https://travis-ci.org/pallets/flask-sqlalchemy.svg?branch=2.x-maintenance
-    :target: https://travis-ci.org/pallets/flask-sqlalchemy
-
-.. image:: https://codecov.io/github/level12/flask-sqlalchemy/coverage.svg?branch=2.x-maintenance
-    :target: https://codecov.io/github/level12/flask-sqlalchemy?branch=2.x-maintenance
-
-.. image:: https://img.shields.io/pypi/v/flask-sqlalchemy.svg
-    :target: https://pypi.org/project/Flask-SQLAlchemy
-
-.. image:: https://img.shields.io/pypi/pyversions/flask-sqlalchemy.svg
-    :target: https://pypi.org/project/Flask-SQLAlchemy
-
-.. image:: https://img.shields.io/pypi/l/flask-sqlalchemy.svg
-    :target: https://pypi.org/project/Flask-SQLAlchemy
-
-.. image:: https://img.shields.io/pypi/status/flask-sqlalchemy.svg
-    :target: https://pypi.org/project/Flask-SQLAlchemy
-
-
-Flask-SQLAlchemy is a Flask_ extension which adds support for the SQLAlchemy_ ORM/toolkit.
+Flask-SQLAlchemy is a Flask_ extension which adds support for the SQLAlchemy_.
 
 
 Installing
-==========
+----------
 
 Install and update using `pip`_:
 
@@ -37,7 +20,7 @@ requirement, and usage instructions.
 
 
 A Simple Example
-================
+----------------
 
 Pretty easy to get started:
 
@@ -61,7 +44,7 @@ For more details, see the `quickstart example
 
 
 Tests
-=====
+-----
 
 In short we use pytest_ and tox_.  You should be able to::
 
@@ -76,14 +59,16 @@ You can figure out our testing and documentation dependencies by further inspect
 file in the root of the project.
 
 Help
-====
+----
 
-- Join us on the #pocoo IRC channel on irc.freenode.net.
-- Join us at: https://discord.gg/t6rrQZH
+Join us at:
+
+- the #pocoo IRC channel on irc.freenode.net
+- https://discord.gg/t6rrQZH
 
 
 Links
-=====
+-----
 
 -   Home: https://github.com/pallets/flask-sqlalchemy
 -   Documentation: http://flask-sqlalchemy.pocoo.org/
@@ -91,8 +76,8 @@ Links
 -   Issue tracker: https://github.com/pallets/flask-sqlalchemy/issues
 -   Test status:
 
-    -   Linux, Mac: https://travis-ci.org/pallets/flask-sqlalchemy/
-    -   Windows: None yet, see `#690 <https://github.com/pallets/flask-sqlalchemy/issues/690>`_
+    -   Linux: https://travis-ci.org/pallets/flask-sqlalchemy/
+    -   Mac, Windows: none yet, see `#690 <https://github.com/pallets/flask-sqlalchemy/issues/690>`_
 
 -   Test coverage: https://codecov.io/gh/pallets/flask-sqlalchemy/
 
