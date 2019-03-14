@@ -11,3 +11,4 @@ docs/_build
 htmlcov
 .coverage
 .coverage.*
+.vscode
