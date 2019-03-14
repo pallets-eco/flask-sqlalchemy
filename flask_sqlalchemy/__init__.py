@@ -414,20 +414,20 @@ class BaseQuery(orm.Query):
     Override the query class for an individual model by subclassing this and setting :attr:`~Model.query_class`.
     """
 
-    def get_or_404(self, ident):
+    def get_or_404(self, ident, description=None):
         """Like :meth:`get` but aborts with 404 if not found instead of returning ``None``."""
 
         rv = self.get(ident)
         if rv is None:
-            abort(404)
+            abort(404, description=description)
         return rv
 
-    def first_or_404(self):
+    def first_or_404(self, description=None):
         """Like :meth:`first` but aborts with 404 if not found instead of returning ``None``."""
 
         rv = self.first()
         if rv is None:
-            abort(404)
+            abort(404, description=description)
         return rv
 
     def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None):
