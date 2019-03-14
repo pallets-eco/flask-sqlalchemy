@@ -130,8 +130,8 @@ specify a `custom constraint naming convention
 <http://docs.sqlalchemy.org/en/latest/core/constraints.html#constraint-naming-conventions>`_
 in conjunction with SQLAlchemy 0.9.2 or higher.
 Doing so is important for dealing with database migrations (for instance using
-`alembic <https://alembic.readthedocs.org>`_ as stated
-`here <http://alembic.readthedocs.org/en/latest/naming.html>`_. Here's an
+`alembic <https://alembic.sqlalchemy.org>`_ as stated
+`here <https://alembic.sqlalchemy.org/en/latest/naming.html>`_. Here's an
 example, as suggested by the SQLAlchemy docs::
 
     from sqlalchemy import MetaData

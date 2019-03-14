@@ -9,7 +9,7 @@ Released on October 11, 2017
 
 - Don't mask the parent table for single-table inheritance models. (`#561`_)
 
-.. _#561: https://github.com/mitsuhiko/flask-sqlalchemy/pull/561
+.. _#561: https://github.com/pallets/flask-sqlalchemy/pull/561
 
 
 Version 2.3.1
@@ -29,11 +29,11 @@ Released on October 5, 2017
 - For ``paginate`` with ``error_out=False``, the minimum value for ``page`` is
   1 and ``per_page`` is 0. (`#558`_)
 
-.. _#542: https://github.com/mitsuhiko/flask-sqlalchemy/pull/542
-.. _#551: https://github.com/mitsuhiko/flask-sqlalchemy/pull/551
-.. _#555: https://github.com/mitsuhiko/flask-sqlalchemy/pull/555
-.. _#556: https://github.com/mitsuhiko/flask-sqlalchemy/pull/556
-.. _#558: https://github.com/mitsuhiko/flask-sqlalchemy/pull/558
+.. _#542: https://github.com/pallets/flask-sqlalchemy/pull/542
+.. _#551: https://github.com/pallets/flask-sqlalchemy/pull/551
+.. _#555: https://github.com/pallets/flask-sqlalchemy/pull/555
+.. _#556: https://github.com/pallets/flask-sqlalchemy/pull/556
+.. _#558: https://github.com/pallets/flask-sqlalchemy/pull/558
 
 
 Version 2.3.0
@@ -62,10 +62,10 @@ Released on September 28, 2017
   ``current_app`` rather than the app they were created for. This caused issues
   when multiple apps were registered with the extension. (`#547`_)
 
-.. _#530: https://github.com/mitsuhiko/flask-sqlalchemy/pull/530
-.. _#541: https://github.com/mitsuhiko/flask-sqlalchemy/pull/541
-.. _#546: https://github.com/mitsuhiko/flask-sqlalchemy/pull/546
-.. _#547: https://github.com/mitsuhiko/flask-sqlalchemy/pull/547
+.. _#530: https://github.com/pallets/flask-sqlalchemy/pull/530
+.. _#541: https://github.com/pallets/flask-sqlalchemy/pull/541
+.. _#546: https://github.com/pallets/flask-sqlalchemy/pull/546
+.. _#547: https://github.com/pallets/flask-sqlalchemy/pull/547
 
 
 Version 2.2
@@ -86,14 +86,14 @@ Released on February 27, 2017, codename Dubnium
 - Tablename generation logic no longer accesses class properties unless they
   are ``declared_attr``. (`#467`_)
 
-.. _#328: https://github.com/mitsuhiko/flask-sqlalchemy/pull/328
-.. _#364: https://github.com/mitsuhiko/flask-sqlalchemy/pull/364
-.. _#373: https://github.com/mitsuhiko/flask-sqlalchemy/pull/373
-.. _#409: https://github.com/mitsuhiko/flask-sqlalchemy/pull/409
-.. _#443: https://github.com/mitsuhiko/flask-sqlalchemy/pull/443
-.. _#460: https://github.com/mitsuhiko/flask-sqlalchemy/pull/460
-.. _#461: https://github.com/mitsuhiko/flask-sqlalchemy/pull/461
-.. _#467: https://github.com/mitsuhiko/flask-sqlalchemy/pull/467
+.. _#328: https://github.com/pallets/flask-sqlalchemy/pull/328
+.. _#364: https://github.com/pallets/flask-sqlalchemy/pull/364
+.. _#373: https://github.com/pallets/flask-sqlalchemy/pull/373
+.. _#409: https://github.com/pallets/flask-sqlalchemy/pull/409
+.. _#443: https://github.com/pallets/flask-sqlalchemy/pull/443
+.. _#460: https://github.com/pallets/flask-sqlalchemy/pull/460
+.. _#461: https://github.com/pallets/flask-sqlalchemy/pull/461
+.. _#467: https://github.com/pallets/flask-sqlalchemy/pull/467
 
 Version 2.1
 -----------

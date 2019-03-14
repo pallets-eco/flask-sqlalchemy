@@ -29,7 +29,13 @@ sys.path.append(os.path.abspath('_themes'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    # Without this we get errors in CI when building docs.  See:
+    # https://github.com/pallets/flask-sqlalchemy/issues/686
+    'sphinx_paramlinks',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
