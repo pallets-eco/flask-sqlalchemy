@@ -854,7 +854,6 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
-        app.config.setdefault('SQLALCHEMY_NESTED_TRANSACTION', False)
         app.config.setdefault('SQLALCHEMY_ISOLATE_TRANSACTION', True)
         track_modifications = app.config.setdefault(
             'SQLALCHEMY_TRACK_MODIFICATIONS', None
@@ -968,7 +967,7 @@ class SQLAlchemy(object):
         return self.get_engine()
 
     @contextmanager
-    def transaction(self, isolate=None, nested=None, **kwargs):
+    def transaction(self, isolate=None, nested=False, **kwargs):
         """Safely commits if no errors, will rollback otherwise.
 
         This is preferably used with PEP 343 `with` statement, for example:
@@ -1022,10 +1021,8 @@ class SQLAlchemy(object):
 
         The default nested transaction implementation is not **nested** - a
         keyword reserved by SQLAlchemy to indicate using savepoint, reused here
-        to follow the same custom. It can be globally set to use savepoint by
-        setting config `SQLALCHEMY_NESTED_TRANSACTION` to `True`;
-        alternatively it can be overriden by setting `nested` parameter on a
-        `db.transaction` call.
+        to follow the same custom. It can be overriden by setting `nested` parameter
+        on a `db.transaction` call.
 
         :param isolate:
             `True`: guarantee transaction boundary;
@@ -1033,8 +1030,7 @@ class SQLAlchemy(object):
             `None`(default): follow config `SQLALCHEMY_ISOLATE_TRANSACTION`
         :param nested:
             `True`: use savepoint for nested transaction;
-            `False`: use subtransaction for nested transaction;
-            `None`(default): follow config `SQLALCHEMY_NESTED_TRANSACTION`
+            `False`(default): use subtransaction for nested transaction;
         :param kwargs:
             additional key-value pairs to be set in the transaction-local
         :return: a PEP 343 context object to be used by `with`
@@ -1052,8 +1048,6 @@ class SQLAlchemy(object):
         else:
             item = stack[-1].copy()
 
-        if nested is None:
-            nested = self.get_app().config['SQLALCHEMY_NESTED_TRANSACTION']
         if isolate is None:
             isolate = self.get_app().config['SQLALCHEMY_ISOLATE_TRANSACTION']
 

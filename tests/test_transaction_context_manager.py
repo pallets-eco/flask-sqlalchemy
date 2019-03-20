@@ -25,12 +25,6 @@ def fix_pysqlite(engine):
         conn.execute("BEGIN")
 
 
-@pytest.fixture(params=(True, False), ids=('nested transaction', 'savepoint'))
-def app(app, request):
-    app.config['SQLALCHEMY_NESTED_TRANSACTION'] = request.param
-    return app
-
-
 @pytest.fixture(params=(True, False), ids=('autocommit', 'no autocommit'))
 def db(app, request):
     db = fsa.SQLAlchemy(app, session_options={'autocommit': request.param})
@@ -50,16 +44,24 @@ def assert_the_same(todo1, todo2):
     assert todo1.pub_date, todo2.pub_date
 
 
-def test_commit(Todo, db):
-    with db.transaction():
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_commit(nested, Todo, db):
+    with db.transaction(nested=nested):
         todo = new_todo(Todo, db)
     db.session.rollback()
     assert_the_same(todo, Todo.query.one())
 
 
-def test_rollback(Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_rollback(nested, Todo, db):
     def method():
-        with db.transaction():
+        with db.transaction(nested=nested):
             new_todo(Todo, db)
             return 1 / 0
     with pytest.raises(ZeroDivisionError):
@@ -69,33 +71,45 @@ def test_rollback(Todo, db):
     assert len(Todo.query.all()) == 0
 
 
-def test_rollback_explicitly(Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_rollback_explicitly(nested, Todo, db):
     def method():
-        with db.transaction():
+        with db.transaction(nested=nested):
             new_todo(Todo, db)
             raise fsa.Rollback()
     with pytest.raises(fsa.Rollback):
         method()
-    with db.transaction():
+    with db.transaction(nested=nested):
         todo = new_todo(Todo, db)
     assert_the_same(todo, Todo.query.one())
 
 
-def test_rollback_no_propagate(Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_rollback_no_propagate(nested, Todo, db):
     def method():
-        with db.transaction():
+        with db.transaction(nested=nested):
             new_todo(Todo, db)
             raise fsa.Rollback(propagate=False)
     method()
-    with db.transaction():
+    with db.transaction(nested=nested):
         todo = new_todo(Todo, db)
     assert_the_same(todo, Todo.query.one())
 
 
-def test_no_isolate_transaction(app, Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_no_isolate_transaction(nested, app, Todo, db):
     app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = False
     todo0 = new_todo(Todo, db)
-    with db.transaction():
+    with db.transaction(nested=nested):
         todo1 = new_todo(Todo, db)
     db.session.rollback()
     r = Todo.query.order_by(Todo.id).all()
@@ -103,10 +117,14 @@ def test_no_isolate_transaction(app, Todo, db):
     assert_the_same(todo1, r[1])
 
 
-def test_explicitly_isolate_transaction(app, Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_explicitly_isolate_transaction(nested, app, Todo, db):
     app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = False
     todo0 = new_todo(Todo, db)
-    with db.transaction(isolate=True):
+    with db.transaction(nested=nested, isolate=True):
         todo1 = new_todo(Todo, db)
     db.session.rollback()
     if db.session().autocommit:
@@ -117,10 +135,14 @@ def test_explicitly_isolate_transaction(app, Todo, db):
         assert_the_same(todo1, Todo.query.one())
 
 
-def test_config_isolate_transaction(app, Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_config_isolate_transaction(nested, app, Todo, db):
     app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = True
     todo0 = new_todo(Todo, db)
-    with db.transaction():
+    with db.transaction(nested=nested):
         todo1 = new_todo(Todo, db)
     db.session.rollback()
     if db.session().autocommit:
@@ -131,10 +153,14 @@ def test_config_isolate_transaction(app, Todo, db):
         assert_the_same(todo1, Todo.query.one())
 
 
-def test_subtransactions_two_commits(Todo, db):
-    with db.transaction():
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_subtransactions_two_commits(nested, Todo, db):
+    with db.transaction(nested=nested):
         todo0 = new_todo(Todo, db)
-        with db.transaction():
+        with db.transaction(nested=nested):
             todo1 = new_todo(Todo, db)
         todo2 = new_todo(Todo, db)
     db.session.rollback()
@@ -144,21 +170,25 @@ def test_subtransactions_two_commits(Todo, db):
     assert_the_same(todo2, r[2])
 
 
-def test_subtransactions_inner_rollback(app, Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_subtransactions_inner_rollback(nested, app, Todo, db):
     todos = []
 
     def method():
-        with db.transaction():
+        with db.transaction(nested=nested):
             todos.append(new_todo(Todo, db))
             try:
-                with db.transaction():
+                with db.transaction(nested=nested):
                     todos.append(new_todo(Todo, db))
                     return 1 / 0
             except ZeroDivisionError:
                 pass
             todos.append(new_todo(Todo, db))
 
-    if app.config['SQLALCHEMY_NESTED_TRANSACTION']:
+    if nested:
         method()
         r = Todo.query.order_by(Todo.id).all()
         assert_the_same(todos[0], r[0])
@@ -166,22 +196,26 @@ def test_subtransactions_inner_rollback(app, Todo, db):
     else:
         with pytest.raises(InvalidRequestError):
             method()
-        with db.transaction():
+        with db.transaction(nested=nested):
             todo = new_todo(Todo, db)
         assert_the_same(todo, Todo.query.one())
 
 
-def test_subtransactions_inner_manual_rollback_silently(app, Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_subtransactions_inner_manual_rollback_silently(nested, app, Todo, db):
     todos = []
 
     def method():
-        with db.transaction():
+        with db.transaction(nested=nested):
             todos.append(new_todo(Todo, db))
-            with db.transaction():
+            with db.transaction(nested=nested):
                 todos.append(new_todo(Todo, db))
                 raise fsa.Rollback(propagate=False)
             todos.append(new_todo(Todo, db))
-    if app.config['SQLALCHEMY_NESTED_TRANSACTION']:
+    if nested:
         method()
         r = Todo.query.order_by(Todo.id).all()
         assert_the_same(todos[0], r[0])
@@ -189,37 +223,45 @@ def test_subtransactions_inner_manual_rollback_silently(app, Todo, db):
     else:
         with pytest.raises(InvalidRequestError):
             method()
-        with db.transaction():
+        with db.transaction(nested=nested):
             todo = new_todo(Todo, db)
         assert_the_same(todo, Todo.query.one())
 
 
-def test_subtransactions_inner_manual_rollback_loudly(Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_subtransactions_inner_manual_rollback_loudly(nested, Todo, db):
     def method():
-        with db.transaction():
+        with db.transaction(nested=nested):
             new_todo(Todo, db)
-            with db.transaction():
+            with db.transaction(nested=nested):
                 new_todo(Todo, db)
                 raise fsa.Rollback(propagate=True)
             new_todo(Todo, db)
     with pytest.raises(fsa.Rollback):
         method()
-    with db.transaction():
+    with db.transaction(nested=nested):
         todo = new_todo(Todo, db)
     assert_the_same(todo, Todo.query.one())
 
 
-def test_subtransactions_inner_manual_rollback(app, Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_subtransactions_inner_manual_rollback(nested, app, Todo, db):
     todos = []
 
     def method():
-        with db.transaction():
+        with db.transaction(nested=nested):
             todos.append(new_todo(Todo, db))
-            with db.transaction():
+            with db.transaction(nested=nested):
                 todos.append(new_todo(Todo, db))
                 raise fsa.Rollback()
             todos.append(new_todo(Todo, db))
-    if app.config['SQLALCHEMY_NESTED_TRANSACTION']:
+    if nested:
         method()
         r = Todo.query.order_by(Todo.id).all()
         assert_the_same(todos[0], r[0])
@@ -227,34 +269,42 @@ def test_subtransactions_inner_manual_rollback(app, Todo, db):
     else:
         with pytest.raises(fsa.Rollback):
             method()
-        with db.transaction():
+        with db.transaction(nested=nested):
             todo = new_todo(Todo, db)
         assert_the_same(todo, Todo.query.one())
 
 
-def test_subtransactions_outer_rollback(Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_subtransactions_outer_rollback(nested, Todo, db):
     def method():
-        with db.transaction():
+        with db.transaction(nested=nested):
             new_todo(Todo, db)
-            with db.transaction():
+            with db.transaction(nested=nested):
                 new_todo(Todo, db)
             new_todo(Todo, db)
             return 1 / 0
     with pytest.raises(ZeroDivisionError):
         method()
-    with db.transaction():
+    with db.transaction(nested=nested):
         todo = new_todo(Todo, db)
     assert_the_same(todo, Todo.query.one())
 
 
-def test_local(Todo, db):
+@pytest.mark.parametrize('nested', [
+    pytest.param(False, id='sub'),
+    pytest.param(True, id='savepoint'),
+])
+def test_local(nested, Todo, db):
     assert db.tx_local is None
     assert db.root_tx_local is None
-    with db.transaction(base=0, val=1):
+    with db.transaction(nested=nested, base=0, val=1):
         assert db.tx_local is db.root_tx_local
         assert db.tx_local['base'] == 0
         assert db.tx_local['val'] == 1
-        with db.transaction(base=0, val=2):
+        with db.transaction(nested=nested, base=0, val=2):
             assert db.tx_local is not db.root_tx_local
             assert db.root_tx_local['base'] == 0
             assert db.root_tx_local['val'] == 1
