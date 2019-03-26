@@ -4,6 +4,10 @@ from flask_sqlalchemy import utils
 
 
 class TestSQLAlchemyVersion:
+    def test_parse_version(self):
+        assert utils.parse_version('1.2.3') == (1, 2, 3)
+        assert utils.parse_version('1.2') == (1, 2, 0)
+        assert utils.parse_version('1') == (1, 0, 0)
 
     @mock.patch.object(utils, 'sqlalchemy')
     def test_sqlalchemy_version(self, m_sqlalchemy):
