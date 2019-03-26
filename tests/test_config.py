@@ -66,11 +66,12 @@ class TestConfigKeys:
                  ' "sqlite:///:memory:".'
         assert recwarn[0].message.args[0] == expect
 
-    def test_engine_creation_ok(self, app):
+    def test_engine_creation_ok(self, app, recwarn):
         """ create_engine() isn't called until needed.  Let's make sure we can do that without
-            errors.
+            errors or warnings.
         """
         assert fsa.SQLAlchemy(app).get_engine()
+        assert len(recwarn) == 0
 
 
 @pytest.fixture
@@ -103,11 +104,13 @@ class TestCreateEngine:
         args, options = m_create_engine.call_args
         assert options['echo'] is True
 
-    def test_convert_unicode_default(self, m_create_engine, app_nr):
+    @mock.patch.object(fsa.utils, 'sqlalchemy')
+    def test_convert_unicode_default_sa_13(self, m_sqlalchemy, m_create_engine, app_nr):
+        m_sqlalchemy.__version__ = '1.3'
         fsa.SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
-        assert options['convert_unicode'] is True
+        assert 'convert_unicode' not in options
 
     def test_config_from_engine_options(self, m_create_engine, app_nr):
         app_nr.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'foo': 'bar'}

@@ -567,7 +567,8 @@ class _EngineConnector(object):
             return rv
 
     def get_options(self, sa_url, echo):
-        options = {'convert_unicode': True}
+        options = {}
+
         self._sa.apply_pool_defaults(self._app, options)
         self._sa.apply_driver_hacks(self._app, sa_url, options)
         if echo:
