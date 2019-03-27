@@ -107,9 +107,8 @@ def test_rollback_no_propagate(nested, Todo, db):
     pytest.param(True, id='savepoint'),
 ])
 def test_no_isolate_transaction(nested, app, Todo, db):
-    app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = False
     todo0 = new_todo(Todo, db)
-    with db.transaction(nested=nested):
+    with db.transaction(isolate=False, nested=nested):
         todo1 = new_todo(Todo, db)
     db.session.rollback()
     r = Todo.query.order_by(Todo.id).all()
@@ -122,7 +121,6 @@ def test_no_isolate_transaction(nested, app, Todo, db):
     pytest.param(True, id='savepoint'),
 ])
 def test_explicitly_isolate_transaction(nested, app, Todo, db):
-    app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = False
     todo0 = new_todo(Todo, db)
     with db.transaction(nested=nested, isolate=True):
         todo1 = new_todo(Todo, db)
@@ -140,9 +138,8 @@ def test_explicitly_isolate_transaction(nested, app, Todo, db):
     pytest.param(True, id='savepoint'),
 ])
 def test_config_isolate_transaction(nested, app, Todo, db):
-    app.config['SQLALCHEMY_ISOLATE_TRANSACTION'] = True
     todo0 = new_todo(Todo, db)
-    with db.transaction(nested=nested):
+    with db.transaction(isolate=True, nested=nested):
         todo1 = new_todo(Todo, db)
     db.session.rollback()
     if db.session().autocommit:

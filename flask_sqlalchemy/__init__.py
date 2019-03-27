@@ -854,7 +854,6 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
-        app.config.setdefault('SQLALCHEMY_ISOLATE_TRANSACTION', True)
         track_modifications = app.config.setdefault(
             'SQLALCHEMY_TRACK_MODIFICATIONS', None
         )
@@ -967,7 +966,7 @@ class SQLAlchemy(object):
         return self.get_engine()
 
     @contextmanager
-    def transaction(self, isolate=None, nested=False, **kwargs):
+    def transaction(self, isolate=True, nested=False, **kwargs):
         """Safely commits if no errors, will rollback otherwise.
 
         This is preferably used with PEP 343 `with` statement, for example:
@@ -997,10 +996,6 @@ class SQLAlchemy(object):
         order to isolate the transaction boundary to precisely where it is
         defined.
 
-        And of course this behavior can be altered, globally by setting config
-        `SQLALCHEMY_ISOLATE_TRANSACTION` to `False`, or explicitly by setting
-        `isolate=False` on a `db.transaction` call. Latter overrides former.
-
         Though `autocommit=True` is no recommended by SQLAlchemy, it is anyway
         supported here. Entering `db.transaction` ensures a `begin`, the rest
         stays all the same as described above.
@@ -1025,12 +1020,11 @@ class SQLAlchemy(object):
         on a `db.transaction` call.
 
         :param isolate:
-            `True`: guarantee transaction boundary;
+            `True`: (default) guarantee transaction boundary;
             `False`: do not rollback at the beginning;
-            `None`(default): follow config `SQLALCHEMY_ISOLATE_TRANSACTION`
         :param nested:
             `True`: use savepoint for nested transaction;
-            `False`(default): use subtransaction for nested transaction;
+            `False`: (default) use subtransaction for nested transaction;
         :param kwargs:
             additional key-value pairs to be set in the transaction-local
         :return: a PEP 343 context object to be used by `with`
@@ -1047,9 +1041,6 @@ class SQLAlchemy(object):
             item = {}
         else:
             item = stack[-1].copy()
-
-        if isolate is None:
-            isolate = self.get_app().config['SQLALCHEMY_ISOLATE_TRANSACTION']
 
         item.update(kwargs)
         stack.append(item)
