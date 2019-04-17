@@ -32,8 +32,7 @@ from flask_sqlalchemy.model import Model
 from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
 from . import utils
-
-__version__ = '2.3.2'
+from .version import __version__  # noqa
 
 # the best timer function for the platform
 if sys.platform == 'win32':

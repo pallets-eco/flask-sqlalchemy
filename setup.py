@@ -6,10 +6,14 @@ from setuptools import setup
 with io.open("README.rst", "rt", encoding="utf8") as f:
     README = f.read()
 
+version_globals = {}
+with io.open("flask_sqlalchemy/version.py", "rt", encoding="utf8") as f:
+    exec(f.read(), version_globals)
+
 
 setup(
     name='Flask-SQLAlchemy',
-    version='2.3.2',
+    version=version_globals['__version__'],
     url='https://github.com/pallets/flask-sqlalchemy',
     project_urls=OrderedDict((
         ('Documentation', 'http://flask-sqlalchemy.pocoo.org/'),
