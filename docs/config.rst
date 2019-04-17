@@ -39,10 +39,16 @@ A list of configuration keys currently understood by the extension:
                                    on some Ubuntu versions) when used with
                                    improper database defaults that specify
                                    encoding-less databases.
+
+                                   **Deprecated** as of v2.4 and will be removed in v3.0.
 ``SQLALCHEMY_POOL_SIZE``           The size of the database pool.  Defaults
-                                   to the engine's default (usually 5)
+                                   to the engine's default (usually 5).
+
+                                   **Deprecated** as of v2.4 and will be removed in v3.0.
 ``SQLALCHEMY_POOL_TIMEOUT``        Specifies the connection timeout in seconds
                                    for the pool.
+
+                                   **Deprecated** as of v2.4 and will be removed in v3.0.
 ``SQLALCHEMY_POOL_RECYCLE``        Number of seconds after which a
                                    connection is automatically recycled.
                                    This is required for MySQL, which removes
@@ -53,11 +59,15 @@ A list of configuration keys currently understood by the extension:
                                    different default timeout value. For more
                                    information about timeouts see
                                    :ref:`timeouts`.
+
+                                   **Deprecated** as of v2.4 and will be removed in v3.0.
 ``SQLALCHEMY_MAX_OVERFLOW``        Controls the number of connections that
                                    can be created after the pool reached
                                    its maximum size.  When those additional
                                    connections are returned to the pool,
                                    they are disconnected and discarded.
+
+                                   **Deprecated** as of v2.4 and will be removed in v3.0.
 ``SQLALCHEMY_TRACK_MODIFICATIONS`` If set to ``True``, Flask-SQLAlchemy will
                                    track modifications of objects and emit
                                    signals.  The default is ``None``, which
@@ -88,7 +98,16 @@ A list of configuration keys currently understood by the extension:
    ``SQLALCHEMY_TRACK_MODIFICATIONS`` will warn if unset.
 
 .. versionchanged:: 2.4
-   ``SQLALCHEMY_ENGINE_OPTIONS`` configuration key was added.
+
+* ``SQLALCHEMY_ENGINE_OPTIONS`` configuration key was added.
+* Deprecated keys
+
+  * ``SQLALCHEMY_NATIVE_UNICODE``
+  * ``SQLALCHEMY_POOL_SIZE``
+  * ``SQLALCHEMY_POOL_TIMEOUT``
+  * ``SQLALCHEMY_POOL_RECYCLE``
+  * ``SQLALCHEMY_MAX_OVERFLOW``
+
 
 Connection URI Format
 ---------------------

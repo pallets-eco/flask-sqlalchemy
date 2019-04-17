@@ -31,6 +31,7 @@ from sqlalchemy.orm.session import Session as SessionBase
 from flask_sqlalchemy.model import Model
 from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
+from . import utils
 
 __version__ = '2.3.2'
 
@@ -634,13 +635,18 @@ class SQLAlchemy(object):
     the second case a :meth:`flask.Flask.app_context` has to exist.
 
     By default Flask-SQLAlchemy will apply some backend-specific settings
-    to improve your experience with them.  As of SQLAlchemy 0.6 SQLAlchemy
+    to improve your experience with them.
+
+    As of SQLAlchemy 0.6 SQLAlchemy
     will probe the library for native unicode support.  If it detects
     unicode it will let the library handle that, otherwise do that itself.
     Sometimes this detection can fail in which case you might want to set
     ``use_native_unicode`` (or the ``SQLALCHEMY_NATIVE_UNICODE`` configuration
     key) to ``False``.  Note that the configuration key overrides the
-    value you pass to the constructor.
+    value you pass to the constructor.  Direct support for ``use_native_unicode``
+    and SQLALCHEMY_NATIVE_UNICODE are deprecated as of v2.4 and will be removed
+    in v3.0.  ``engine_options`` and ``SQLALCHEMY_ENGINE_OPTIONS`` may be used
+    instead.
 
     This class also provides access to all the SQLAlchemy functions and classes
     from the :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` modules.  So you can
@@ -696,6 +702,9 @@ class SQLAlchemy(object):
 
     .. versionadded:: 2.4
        The `engine_options` parameter was added.
+
+    .. versionchanged:: 2.4
+       The `use_native_unicode` parameter was deprecated.
     """
 
     #: Default query class used by :attr:`Model.query` and other queries.
@@ -834,6 +843,12 @@ class SQLAlchemy(object):
                 'or False to suppress this warning.'
             ))
 
+        # Deprecation warnings for config keys that should be replaced by SQLALCHEMY_ENGINE_OPTIONS.
+        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_SIZE', 'pool_size')
+        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_TIMEOUT', 'pool_timeout')
+        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_RECYCLE', 'pool_recycle')
+        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_MAX_OVERFLOW', 'max_overflow')
+
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
 
         @app.teardown_appcontext
@@ -903,6 +918,19 @@ class SQLAlchemy(object):
             unu = self.use_native_unicode
         if not unu:
             options['use_native_unicode'] = False
+
+        if app.config['SQLALCHEMY_NATIVE_UNICODE'] is not None:
+            warnings.warn(
+                "The 'SQLALCHEMY_NATIVE_UNICODE' config option is deprecated and will be removed in"
+                " v3.0.  Use 'SQLALCHEMY_ENGINE_OPTIONS' instead.",
+                DeprecationWarning
+            )
+        if not self.use_native_unicode:
+            warnings.warn(
+                "'use_native_unicode' is deprecated and will be removed in v3.0."
+                "  Use the 'engine_options' parameter instead.",
+                DeprecationWarning
+            )
 
     @property
     def engine(self):

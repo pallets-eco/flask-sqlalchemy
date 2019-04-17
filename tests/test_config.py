@@ -6,6 +6,16 @@ import flask_sqlalchemy as fsa
 from flask_sqlalchemy import _compat, utils
 
 
+@pytest.fixture
+def app_nr(app):
+    """
+        Signal/event registration with record queries breaks when
+        sqlalchemy.create_engine() is mocked out.
+    """
+    app.config['SQLALCHEMY_RECORD_QUERIES'] = False
+    return app
+
+
 class TestConfigKeys:
 
     def test_defaults(self, app):
@@ -81,15 +91,68 @@ class TestConfigKeys:
 
         assert len(recwarn) == expected_warnings
 
+    @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
+    def test_native_unicode_deprecation_config_opt(self, m_create_engine, app_nr, recwarn):
+        app_nr.config['SQLALCHEMY_NATIVE_UNICODE'] = False
+        assert fsa.SQLAlchemy(app_nr).get_engine()
+        assert len(recwarn) == 1
 
-@pytest.fixture
-def app_nr(app):
-    """
-        Signal/event registration with record queries breaks when
-        sqlalchemy.create_engine() is mocked out.
-    """
-    app.config['SQLALCHEMY_RECORD_QUERIES'] = False
-    return app
+        warning_msg = recwarn[0].message.args[0]
+        assert 'SQLALCHEMY_NATIVE_UNICODE' in warning_msg
+        assert 'deprecated and will be removed in v3.0' in warning_msg
+
+    @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
+    def test_native_unicode_deprecation_init_opt(self, m_create_engine, app_nr, recwarn):
+        assert fsa.SQLAlchemy(app_nr, use_native_unicode=False).get_engine()
+        assert len(recwarn) == 1
+
+        warning_msg = recwarn[0].message.args[0]
+        assert 'use_native_unicode' in warning_msg
+        assert 'deprecated and will be removed in v3.0' in warning_msg
+
+    @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
+    def test_deprecation_config_opt_pool_size(self, m_create_engine, app_nr, recwarn):
+        app_nr.config['SQLALCHEMY_POOL_SIZE'] = 5
+        assert fsa.SQLAlchemy(app_nr).get_engine()
+        assert len(recwarn) == 1
+
+        warning_msg = recwarn[0].message.args[0]
+        assert 'SQLALCHEMY_POOL_SIZE' in warning_msg
+        assert 'deprecated and will be removed in v3.0.' in warning_msg
+        assert 'pool_size' in warning_msg
+
+    @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
+    def test_deprecation_config_opt_pool_timeout(self, m_create_engine, app_nr, recwarn):
+        app_nr.config['SQLALCHEMY_POOL_TIMEOUT'] = 5
+        assert fsa.SQLAlchemy(app_nr).get_engine()
+        assert len(recwarn) == 1
+
+        warning_msg = recwarn[0].message.args[0]
+        assert 'SQLALCHEMY_POOL_TIMEOUT' in warning_msg
+        assert 'deprecated and will be removed in v3.0.' in warning_msg
+        assert 'pool_timeout' in warning_msg
+
+    @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
+    def test_deprecation_config_opt_pool_recycle(self, m_create_engine, app_nr, recwarn):
+        app_nr.config['SQLALCHEMY_POOL_RECYCLE'] = 5
+        assert fsa.SQLAlchemy(app_nr).get_engine()
+        assert len(recwarn) == 1
+
+        warning_msg = recwarn[0].message.args[0]
+        assert 'SQLALCHEMY_POOL_RECYCLE' in warning_msg
+        assert 'deprecated and will be removed in v3.0.' in warning_msg
+        assert 'pool_recycle' in warning_msg
+
+    @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
+    def test_deprecation_config_opt_max_overflow(self, m_create_engine, app_nr, recwarn):
+        app_nr.config['SQLALCHEMY_MAX_OVERFLOW'] = 5
+        assert fsa.SQLAlchemy(app_nr).get_engine()
+        assert len(recwarn) == 1
+
+        warning_msg = recwarn[0].message.args[0]
+        assert 'SQLALCHEMY_MAX_OVERFLOW' in warning_msg
+        assert 'deprecated and will be removed in v3.0.' in warning_msg
+        assert 'max_overflow' in warning_msg
 
 
 @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
@@ -139,7 +202,7 @@ class TestCreateEngine:
         args, options = m_create_engine.call_args
         assert options['poolclass'].__name__ == 'StaticPool'
 
-    def test_pool_class_with_pool_size_zero(self, m_create_engine, app_nr):
+    def test_pool_class_with_pool_size_zero(self, m_create_engine, app_nr, recwarn):
         app_nr.config['SQLALCHEMY_POOL_SIZE'] = 0
         with pytest.raises(RuntimeError) as exc_info:
             fsa.SQLAlchemy(app_nr).get_engine()
