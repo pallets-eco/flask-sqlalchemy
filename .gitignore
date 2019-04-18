@@ -12,3 +12,4 @@ htmlcov
 .coverage
 .coverage.*
 .vscode
+pyp.ini
