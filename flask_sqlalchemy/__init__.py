@@ -194,7 +194,8 @@ class _SessionSignalEvents(object):
         except AttributeError:
             return
 
-        for targets, operation in ((session.new, 'insert'), (session.dirty, 'update'), (session.deleted, 'delete')):
+        for targets, operation in ((session.new, 'insert'), (session.dirty, 'update'),
+                        (session.deleted, 'delete')):
             for target in targets:
                 state = inspect(target)
                 key = state.identity_key if state.has_identity else id(target)
@@ -396,10 +397,9 @@ class Pagination(object):
         """
         last = 0
         for num in xrange(1, self.pages + 1):
-            if num <= left_edge or \
-               (num > self.page - left_current - 1 and
-                num < self.page + right_current) or \
-               num > self.pages - right_edge:
+            if num <= left_edge \
+                    or (num > self.page - left_current - 1 and num < self.page + right_current) \
+                    or num > self.pages - right_edge:
                 if last + 1 != num:
                     yield None
                 yield num
@@ -407,10 +407,12 @@ class Pagination(object):
 
 
 class BaseQuery(orm.Query):
-    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with convenience methods for querying in a web application.
+    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with convenience methods for
+    querying in a web application.
 
-    This is the default :attr:`~Model.query` object used for models, and exposed as :attr:`~SQLAlchemy.Query`.
-    Override the query class for an individual model by subclassing this and setting :attr:`~Model.query_class`.
+    This is the default :attr:`~Model.query` object used for models, and exposed as
+    :attr:`~SQLAlchemy.Query`. Override the query class for an individual model by subclassing this
+    and setting :attr:`~Model.query_class`.
     """
 
     def get_or_404(self, ident, description=None):
@@ -804,8 +806,8 @@ class SQLAlchemy(object):
         leak.
         """
         if (
-            'SQLALCHEMY_DATABASE_URI' not in app.config and
-            'SQLALCHEMY_BINDS' not in app.config
+            'SQLALCHEMY_DATABASE_URI' not in app.config
+            and 'SQLALCHEMY_BINDS' not in app.config
         ):
             warnings.warn(
                 'Neither SQLALCHEMY_DATABASE_URI nor SQLALCHEMY_BINDS is set. '

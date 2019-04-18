@@ -10,15 +10,15 @@ if PY2:
     def itervalues(d):
         return d.itervalues()
 
-    xrange = xrange
+    xrange = xrange  # noqa
 
-    string_types = (unicode, bytes)
+    string_types = (unicode, bytes)  # noqa
 
     def to_str(x, charset='utf8', errors='strict'):
         if x is None or isinstance(x, str):
             return x
 
-        if isinstance(x, unicode):
+        if isinstance(x, unicode):  # noqa
             return x.encode(charset, errors)
 
         return str(x)
