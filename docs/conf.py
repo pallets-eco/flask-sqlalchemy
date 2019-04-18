@@ -35,7 +35,10 @@ extensions = [
     # Without this we get errors in CI when building docs.  See:
     # https://github.com/pallets/flask-sqlalchemy/issues/686
     'sphinx_paramlinks',
+    'sphinx_issues',
 ]
+
+issues_github_path = "pallets/flask-sqlalchemy"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -234,7 +237,7 @@ man_pages = [
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'flask': ('http://flask.pocoo.org/docs/', None),
-    'sqlalchemy': ('http://docs.sqlalchemy.org/en/latest/', None)
+    'sqlalchemy': ('https://docs.sqlalchemy.org/en/latest/', None)
 }
 pygments_style = 'flask_theme_support.FlaskyStyle'
 
