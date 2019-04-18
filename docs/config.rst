@@ -114,7 +114,7 @@ Connection URI Format
 
 For a complete list of connection URIs head over to the SQLAlchemy
 documentation under (`Supported Databases
-<http://www.sqlalchemy.org/docs/core/engines.html>`_).  This here shows
+<https://docs.sqlalchemy.org/en/latest/core/engines.html>`_).  This here shows
 some common connection strings.
 
 SQLAlchemy indicates the source of an Engine as a URI combined with
@@ -155,10 +155,10 @@ You can optionally construct the :class:`SQLAlchemy` object with a custom
 :class:`~sqlalchemy.schema.MetaData` object.
 This allows you to, among other things,
 specify a `custom constraint naming convention
-<http://docs.sqlalchemy.org/en/latest/core/constraints.html#constraint-naming-conventions>`_
+<https://docs.sqlalchemy.org/en/latest/core/constraints.html#constraint-naming-conventions>`_
 in conjunction with SQLAlchemy 0.9.2 or higher.
 Doing so is important for dealing with database migrations (for instance using
-`alembic <https://alembic.sqlalchemy.org>`_ as stated
+`alembic <https://alembic.sqlalchemy.org/en/latest/>`_ as stated
 `here <https://alembic.sqlalchemy.org/en/latest/naming.html>`_. Here's an
 example, as suggested by the SQLAlchemy docs::
 
@@ -179,7 +179,7 @@ example, as suggested by the SQLAlchemy docs::
 
 For more info about :class:`~sqlalchemy.schema.MetaData`,
 `check out the official docs on it
-<http://docs.sqlalchemy.org/en/latest/core/metadata.html>`_.
+<https://docs.sqlalchemy.org/en/latest/core/metadata.html>`_.
 
 .. _timeouts:
 

@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-    flask_sqlalchemy
-    ~~~~~~~~~~~~~~~~
-
-    Adds basic SQLAlchemy support to your application.
-
-    :copyright: (c) 2014 by Armin Ronacher, Daniel Neuhäuser.
-    :license: BSD, see LICENSE for more details.
-"""
 from __future__ import absolute_import
 
 import functools
@@ -33,7 +24,7 @@ from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
 from . import utils
 
-__version__ = '2.3.2'
+__version__ = "2.4.0.dev"
 
 # the best timer function for the platform
 if sys.platform == 'win32':

@@ -1,7 +1,8 @@
-include CHANGES.rst LICENSE
+include CHANGES.rst
+include tox.ini
+graft artwork
 graft docs
 prune docs/_build
-recursive-exclude docs/_themes .git*
-recursive-exclude docs *.pyc
+graft examples
 graft tests
-recursive-exclude tests *.pyc
+global-exclude *.pyc
