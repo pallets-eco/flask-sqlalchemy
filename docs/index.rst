@@ -1,7 +1,10 @@
+.. rst-class:: hide-header
+
 Flask-SQLAlchemy
 ================
 
-.. module:: flask_sqlalchemy
+.. image:: _static/flask-sqlalchemy-title.png
+    :align: center
 
 Flask-SQLAlchemy is an extension for `Flask`_ that adds support for `SQLAlchemy`_ to your
 application.  It aims to simplify using SQLAlchemy with Flask by providing useful defaults and extra

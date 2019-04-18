@@ -6,8 +6,8 @@ Unreleased
 -   Make engine configuration more flexible. (:pr:`684`)
 -   Address SQLAlchemy 1.3 deprecations. (:pr:`684`)
 -   ``get_or_404()`` and ``first_or_404()`` now accept a ``description``
-    parameter to control the 404 message. (:pr:`636`)
--   Use ``time.perf_counter`` for Python 3 on Windows. (:pr:`638`)
+    parameter to control the 404 message. (:issue:`636`)
+-   Use ``time.perf_counter`` for Python 3 on Windows. (:issue:`638`)
 -   Drop support for Python 2.6 and 3.3. (:pr:`687`)
 
 
@@ -27,15 +27,15 @@ Released 2017-10-05
 
 -   If a model has a table name that matches an existing table in the
     metadata, use that table. Fixes a regression where reflected tables
-    were not picked up by models. (:pr:`551`)
+    were not picked up by models. (:issue:`551`)
 -   Raise the correct error when a model has a table name but no primary
     key. (:pr:`556`)
 -   Fix ``repr`` on models that don't have an identity because they have
-    not been flushed yet. (:pr:`555`)
+    not been flushed yet. (:issue:`555`)
 -   Allow specifying a ``max_per_page`` limit for pagination, to avoid
     users specifying high values in the request args. (:pr:`542`)
 -   For ``paginate`` with ``error_out=False``, the minimum value for
-    ``page`` is 1 and ``per_page`` is 0. (:pr:`558`)
+    ``page`` is 1 and ``per_page`` is 0. (:issue:`558`)
 
 
 Version 2.3.0
@@ -51,14 +51,14 @@ Released 2017-09-28
 -   Passing an existing ``declarative_base()`` as ``model_class`` to
     ``SQLAlchemy.__init__`` will use this as the base class instead of
     creating one. This allows customizing the metaclass used to
-    construct the base. (:pr:`546`)
+    construct the base. (:issue:`546`)
 -   The undocumented ``DeclarativeMeta`` internals that the extension
     uses for binds and table name generation have been refactored to
     work as mixins. Documentation is added about how to create a custom
-    metaclass that does not do table name generation. (:pr:`546`)
+    metaclass that does not do table name generation. (:issue:`546`)
 -   Model and metaclass code has been moved to a new ``models`` module.
     ``_BoundDeclarativeMeta`` is renamed to ``DefaultMeta``; the old
-    name will be removed in 3.0. (:pr:`546`)
+    name will be removed in 3.0. (:issue:`546`)
 -   Models have a default ``repr`` that shows the model name and primary
     key. (:pr:`530`)
 -   Fixed a bug where using ``init_app`` would cause connectors to
@@ -79,13 +79,13 @@ Released 2017-02-27, codename Dubnium
 -   Allow listening to SQLAlchemy events on ``db.session``.
     (:pr:`364`)
 -   Allow ``__bind_key__`` on abstract models. (:pr:`373`)
--   Allow ``SQLALCHEMY_ECHO`` to be a string. (:pr:`409`)
+-   Allow ``SQLALCHEMY_ECHO`` to be a string. (:issue:`409`)
 -   Warn when ``SQLALCHEMY_DATABASE_URI`` is not set. (:pr:`443`)
--   Don't let pagination generate invalid page numbers. (:pr:`460`)
+-   Don't let pagination generate invalid page numbers. (:issue:`460`)
 -   Drop support of Flask < 0.10. This means the db session is always
-    tied to the app context and its teardown event. (:pr:`461`)
+    tied to the app context and its teardown event. (:issue:`461`)
 -   Tablename generation logic no longer accesses class properties
-    unless they are ``declared_attr``. (:pr:`467`)
+    unless they are ``declared_attr``. (:issue:`467`)
 
 
 Version 2.1
