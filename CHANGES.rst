@@ -3,17 +3,12 @@ Version 2.4.0
 
 Unreleased
 
-- Make SA engine configuration more flexible (`#684`_)
-- Address SQLAlchemy 1.3 deprecations (`#684`_)
-- `get_or_404()` and `first_or_404()` now accept a description param (`#636`_)
-- Windows: replace time.clock with perf_counter for py3 (`#638`_)
-- Improve readme, docs, tox and update Python versions in CI (`#687`_)
-- Dropped support for Python 2.6, 3.3 and added 3.7 support (`#687`_)
-
-.. _#684: https://github.com/pallets/flask-sqlalchemy/pull/684
-.. _#636: https://github.com/pallets/flask-sqlalchemy/pull/636
-.. _#638: https://github.com/pallets/flask-sqlalchemy/pull/638
-.. _#687: https://github.com/pallets/flask-sqlalchemy/pull/687
+-   Make engine configuration more flexible. (:pr:`684`)
+-   Address SQLAlchemy 1.3 deprecations. (:pr:`684`)
+-   ``get_or_404()`` and ``first_or_404()`` now accept a ``description``
+    parameter to control the 404 message. (:pr:`636`)
+-   Use ``time.perf_counter`` for Python 3 on Windows. (:pr:`638`)
+-   Drop support for Python 2.6 and 3.3. (:pr:`687`)
 
 
 Version 2.3.2
