@@ -1,7 +1,0 @@
-[flake8]
-max-line-length = 100
-exclude=.git,.tox,dist,doc,*egg,build
-# E128 - Continuation line under-indented for visual indent.
-# E731 - allow assignment of lambda expressions
-# W503 - Line breaks should occur after the binary operator to keep all variable names aligned.
-ignore=E128,E731,W503

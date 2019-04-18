@@ -64,7 +64,7 @@ def test_mixin_attr(db):
     """
     class Mixin(object):
         @declared_attr
-        def __tablename__(cls):
+        def __tablename__(cls):  # noqa: B902
             return cls.__name__.upper()
 
     class Bird(Mixin, db.Model):
@@ -105,7 +105,7 @@ def test_complex_inheritance(db):
 
     class IdMixin(object):
         @declared_attr
-        def id(cls):
+        def id(cls):  # noqa: B902
             return db.Column(
                 db.Integer, db.ForeignKey(Duck.id), primary_key=True
             )
@@ -190,7 +190,7 @@ def test_no_access_to_class_property(db):
 
         @class_property
         def floats(self):
-            assert False
+            raise AssertionError()
 
     assert ns.accessed
 

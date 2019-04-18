@@ -4,32 +4,20 @@ PY2 = sys.version_info[0] == 2
 
 
 if PY2:
-    def iteritems(d):
-        return d.iteritems()
+    xrange = xrange  # noqa: F821
 
-    def itervalues(d):
-        return d.itervalues()
-
-    xrange = xrange  # noqa
-
-    string_types = (unicode, bytes)  # noqa
+    string_types = (unicode, bytes)  # noqa: F821
 
     def to_str(x, charset='utf8', errors='strict'):
         if x is None or isinstance(x, str):
             return x
 
-        if isinstance(x, unicode):  # noqa
+        if isinstance(x, unicode):  # noqa: F821
             return x.encode(charset, errors)
 
         return str(x)
 
 else:
-    def iteritems(d):
-        return iter(d.items())
-
-    def itervalues(d):
-        return iter(d.values())
-
     xrange = range
 
     string_types = (str,)

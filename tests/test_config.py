@@ -78,8 +78,8 @@ class TestConfigKeys:
         assert recwarn[0].message.args[0] == expect
 
     def test_engine_creation_ok(self, app, recwarn):
-        """ create_engine() isn't called until needed.  Let's make sure we can do that without
-            errors or warnings.
+        """create_engine() isn't called until needed. Let's make sure we
+        can do that without errors or warnings.
         """
         assert fsa.SQLAlchemy(app).get_engine()
         if utils.sqlalchemy_version('==', '0.8.0') and not _compat.PY2:
@@ -92,7 +92,9 @@ class TestConfigKeys:
         assert len(recwarn) == expected_warnings
 
     @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
-    def test_native_unicode_deprecation_config_opt(self, m_create_engine, app_nr, recwarn):
+    def test_native_unicode_deprecation_config_opt(
+        self, m_create_engine, app_nr, recwarn
+    ):
         app_nr.config['SQLALCHEMY_NATIVE_UNICODE'] = False
         assert fsa.SQLAlchemy(app_nr).get_engine()
         assert len(recwarn) == 1
@@ -102,7 +104,9 @@ class TestConfigKeys:
         assert 'deprecated and will be removed in v3.0' in warning_msg
 
     @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
-    def test_native_unicode_deprecation_init_opt(self, m_create_engine, app_nr, recwarn):
+    def test_native_unicode_deprecation_init_opt(
+        self, m_create_engine, app_nr, recwarn
+    ):
         assert fsa.SQLAlchemy(app_nr, use_native_unicode=False).get_engine()
         assert len(recwarn) == 1
 
@@ -122,7 +126,9 @@ class TestConfigKeys:
         assert 'pool_size' in warning_msg
 
     @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
-    def test_deprecation_config_opt_pool_timeout(self, m_create_engine, app_nr, recwarn):
+    def test_deprecation_config_opt_pool_timeout(
+        self, m_create_engine, app_nr, recwarn
+    ):
         app_nr.config['SQLALCHEMY_POOL_TIMEOUT'] = 5
         assert fsa.SQLAlchemy(app_nr).get_engine()
         assert len(recwarn) == 1
@@ -133,7 +139,9 @@ class TestConfigKeys:
         assert 'pool_timeout' in warning_msg
 
     @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
-    def test_deprecation_config_opt_pool_recycle(self, m_create_engine, app_nr, recwarn):
+    def test_deprecation_config_opt_pool_recycle(
+        self, m_create_engine, app_nr, recwarn
+    ):
         app_nr.config['SQLALCHEMY_POOL_RECYCLE'] = 5
         assert fsa.SQLAlchemy(app_nr).get_engine()
         assert len(recwarn) == 1
@@ -144,7 +152,9 @@ class TestConfigKeys:
         assert 'pool_recycle' in warning_msg
 
     @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
-    def test_deprecation_config_opt_max_overflow(self, m_create_engine, app_nr, recwarn):
+    def test_deprecation_config_opt_max_overflow(
+        self, m_create_engine, app_nr, recwarn
+    ):
         app_nr.config['SQLALCHEMY_MAX_OVERFLOW'] = 5
         assert fsa.SQLAlchemy(app_nr).get_engine()
         assert len(recwarn) == 1
@@ -206,7 +216,10 @@ class TestCreateEngine:
         app_nr.config['SQLALCHEMY_POOL_SIZE'] = 0
         with pytest.raises(RuntimeError) as exc_info:
             fsa.SQLAlchemy(app_nr).get_engine()
-        expected = 'SQLite in memory database with an empty queue not possible due to data loss.'
+        expected = (
+            'SQLite in memory database with an empty queue not possible'
+            ' due to data loss.'
+        )
         assert exc_info.value.args[0] == expected
 
     def test_pool_class_nullpool(self, m_create_engine, app_nr):

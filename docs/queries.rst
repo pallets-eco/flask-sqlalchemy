@@ -118,7 +118,7 @@ If you write a Flask view function it's often very handy to return a 404
 error for missing entries.  Because this is a very common idiom,
 Flask-SQLAlchemy provides a helper for this exact purpose.  Instead of
 :meth:`~sqlalchemy.orm.query.Query.get` one can use
-:meth:`~Query.get_or_404` and instead of 
+:meth:`~Query.get_or_404` and instead of
 :meth:`~sqlalchemy.orm.query.Query.first` :meth:`~Query.first_or_404`.
 This will raise 404 errors instead of returning `None`::
 

@@ -20,7 +20,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
 from flask_sqlalchemy.model import Model
-from ._compat import itervalues, string_types, xrange
+from ._compat import string_types, xrange
 from .model import DefaultMeta
 from . import utils
 
@@ -194,8 +194,11 @@ class _SessionSignalEvents(object):
         except AttributeError:
             return
 
-        for targets, operation in ((session.new, 'insert'), (session.dirty, 'update'),
-                        (session.deleted, 'delete')):
+        for targets, operation in (
+            (session.new, 'insert'),
+            (session.dirty, 'update'),
+            (session.deleted, 'delete')
+        ):
             for target in targets:
                 state = inspect(target)
                 key = state.identity_key if state.has_identity else id(target)
@@ -397,9 +400,11 @@ class Pagination(object):
         """
         last = 0
         for num in xrange(1, self.pages + 1):
-            if num <= left_edge \
-                    or (num > self.page - left_current - 1 and num < self.page + right_current) \
-                    or num > self.pages - right_edge:
+            if (
+                num <= left_edge
+                or self.page - left_current - 1 < num < self.page + right_current
+                or num > self.pages - right_edge
+            ):
                 if last + 1 != num:
                     yield None
                 yield num
@@ -407,25 +412,28 @@ class Pagination(object):
 
 
 class BaseQuery(orm.Query):
-    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with convenience methods for
-    querying in a web application.
+    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with
+    convenience methods for querying in a web application.
 
-    This is the default :attr:`~Model.query` object used for models, and exposed as
-    :attr:`~SQLAlchemy.Query`. Override the query class for an individual model by subclassing this
-    and setting :attr:`~Model.query_class`.
+    This is the default :attr:`~Model.query` object used for models, and
+    exposed as :attr:`~SQLAlchemy.Query`. Override the query class for
+    an individual model by subclassing this and setting
+    :attr:`~Model.query_class`.
     """
 
     def get_or_404(self, ident, description=None):
-        """Like :meth:`get` but aborts with 404 if not found instead of returning ``None``."""
-
+        """Like :meth:`get` but aborts with 404 if not found instead of
+        returning ``None``.
+        """
         rv = self.get(ident)
         if rv is None:
             abort(404, description=description)
         return rv
 
     def first_or_404(self, description=None):
-        """Like :meth:`first` but aborts with 404 if not found instead of returning ``None``."""
-
+        """Like :meth:`first` but aborts with 404 if not found instead
+        of returning ``None``.
+        """
         rv = self.first()
         if rv is None:
             abort(404, description=description)
@@ -663,9 +671,9 @@ class SQLAlchemy(object):
        emulates `Table` behavior but is not a class. `db.Table` exposes the
        `Table` interface, but is a function which allows omission of metadata.
 
-    The ``session_options`` parameter, if provided, is a dict of parameters
-    to be passed to the session constructor.  See :class:`~sqlalchemy.orm.session.Session`
-    for the standard options.
+    The ``session_options`` parameter, if provided, is a dict of
+    parameters to be passed to the session constructor. See
+    :class:`~sqlalchemy.orm.session.Session` for the standard options.
 
     The ``engine_options`` parameter, if provided, is a dict of parameters
     to be passed to create engine.  See :func:`~sqlalchemy.create_engine`
@@ -751,19 +759,23 @@ class SQLAlchemy(object):
         )
 
     def create_session(self, options):
-        """Create the session factory used by :meth:`create_scoped_session`.
+        """Create the session factory used by
+        :meth:`create_scoped_session`.
 
-        The factory **must** return an object that SQLAlchemy recognizes as a session,
-        or registering session events may raise an exception.
+        The factory **must** return an object that SQLAlchemy recognizes
+        as a session, or registering session events may raise an
+        exception.
 
-        Valid factories include a :class:`~sqlalchemy.orm.session.Session`
+        Valid factories include a
+        :class:`~sqlalchemy.orm.session.Session`
         class or a :class:`~sqlalchemy.orm.session.sessionmaker`.
 
-        The default implementation creates a ``sessionmaker`` for :class:`SignallingSession`.
+        The default implementation creates a ``sessionmaker`` for
+        :class:`SignallingSession`.
 
-        :param options: dict of keyword arguments passed to session class
+        :param options: dict of keyword arguments passed to session
+            class
         """
-
         return orm.sessionmaker(class_=SignallingSession, db=self, **options)
 
     def make_declarative_base(self, model, metadata=None):
@@ -836,11 +848,16 @@ class SQLAlchemy(object):
                 'or False to suppress this warning.'
             ))
 
-        # Deprecation warnings for config keys that should be replaced by SQLALCHEMY_ENGINE_OPTIONS.
-        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_SIZE', 'pool_size')
-        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_TIMEOUT', 'pool_timeout')
-        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_RECYCLE', 'pool_recycle')
-        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_MAX_OVERFLOW', 'max_overflow')
+        # Deprecation warnings for config keys that should be replaced
+        # by SQLALCHEMY_ENGINE_OPTIONS.
+        utils.engine_config_warning(
+            app.config, '3.0', 'SQLALCHEMY_POOL_SIZE', 'pool_size')
+        utils.engine_config_warning(
+            app.config, '3.0', 'SQLALCHEMY_POOL_TIMEOUT', 'pool_timeout')
+        utils.engine_config_warning(
+            app.config, '3.0', 'SQLALCHEMY_POOL_RECYCLE', 'pool_recycle')
+        utils.engine_config_warning(
+            app.config, '3.0', 'SQLALCHEMY_MAX_OVERFLOW', 'max_overflow')
 
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
 
@@ -914,14 +931,15 @@ class SQLAlchemy(object):
 
         if app.config['SQLALCHEMY_NATIVE_UNICODE'] is not None:
             warnings.warn(
-                "The 'SQLALCHEMY_NATIVE_UNICODE' config option is deprecated and will be removed in"
-                " v3.0.  Use 'SQLALCHEMY_ENGINE_OPTIONS' instead.",
-                DeprecationWarning
+                "The 'SQLALCHEMY_NATIVE_UNICODE' config option is"
+                " deprecated and will be removed in v3.0. Use"
+                " 'SQLALCHEMY_ENGINE_OPTIONS' instead.",
+                DeprecationWarning,
             )
         if not self.use_native_unicode:
             warnings.warn(
-                "'use_native_unicode' is deprecated and will be removed in v3.0."
-                "  Use the 'engine_options' parameter instead.",
+                "'use_native_unicode' is deprecated and will be removed"
+                " in v3.0. Use the 'engine_options' parameter instead.",
                 DeprecationWarning
             )
 
@@ -986,7 +1004,7 @@ class SQLAlchemy(object):
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
-        for table in itervalues(self.Model.metadata.tables):
+        for table in self.Model.metadata.tables.values():
             if table.info.get('bind_key') == bind:
                 result.append(table)
         return result
@@ -1055,7 +1073,7 @@ class SQLAlchemy(object):
 
 
 class _BoundDeclarativeMeta(DefaultMeta):
-    def __init__(cls, name, bases, d):
+    def __init__(cls, name, bases, d):  # noqa: B902
         warnings.warn(FSADeprecationWarning(
             '"_BoundDeclarativeMeta" has been renamed to "DefaultMeta". The'
             ' old name will be removed in 3.0.'
