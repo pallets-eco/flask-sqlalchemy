@@ -6,7 +6,7 @@ from pallets_sphinx_themes import ProjectLink
 project = "Flask-SQLAlchemy"
 copyright = "2010 Pallets"
 author = "Pallets"
-release, version = get_version("Flask-SQLAlchemy")
+release, version = get_version("Flask-SQLAlchemy", version_length=1)
 
 # General --------------------------------------------------------------
 
@@ -15,7 +15,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "pallets_sphinx_themes",
-    "sphinx_paramlinks",
     "sphinx_issues",
 ]
 intersphinx_mapping = {

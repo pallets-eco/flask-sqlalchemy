@@ -147,6 +147,9 @@ class SignallingSession(SessionBase):
         )
 
     def get_bind(self, mapper=None, clause=None):
+        """Return the engine or connection for a given model or
+        table, using the ``__bind_key__`` if it is set.
+        """
         # mapper is None if someone tries to just get a connection
         if mapper is not None:
             try:
@@ -771,7 +774,7 @@ class SQLAlchemy(object):
             to :func:`~sqlalchemy.ext.declarative.declarative_base`. Or a class
             returned from ``declarative_base``, in which case a new base class
             is not created.
-        :param: metadata: :class:`~sqlalchemy.MetaData` instance to use, or
+        :param metadata: :class:`~sqlalchemy.MetaData` instance to use, or
             none to use SQLAlchemy's default.
 
         .. versionchanged 2.3.0::
