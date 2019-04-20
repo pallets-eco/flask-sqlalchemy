@@ -1,8 +1,8 @@
 import pytest
 
 from flaskr import db
-from flaskr.auth import User
-from flaskr.blog import Post
+from flaskr.auth.models import User
+from flaskr.blog.models import Post
 
 
 def test_index(client, auth):

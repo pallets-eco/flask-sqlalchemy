@@ -6,8 +6,8 @@ from werkzeug.security import generate_password_hash
 from flaskr import create_app
 from flaskr import db
 from flaskr import init_db
-from flaskr.auth import User
-from flaskr.blog import Post
+from flaskr.auth.models import User
+from flaskr.blog.models import Post
 
 _user1_pass = generate_password_hash("test")
 _user2_pass = generate_password_hash("other")
