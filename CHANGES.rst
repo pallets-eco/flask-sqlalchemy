@@ -9,6 +9,8 @@ Unreleased
     parameter to control the 404 message. (:issue:`636`)
 -   Use ``time.perf_counter`` for Python 3 on Windows. (:issue:`638`)
 -   Drop support for Python 2.6 and 3.3. (:pr:`687`)
+-   Add an example of Flask's tutorial project, Flaskr, adapted for
+    Flask-SQLAlchemy. (:pr:`720`)
 
 
 Version 2.3.2
