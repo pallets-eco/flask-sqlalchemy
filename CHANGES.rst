@@ -1,7 +1,7 @@
 Version 2.4.0
 -------------
 
-Unreleased
+Released 2019-04-23
 
 -   Make engine configuration more flexible. (:pr:`684`)
 -   Address SQLAlchemy 1.3 deprecations. (:pr:`684`)
