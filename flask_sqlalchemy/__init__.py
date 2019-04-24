@@ -477,6 +477,22 @@ class BaseQuery(orm.Query):
         if max_per_page is not None:
             per_page = min(per_page, max_per_page)
 
+        try:
+            page = int(page)
+        except (TypeError, ValueError):
+            if error_out:
+                abort(404)
+
+            page = 1
+
+        try:
+            per_page = int(per_page)
+        except (TypeError, ValueError):
+            if error_out:
+                abort(404)
+
+            per_page = 20
+
         if page < 1:
             if error_out:
                 abort(404)
