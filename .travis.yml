@@ -38,7 +38,7 @@ cache:
 branches:
   only:
     - master
-    - /^.*-maintenance$/
+    - /^\d+(\.\d+)*(\.x)?$/
 
 notifications:
   email: false
