@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-    flask_sqlalchemy._compat
-    ~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Internal Python 2.x/3.x compatibility layer.
-
-    :copyright: (c) 2013 by Daniel Neuhäuser
-    :license: BSD, see LICENSE for more details.
-"""
 import sys
 
 PY2 = sys.version_info[0] == 2

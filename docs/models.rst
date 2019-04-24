@@ -125,7 +125,7 @@ when SQLAlchemy will load the data from the database:
 How do you define the lazy status for backrefs?  By using the
 :func:`~sqlalchemy.orm.backref` function::
 
-    class User(db.Model):
+    class Person(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         name = db.Column(db.String(50), nullable=False)
         addresses = db.relationship('Address', lazy='select',

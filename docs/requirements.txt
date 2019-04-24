@@ -1,0 +1,3 @@
+Sphinx~=2.0.1
+Pallets-Sphinx-Themes~=1.1.4
+sphinx-issues~=1.2.0

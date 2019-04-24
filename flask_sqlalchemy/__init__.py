@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-    flask_sqlalchemy
-    ~~~~~~~~~~~~~~~~
-
-    Adds basic SQLAlchemy support to your application.
-
-    :copyright: (c) 2014 by Armin Ronacher, Daniel Neuhäuser.
-    :license: BSD, see LICENSE for more details.
-"""
 from __future__ import absolute_import
 
 import functools
@@ -31,12 +22,16 @@ from sqlalchemy.orm.session import Session as SessionBase
 from flask_sqlalchemy.model import Model
 from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
+from . import utils
 
-__version__ = '2.3.2'
+__version__ = "2.4.0"
 
 # the best timer function for the platform
 if sys.platform == 'win32':
-    _timer = time.clock
+    if sys.version_info >= (3, 3):
+        _timer = time.perf_counter
+    else:
+        _timer = time.clock
 else:
     _timer = time.time
 
@@ -152,9 +147,19 @@ class SignallingSession(SessionBase):
         )
 
     def get_bind(self, mapper=None, clause=None):
+        """Return the engine or connection for a given model or
+        table, using the ``__bind_key__`` if it is set.
+        """
         # mapper is None if someone tries to just get a connection
         if mapper is not None:
-            info = getattr(mapper.mapped_table, 'info', {})
+            try:
+                # SA >= 1.3
+                persist_selectable = mapper.persist_selectable
+            except AttributeError:
+                # SA < 1.3
+                persist_selectable = mapper.mapped_table
+
+            info = getattr(persist_selectable, 'info', {})
             bind_key = info.get('bind_key')
             if bind_key is not None:
                 state = get_state(self.app)
@@ -395,7 +400,7 @@ class Pagination(object):
         last = 0
         for num in xrange(1, self.pages + 1):
             if num <= left_edge or \
-               (num > self.page - left_current - 1 and \
+               (num > self.page - left_current - 1 and
                 num < self.page + right_current) or \
                num > self.pages - right_edge:
                 if last + 1 != num:
@@ -411,20 +416,20 @@ class BaseQuery(orm.Query):
     Override the query class for an individual model by subclassing this and setting :attr:`~Model.query_class`.
     """
 
-    def get_or_404(self, ident):
+    def get_or_404(self, ident, description=None):
         """Like :meth:`get` but aborts with 404 if not found instead of returning ``None``."""
 
         rv = self.get(ident)
         if rv is None:
-            abort(404)
+            abort(404, description=description)
         return rv
 
-    def first_or_404(self):
+    def first_or_404(self, description=None):
         """Like :meth:`first` but aborts with 404 if not found instead of returning ``None``."""
 
         rv = self.first()
         if rv is None:
-            abort(404)
+            abort(404, description=description)
         return rv
 
     def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None, count=True):
@@ -554,18 +559,35 @@ class _EngineConnector(object):
             echo = self._app.config['SQLALCHEMY_ECHO']
             if (uri, echo) == self._connected_for:
                 return self._engine
-            info = make_url(uri)
-            options = {'convert_unicode': True}
-            self._sa.apply_pool_defaults(self._app, options)
-            self._sa.apply_driver_hacks(self._app, info, options)
-            if echo:
-                options['echo'] = echo
-            self._engine = rv = sqlalchemy.create_engine(info, **options)
+
+            sa_url = make_url(uri)
+            options = self.get_options(sa_url, echo)
+            self._engine = rv = self._sa.create_engine(sa_url, options)
+
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(self._engine,
                                              self._app.import_name).register()
+
             self._connected_for = (uri, echo)
+
             return rv
+
+    def get_options(self, sa_url, echo):
+        options = {}
+
+        self._sa.apply_pool_defaults(self._app, options)
+        self._sa.apply_driver_hacks(self._app, sa_url, options)
+        if echo:
+            options['echo'] = echo
+
+        # Give the config options set by a developer explicitly priority
+        # over decisions FSA makes.
+        options.update(self._app.config['SQLALCHEMY_ENGINE_OPTIONS'])
+
+        # Give options set in SQLAlchemy.__init__() ultimate priority
+        options.update(self._sa._engine_options)
+
+        return options
 
 
 def get_state(app):
@@ -611,13 +633,18 @@ class SQLAlchemy(object):
     the second case a :meth:`flask.Flask.app_context` has to exist.
 
     By default Flask-SQLAlchemy will apply some backend-specific settings
-    to improve your experience with them.  As of SQLAlchemy 0.6 SQLAlchemy
+    to improve your experience with them.
+
+    As of SQLAlchemy 0.6 SQLAlchemy
     will probe the library for native unicode support.  If it detects
     unicode it will let the library handle that, otherwise do that itself.
     Sometimes this detection can fail in which case you might want to set
     ``use_native_unicode`` (or the ``SQLALCHEMY_NATIVE_UNICODE`` configuration
     key) to ``False``.  Note that the configuration key overrides the
-    value you pass to the constructor.
+    value you pass to the constructor.  Direct support for ``use_native_unicode``
+    and SQLALCHEMY_NATIVE_UNICODE are deprecated as of v2.4 and will be removed
+    in v3.0.  ``engine_options`` and ``SQLALCHEMY_ENGINE_OPTIONS`` may be used
+    instead.
 
     This class also provides access to all the SQLAlchemy functions and classes
     from the :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` modules.  So you can
@@ -645,6 +672,12 @@ class SQLAlchemy(object):
     to be passed to the session constructor.  See :class:`~sqlalchemy.orm.session.Session`
     for the standard options.
 
+    The ``engine_options`` parameter, if provided, is a dict of parameters
+    to be passed to create engine.  See :func:`~sqlalchemy.create_engine`
+    for the standard options.  The values given here will be merged with and
+    override anything set in the ``'SQLALCHEMY_ENGINE_OPTIONS'`` config
+    variable or othewise set by this library.
+
     .. versionadded:: 0.10
        The `session_options` parameter was added.
 
@@ -656,15 +689,20 @@ class SQLAlchemy(object):
        The `metadata` parameter was added. This allows for setting custom
        naming conventions among other, non-trivial things.
 
-    .. versionadded:: 3.0
        The `query_class` parameter was added, to allow customisation
        of the query class, in place of the default of :class:`BaseQuery`.
 
        The `model_class` parameter was added, which allows a custom model
        class to be used in place of :class:`Model`.
 
-    .. versionchanged:: 3.0
+    .. versionchanged:: 2.1
        Utilise the same query class across `session`, `Model.query` and `Query`.
+
+    .. versionadded:: 2.4
+       The `engine_options` parameter was added.
+
+    .. versionchanged:: 2.4
+       The `use_native_unicode` parameter was deprecated.
     """
 
     #: Default query class used by :attr:`Model.query` and other queries.
@@ -673,7 +711,8 @@ class SQLAlchemy(object):
     Query = None
 
     def __init__(self, app=None, use_native_unicode=True, session_options=None,
-                 metadata=None, query_class=BaseQuery, model_class=Model):
+                 metadata=None, query_class=BaseQuery, model_class=Model,
+                 engine_options=None):
 
         self.use_native_unicode = use_native_unicode
         self.Query = query_class
@@ -681,6 +720,7 @@ class SQLAlchemy(object):
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
         self.app = app
+        self._engine_options = engine_options or {}
         _include_sqlalchemy(self, query_class)
 
         if app is not None:
@@ -738,7 +778,7 @@ class SQLAlchemy(object):
             to :func:`~sqlalchemy.ext.declarative.declarative_base`. Or a class
             returned from ``declarative_base``, in which case a new base class
             is not created.
-        :param: metadata: :class:`~sqlalchemy.MetaData` instance to use, or
+        :param metadata: :class:`~sqlalchemy.MetaData` instance to use, or
             none to use SQLAlchemy's default.
 
         .. versionchanged 2.3.0::
@@ -792,6 +832,7 @@ class SQLAlchemy(object):
         track_modifications = app.config.setdefault(
             'SQLALCHEMY_TRACK_MODIFICATIONS', None
         )
+        app.config.setdefault('SQLALCHEMY_ENGINE_OPTIONS', {})
 
         if track_modifications is None:
             warnings.warn(FSADeprecationWarning(
@@ -799,6 +840,12 @@ class SQLAlchemy(object):
                 'will be disabled by default in the future.  Set it to True '
                 'or False to suppress this warning.'
             ))
+
+        # Deprecation warnings for config keys that should be replaced by SQLALCHEMY_ENGINE_OPTIONS.
+        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_SIZE', 'pool_size')
+        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_TIMEOUT', 'pool_timeout')
+        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_RECYCLE', 'pool_recycle')
+        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_MAX_OVERFLOW', 'max_overflow')
 
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
 
@@ -821,7 +868,7 @@ class SQLAlchemy(object):
         _setdefault('pool_recycle', 'SQLALCHEMY_POOL_RECYCLE')
         _setdefault('max_overflow', 'SQLALCHEMY_MAX_OVERFLOW')
 
-    def apply_driver_hacks(self, app, info, options):
+    def apply_driver_hacks(self, app, sa_url, options):
         """This method is called before engine creation and used to inject
         driver specific hacks into the options.  The `options` parameter is
         a dictionary of keyword arguments that will then be used to call
@@ -831,15 +878,15 @@ class SQLAlchemy(object):
         like pool sizes for MySQL and sqlite.  Also it injects the setting of
         `SQLALCHEMY_NATIVE_UNICODE`.
         """
-        if info.drivername.startswith('mysql'):
-            info.query.setdefault('charset', 'utf8')
-            if info.drivername != 'mysql+gaerdbms':
+        if sa_url.drivername.startswith('mysql'):
+            sa_url.query.setdefault('charset', 'utf8')
+            if sa_url.drivername != 'mysql+gaerdbms':
                 options.setdefault('pool_size', 10)
                 options.setdefault('pool_recycle', 7200)
-        elif info.drivername == 'sqlite':
+        elif sa_url.drivername == 'sqlite':
             pool_size = options.get('pool_size')
             detected_in_memory = False
-            if info.database in (None, '', ':memory:'):
+            if sa_url.database in (None, '', ':memory:'):
                 detected_in_memory = True
                 from sqlalchemy.pool import StaticPool
                 options['poolclass'] = StaticPool
@@ -862,13 +909,26 @@ class SQLAlchemy(object):
 
             # if it's not an in memory database we make the path absolute.
             if not detected_in_memory:
-                info.database = os.path.join(app.root_path, info.database)
+                sa_url.database = os.path.join(app.root_path, sa_url.database)
 
         unu = app.config['SQLALCHEMY_NATIVE_UNICODE']
         if unu is None:
             unu = self.use_native_unicode
         if not unu:
             options['use_native_unicode'] = False
+
+        if app.config['SQLALCHEMY_NATIVE_UNICODE'] is not None:
+            warnings.warn(
+                "The 'SQLALCHEMY_NATIVE_UNICODE' config option is deprecated and will be removed in"
+                " v3.0.  Use 'SQLALCHEMY_ENGINE_OPTIONS' instead.",
+                DeprecationWarning
+            )
+        if not self.use_native_unicode:
+            warnings.warn(
+                "'use_native_unicode' is deprecated and will be removed in v3.0."
+                "  Use the 'engine_options' parameter instead.",
+                DeprecationWarning
+            )
 
     @property
     def engine(self):
@@ -898,6 +958,16 @@ class SQLAlchemy(object):
                 state.connectors[bind] = connector
 
             return connector.get_engine()
+
+    def create_engine(self, sa_url, engine_opts):
+        """
+            Override this method to have final say over how the SQLAlchemy engine
+            is created.
+
+            In most cases, you will want to use ``'SQLALCHEMY_ENGINE_OPTIONS'``
+            config variable or set ``engine_options`` for :func:`SQLAlchemy`.
+        """
+        return sqlalchemy.create_engine(sa_url, **engine_opts)
 
     def get_app(self, reference_app=None):
         """Helper method that implements the logic to look up an
