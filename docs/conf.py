@@ -22,7 +22,7 @@ intersphinx_mapping = {
     "flask": ("http://flask.pocoo.org/docs/", None),
     "sqlalchemy": ("https://docs.sqlalchemy.org/en/latest/", None),
 }
-issues_github_path = "pallets/werkzeug"
+issues_github_path = "pallets/flask-sqlalchemy"
 
 # HTML -----------------------------------------------------------------
 
