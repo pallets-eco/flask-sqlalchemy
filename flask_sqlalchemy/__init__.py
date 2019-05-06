@@ -138,7 +138,7 @@ class SignallingSession(SessionBase):
         bind = options.pop('bind', None) or db.engine
         binds = options.pop('binds', db.get_binds(app))
 
-        if track_modifications is None or track_modifications:
+        if track_modifications:
             _SessionSignalEvents.register(self)
 
         SessionBase.__init__(
@@ -829,17 +829,8 @@ class SQLAlchemy(object):
         app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
         app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
-        track_modifications = app.config.setdefault(
-            'SQLALCHEMY_TRACK_MODIFICATIONS', None
-        )
+        app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', False)
         app.config.setdefault('SQLALCHEMY_ENGINE_OPTIONS', {})
-
-        if track_modifications is None:
-            warnings.warn(FSADeprecationWarning(
-                'SQLALCHEMY_TRACK_MODIFICATIONS adds significant overhead and '
-                'will be disabled by default in the future.  Set it to True '
-                'or False to suppress this warning.'
-            ))
 
         # Deprecation warnings for config keys that should be replaced by SQLALCHEMY_ENGINE_OPTIONS.
         utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_SIZE', 'pool_size')

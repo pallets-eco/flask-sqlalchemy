@@ -70,10 +70,8 @@ A list of configuration keys currently understood by the extension:
                                    **Deprecated** as of v2.4 and will be removed in v3.0.
 ``SQLALCHEMY_TRACK_MODIFICATIONS`` If set to ``True``, Flask-SQLAlchemy will
                                    track modifications of objects and emit
-                                   signals.  The default is ``None``, which
-                                   enables tracking but issues a warning
-                                   that it will be disabled by default in
-                                   the future.  This requires extra memory
+                                   signals.  The default is ``False`` because
+                                   this requires extra memory
                                    and should be disabled if not needed.
 ``SQLALCHEMY_ENGINE_OPTIONS``      A dictionary of keyword args to send to
                                    :func:`~sqlalchemy.create_engine`.  See
