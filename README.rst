@@ -42,6 +42,25 @@ A Simple Example
     users = User.query.all()
 
 
+Contributing
+------------
+
+For guidance on setting up a development environment and how to make a
+contribution to Flask-SQLAlchemy, see the `contributing guidelines`_.
+
+.. _contributing guidelines: https://github.com/pallets/flask-sqlalchemy/blob/master/CONTRIBUTING.rst
+
+
+Donate
+------
+
+The Pallets organization develops and supports Flask-SQLAlchemy.
+In order to grow the community of contributors and users, and allow
+the maintainers to devote more time to the projects, `please donate today`_.
+
+.. _please donate today: https://psfmember.org/civicrm/contribute/transact?reset=1&id=20
+
+
 Links
 -----
 
