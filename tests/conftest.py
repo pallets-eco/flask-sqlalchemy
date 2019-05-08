@@ -11,7 +11,6 @@ def app(request):
     app = flask.Flask(request.module.__name__)
     app.testing = True
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     return app
 
 

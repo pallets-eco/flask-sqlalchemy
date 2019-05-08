@@ -3,6 +3,9 @@ Version 3.0.0
 
 Unreleased
 
+-   Set `SQLALCHEMY_TRACK_MODIFICATIONS` to `False` by default,
+    remove deprecation warning (:pr:`727`)
+
 
 Version 2.4.0
 -------------
