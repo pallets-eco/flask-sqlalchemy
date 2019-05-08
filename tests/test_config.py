@@ -18,18 +18,39 @@ def app_nr(app):
 
 class TestConfigKeys:
 
-    def test_defaults(self, app, recwarn):
+    def test_default_error_without_uri_or_binds(self, app, recwarn):
         """
-        Test all documented config values in the order they appear in our
-        documentation: http://flask-sqlalchemy.pocoo.org/dev/config/
+        Test that default configuration throws an error because
+        SQLALCHEMY_DATABASE_URI and SQLALCHEMY_BINDS are unset
         """
 
         fsa.SQLAlchemy(app)
 
-        # Expecting no warnings for default config
+        # Our pytest fixture for creating the app sets
+        # SQLALCHEMY_DATABASE_URI, so undo that here so that we
+        # can inspect what FSA does below:
+        del app.config['SQLALCHEMY_DATABASE_URI']
+
+        with pytest.raises(RuntimeError) as exc_info:
+            fsa.SQLAlchemy(app)
+
+        expected = 'Either SQLALCHEMY_DATABASE_URI ' \
+                   'or SQLALCHEMY_BINDS needs to be set.'
+        assert exc_info.value.args[0] == expected
+
+    def test_defaults_with_uri(self, app, recwarn):
+        """
+        Test default config values when URI is provided, in the order they
+        appear in the documentation: http://flask-sqlalchemy.pocoo.org/dev/config/
+
+        Our pytest fixture for creating the app sets SQLALCHEMY_DATABASE_URI
+        """
+
+        fsa.SQLAlchemy(app)
+
+        # Expecting no warnings for default config with URI
         assert len(recwarn) == 0
 
-        assert app.config['SQLALCHEMY_DATABASE_URI'] == 'sqlite:///:memory:'
         assert app.config['SQLALCHEMY_BINDS'] is None
         assert app.config['SQLALCHEMY_ECHO'] is False
         assert app.config['SQLALCHEMY_RECORD_QUERIES'] is None
@@ -40,18 +61,6 @@ class TestConfigKeys:
         assert app.config['SQLALCHEMY_MAX_OVERFLOW'] is None
         assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] is False
         assert app.config['SQLALCHEMY_ENGINE_OPTIONS'] == {}
-
-    def test_uri_binds_warning(self, app, recwarn):
-        # Let's trigger the warning
-        del app.config['SQLALCHEMY_DATABASE_URI']
-        fsa.SQLAlchemy(app)
-
-        # and verify it showed up as expected
-        assert len(recwarn) == 1
-        expect = 'Neither SQLALCHEMY_DATABASE_URI nor SQLALCHEMY_BINDS' \
-                 ' is set. Defaulting SQLALCHEMY_DATABASE_URI to'\
-                 ' "sqlite:///:memory:".'
-        assert recwarn[0].message.args[0] == expect
 
     def test_engine_creation_ok(self, app, recwarn):
         """ create_engine() isn't called until needed.  Let's make sure we can do that without

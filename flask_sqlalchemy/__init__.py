@@ -810,19 +810,18 @@ class SQLAlchemy(object):
         of an application not initialized that way or connections will
         leak.
         """
+
         # We intentionally don't set self.app = app, to support multiple
         # applications. If the app is passed in the constructor,
         # we set it and don't support multiple applications.
-        if (
-            'SQLALCHEMY_DATABASE_URI' not in app.config and
-            'SQLALCHEMY_BINDS' not in app.config
+        if not (
+            app.config.get('SQLALCHEMY_DATABASE_URI')
+            or app.config.get('SQLALCHEMY_BINDS')
         ):
-            warnings.warn(
-                'Neither SQLALCHEMY_DATABASE_URI nor SQLALCHEMY_BINDS is set. '
-                'Defaulting SQLALCHEMY_DATABASE_URI to "sqlite:///:memory:".'
-            )
+            raise RuntimeError('Either SQLALCHEMY_DATABASE_URI '
+                               'or SQLALCHEMY_BINDS needs to be set.')
 
-        app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///:memory:')
+        app.config.setdefault('SQLALCHEMY_DATABASE_URI', None)
         app.config.setdefault('SQLALCHEMY_BINDS', None)
         app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)

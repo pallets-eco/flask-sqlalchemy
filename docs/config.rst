@@ -106,6 +106,10 @@ A list of configuration keys currently understood by the extension:
   * ``SQLALCHEMY_POOL_RECYCLE``
   * ``SQLALCHEMY_MAX_OVERFLOW``
 
+.. versionchanged:: 3.0
+
+  * ``SQLALCHEMY_TRACK_MODIFICATIONS`` configuration key now defaults to ``False``
+  * ``SQLALCHEMY_DATABASE_URI``  configuration key no longer defaults to ``'sqlite:///:memory:'``
 
 Connection URI Format
 ---------------------
