@@ -36,7 +36,7 @@ A Simple Example
         email = db.Column(db.String, unique=True, nullable=False)
 
 
-    db.session.add(User(name="Flask", email="example@example.com"))
+    db.session.add(User(username="Flask", email="example@example.com"))
     db.session.commit()
 
     users = User.query.all()
