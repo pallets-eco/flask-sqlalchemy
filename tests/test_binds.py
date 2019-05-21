@@ -30,8 +30,8 @@ def test_basic_binds(app, db):
         assert str(engine.url) == app.config['SQLALCHEMY_BINDS'][key]
 
     # do the models have the correct engines?
-    assert db.metadata.tables['foo'].info['bind_key'] == 'foo'
-    assert db.metadata.tables['bar'].info['bind_key'] == 'bar'
+    assert db.get_metadata(bind='foo').tables['foo'].info['bind_key'] == 'foo'
+    assert db.get_metadata(bind='bar').tables['bar'].info['bind_key'] == 'bar'
     assert db.metadata.tables['baz'].info.get('bind_key') is None
 
     # see the tables created in an engine
@@ -73,7 +73,7 @@ def test_abstract_binds(app, db):
     db.create_all()
 
     # does the model have the correct engines?
-    assert db.metadata.tables['foo_bound_model'].info['bind_key'] == 'foo'
+    assert db.get_metadata(bind='foo').tables['foo_bound_model'].info['bind_key'] == 'foo'
 
     # see the tables created in an engine
     metadata = db.MetaData()
@@ -123,3 +123,27 @@ def test_polymorphic_bind(app, db):
 
     assert Base.__table__.info['bind_key'] == bind_key
     assert Child1.__table__.info['bind_key'] == bind_key
+
+
+def test_binds_with_same_table_name(app, db):
+    app.config['SQLALCHEMY_BINDS'] = {
+        'foo': 'sqlite://',
+        'bar': 'sqlite://'
+    }
+    db = fsa.SQLAlchemy(app)
+
+    class FooUser(db.Model):
+        __bind_key__ = 'foo'
+        __tablename__ = 'users'
+        __table_args__ = {"info": {"bind_key": "foo"}}
+        id = db.Column(db.Integer, primary_key=True)
+
+    class BarUser(db.Model):
+        __bind_key__ = 'bar'
+        __tablename__ = 'users'
+        id = db.Column(db.Integer, primary_key=True)
+
+    db.create_all()
+
+    assert db.get_metadata(bind='foo').tables['users'].info['bind_key'] == 'foo'
+    assert db.get_metadata(bind='bar').tables['users'].info['bind_key'] == 'bar'

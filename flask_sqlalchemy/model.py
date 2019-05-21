@@ -4,6 +4,7 @@ import sqlalchemy as sa
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative import DeclarativeMeta, declared_attr
 from sqlalchemy.schema import _get_table_key
+from sqlalchemy.schema import MetaData
 
 from ._compat import to_str
 
@@ -117,6 +118,10 @@ class BindMetaMixin(object):
             d.pop('__bind_key__', None)
             or getattr(cls, '__bind_key__', None)
         )
+        if bind_key:
+            if bind_key not in cls._metadata:
+                cls._metadata[bind_key] = MetaData()
+            cls.metadata = cls._metadata[bind_key]
 
         super(BindMetaMixin, cls).__init__(name, bases, d)
 
