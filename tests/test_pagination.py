@@ -1,3 +1,5 @@
+import collections
+import datetime as dt
 import pytest
 from werkzeug.exceptions import NotFound
 
@@ -14,7 +16,8 @@ def test_basic_pagination():
     assert p.next_num == 2
     assert list(p.iter_pages()) == [1, 2, 3, 4, 5, None, 24, 25]
     p.page = 10
-    assert list(p.iter_pages()) == [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25]
+    assert list(p.iter_pages()) == [1, 2, None, 8, 9, 10, 11,
+                                    12, 13, 14, None, 24, 25]
 
 
 def test_pagination_pages_when_0_items_per_page():
@@ -25,6 +28,58 @@ def test_pagination_pages_when_0_items_per_page():
 def test_pagination_pages_when_total_is_none():
     p = fsa.Pagination(None, 1, 100, None, [])
     assert p.pages == 0
+
+
+def test_basic_as_dict_method():
+    mock_row_proxy = collections.OrderedDict(
+        int_col=1,
+        float_col=.5,
+        datetime_col=dt.datetime(year=1970, month=1, day=1,
+                                 hour=12, minute=12, second=12),
+        string_col='this is a string'
+    )
+    p = fsa.Pagination(None, 1, 20, 500, [mock_row_proxy])
+    assert p.as_dict()['page'] == p.page
+    assert p.as_dict()['total'] == p.total
+    assert p.as_dict()['prev_num'] == p.prev_num
+    assert p.as_dict()['next_num'] == p.next_num
+    assert list(p.as_dict()['items']) == list(p.serialize_items())
+
+
+def test_serialize_row_item_method():
+    serialize = fsa.Pagination._serialize_item
+    test_date = dt.datetime(year=1970, month=1, day=1,
+                            hour=12, minute=12, second=12)
+
+    assert serialize(True) == 'true'
+    assert serialize(False) == 'false'
+    assert serialize(5) == 5
+    assert serialize(.1) == .1
+    assert list(serialize([1, 'a', .1, test_date])) == [1, 'a', .1, '1970-01-01T12:12:12']
+    assert serialize(test_date) == '1970-01-01T12:12:12'
+    assert serialize(None) == 'null'
+
+    with pytest.raises(TypeError):
+        class NotSerializable:
+            pass
+        fsa.Pagination._serialize_item(NotSerializable())
+
+
+def test_serialize_row_static_method():
+    mock_row_proxy = collections.OrderedDict(
+        int_col=1,
+        float_col=.5,
+        datetime_col=dt.datetime(year=1970, month=1, day=1,
+                                 hour=12, minute=12, second=12),
+        string_col='this is a string'
+    )
+    json_row_proxy = collections.OrderedDict(
+        int_col=1,
+        float_col=.5,
+        datetime_col='1970-01-01T12:12:12',
+        string_col='this is a string'
+    )
+    assert fsa.Pagination._serialize_row(mock_row_proxy) == json_row_proxy
 
 
 def test_query_paginate(app, db, Todo):

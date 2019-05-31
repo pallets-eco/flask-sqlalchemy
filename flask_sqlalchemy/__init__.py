@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+import datetime as dt
 import functools
 import os
 import sys
@@ -20,7 +21,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
 from flask_sqlalchemy.model import Model
-from ._compat import itervalues, string_types, xrange
+from ._compat import iteritems, itervalues, string_types, xrange
 from .model import DefaultMeta
 from . import utils
 
@@ -372,6 +373,47 @@ class Pagination(object):
             return None
         return self.page + 1
 
+    @staticmethod
+    def _serialize_item(value):
+        """Handles specific JSON serialization of different datatypes"""
+        if value is None:
+            return 'null'
+        if isinstance(value, bool):
+            return str(value).lower()
+        if isinstance(value, int) or isinstance(value, float):
+            return value
+        if isinstance(value, str):
+            return value
+        if isinstance(value, dt.datetime):
+            return value.isoformat()
+        if isinstance(value, list):
+            return (Pagination._serialize_item(i) for i in value)
+        if isinstance(value, dict):
+            return {Pagination._serialize_item(k): Pagination._serialize_item(v)
+                    for k, v in iteritems(value)}
+        msg = "Unable to serialize {}".format(value)
+        raise TypeError(msg)
+
+    @staticmethod
+    def _serialize_row(row_proxy):
+        """Converts each row proxy into a dict and serializes the values"""
+        return {k: Pagination._serialize_item(v)
+                for k, v in iteritems(dict(row_proxy))}
+
+    def serialize_items(self):
+        """JSON serialization of the items"""
+        return (Pagination._serialize_row(row) for row in self.items)
+
+    def as_dict(self):
+        """Returns the pagination object as a dict for JSON-like responses"""
+        return {
+            'items': self.serialize_items(),
+            'page': self.page,
+            'total': self.total,
+            'prev_num': self.prev_num,
+            'next_num': self.next_num
+        }
+
     def iter_pages(self, left_edge=2, left_current=2,
                    right_current=5, right_edge=2):
         """Iterates over the page numbers in the pagination.  The four
@@ -402,7 +444,7 @@ class Pagination(object):
             if num <= left_edge or \
                (num > self.page - left_current - 1 and
                 num < self.page + right_current) or \
-               num > self.pages - right_edge:
+                num > self.pages - right_edge:
                 if last + 1 != num:
                     yield None
                 yield num
