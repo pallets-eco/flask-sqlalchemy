@@ -31,55 +31,11 @@ def test_pagination_pages_when_total_is_none():
 
 
 def test_basic_as_dict_method():
-    mock_row_proxy = collections.OrderedDict(
-        int_col=1,
-        float_col=.5,
-        datetime_col=dt.datetime(year=1970, month=1, day=1,
-                                 hour=12, minute=12, second=12),
-        string_col='this is a string'
-    )
-    p = fsa.Pagination(None, 1, 20, 500, [mock_row_proxy])
+    p = fsa.Pagination(None, 1, 20, 500, [])
     assert p.as_dict()['page'] == p.page
     assert p.as_dict()['total'] == p.total
     assert p.as_dict()['prev_num'] == p.prev_num
     assert p.as_dict()['next_num'] == p.next_num
-    assert list(p.as_dict()['items']) == list(p.serialize_items())
-
-
-def test_serialize_row_item_method():
-    serialize = fsa.Pagination._serialize_item
-    test_date = dt.datetime(year=1970, month=1, day=1,
-                            hour=12, minute=12, second=12)
-
-    assert serialize(True) == 'true'
-    assert serialize(False) == 'false'
-    assert serialize(5) == 5
-    assert serialize(.1) == .1
-    assert list(serialize([1, 'a', .1, test_date])) == [1, 'a', .1, '1970-01-01T12:12:12']
-    assert serialize(test_date) == '1970-01-01T12:12:12'
-    assert serialize(None) == 'null'
-
-    with pytest.raises(TypeError):
-        class NotSerializable:
-            pass
-        fsa.Pagination._serialize_item(NotSerializable())
-
-
-def test_serialize_row_static_method():
-    mock_row_proxy = collections.OrderedDict(
-        int_col=1,
-        float_col=.5,
-        datetime_col=dt.datetime(year=1970, month=1, day=1,
-                                 hour=12, minute=12, second=12),
-        string_col='this is a string'
-    )
-    json_row_proxy = collections.OrderedDict(
-        int_col=1,
-        float_col=.5,
-        datetime_col='1970-01-01T12:12:12',
-        string_col='this is a string'
-    )
-    assert fsa.Pagination._serialize_row(mock_row_proxy) == json_row_proxy
 
 
 def test_query_paginate(app, db, Todo):
@@ -112,6 +68,37 @@ def test_query_paginate_more_than_20(app, db, Todo):
         db.session.commit()
 
     assert len(Todo.query.paginate(max_per_page=10).items) == 10
+
+
+def test_query_paginate_as_dict(app, db, Todo):
+    with app.app_context():
+        db.session.add(Todo("item1", "item1"))
+        db.session.add(Todo("item2", "item2"))
+        db.session.add(Todo("item3", "item3"))
+        db.session.commit()
+
+    p = Todo.query.paginate()
+    assert len(p.items) == 3
+
+    # save off generator for testing
+    rows = list(p.as_dict()['items'])
+    assert len(rows) == 3
+
+    # test default values in dict
+    assert p.as_dict()['page'] == 1
+    assert p.as_dict()['total'] == 3
+
+    first_row = rows[0]
+    assert first_row['title'] == 'item1'
+    assert first_row['text'] == 'item1'
+    assert first_row['done'] is False
+    assert first_row['todo_id'] == 1
+
+    second_row = rows[1]
+    assert second_row['title'] == 'item2'
+    assert second_row['text'] == 'item2'
+    assert second_row['done'] is False
+    assert second_row['todo_id'] == 2
 
 
 def test_paginate_min(app, db, Todo):

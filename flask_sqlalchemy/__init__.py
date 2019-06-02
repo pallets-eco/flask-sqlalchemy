@@ -374,40 +374,39 @@ class Pagination(object):
         return self.page + 1
 
     @staticmethod
-    def _serialize_item(value):
-        """Handles specific JSON serialization of different datatypes"""
-        if value is None:
-            return 'null'
-        if isinstance(value, bool):
-            return str(value).lower()
-        if isinstance(value, int) or isinstance(value, float):
-            return value
-        if isinstance(value, str):
-            return value
-        if isinstance(value, dt.datetime):
-            return value.isoformat()
-        if isinstance(value, list):
-            return (Pagination._serialize_item(i) for i in value)
-        if isinstance(value, dict):
-            return {Pagination._serialize_item(k): Pagination._serialize_item(v)
-                    for k, v in iteritems(value)}
-        msg = "Unable to serialize {}".format(value)
-        raise TypeError(msg)
+    def _row_proxy_to_dict(row_proxy):
+        """Converts a sqlalchemy row proxy into a vanilla python dictionary
+        were the key is the column name and the value is the value for that
+        record. This method handles the case in which the model defines a
+        different column name than the one defined in the model.
+        """
+        d = {}
+        for column in row_proxy.__table__.columns:
+            class_attr = row_proxy.__mapper__.get_property_by_column(column).key
+            d[column.name] = getattr(row_proxy, class_attr)
+        return d
 
-    @staticmethod
-    def _serialize_row(row_proxy):
-        """Converts each row proxy into a dict and serializes the values"""
-        return {k: Pagination._serialize_item(v)
-                for k, v in iteritems(dict(row_proxy))}
+    def _convert_items_to_dict(self):
+        """Converts each row in the collection of items into a dictionary.
 
-    def serialize_items(self):
-        """JSON serialization of the items"""
-        return (Pagination._serialize_row(row) for row in self.items)
+        A RowProxy object by default is not serializable. This method is used
+        to convert each row to a dictionary of key, value pairs where the key
+        is the column name and the value is the stored value in the database.
+        Note that some datatypes returned in the :class:`Pagination` object
+        are not serializable by default.
+        """
+        return (Pagination._row_proxy_to_dict(row) for row in self.items)
 
     def as_dict(self):
-        """Returns the pagination object as a dict for JSON-like responses"""
+        """Returns the :class: `Pagination` object as a dict for JSON-like responses
+
+        Not all items that are returned from SQLAlchemy's result set is
+        serializable by default although we provide this as a convience method,
+        it is up to the developer to ensure that the correct serialization
+        scheme can be applied to all items that are queried from the database.
+        """
         return {
-            'items': self.serialize_items(),
+            'items': self._convert_items_to_dict(),
             'page': self.page,
             'total': self.total,
             'prev_num': self.prev_num,
