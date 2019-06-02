@@ -1,5 +1,3 @@
-import collections
-import datetime as dt
 import pytest
 from werkzeug.exceptions import NotFound
 

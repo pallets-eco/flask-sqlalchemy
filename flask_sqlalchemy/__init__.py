@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import datetime as dt
 import functools
 import os
 import sys
@@ -21,7 +20,7 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
 from flask_sqlalchemy.model import Model
-from ._compat import iteritems, itervalues, string_types, xrange
+from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
 from . import utils
 
