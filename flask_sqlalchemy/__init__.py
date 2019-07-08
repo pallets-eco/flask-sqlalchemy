@@ -839,6 +839,7 @@ class SQLAlchemy(object):
         utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_MAX_OVERFLOW', 'max_overflow')
 
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
+        self.app = app
 
         @app.teardown_appcontext
         def shutdown_session(response_or_exc):
