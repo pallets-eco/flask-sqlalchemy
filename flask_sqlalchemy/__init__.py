@@ -810,6 +810,9 @@ class SQLAlchemy(object):
         of an application not initialized that way or connections will
         leak.
         """
+        # We intentionally don't set self.app = app, to support multiple
+        # applications. If the app is passed in the constructor,
+        # we set it and don't support multiple applications.
         if (
             'SQLALCHEMY_DATABASE_URI' not in app.config and
             'SQLALCHEMY_BINDS' not in app.config
