@@ -415,6 +415,37 @@ class BaseQuery(orm.Query):
     This is the default :attr:`~Model.query` object used for models, and exposed as :attr:`~SQLAlchemy.Query`.
     Override the query class for an individual model by subclassing this and setting :attr:`~Model.query_class`.
     """
+    def dynamic_filter(self, filter_conditions, filters = None):
+        '''
+        Return filtered queryset based on condition.
+        :param query: takes query
+        :param filter_condition: Its a list, ie: [(key,operator,value)]
+        operator list:
+            eq for ==
+            lt for <
+            ge for >=
+            in for in_
+            like for like
+            value could be list or a string
+        :return: queryset
+        '''
+        if len(filter_conditions) == 0:
+            return filters
+        else:
+            column, op, value = filter_conditions.pop()
+            try:
+                attr = list(filter(lambda e: hasattr(column, e % op), ['%s', '%s_', '__%s__']))[0] % op
+            except IndexError:
+                raise Exception('Invalid filter operator: %s' % op)
+            if value == 'null':
+                value = None
+            filt = getattr(column, attr)(value)
+            if filters == None:
+                filters = self.filter(filt)
+            else:
+                filters = filters.filter(filt)
+            return self.dynamic_filter(filter_conditions, filters)
+
 
     def get_or_404(self, ident, description=None):
         """Like :meth:`get` but aborts with 404 if not found instead of returning ``None``."""

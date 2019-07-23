@@ -22,6 +22,22 @@ def test_no_app_bound(app):
         assert len(Foo.query.all()) == 1
 
 
+def test_dynamic_filtering_records(db, Todo):
+    # If an app was passed to the SQLAlchemy constructor,
+    # the query property is always available.
+    todo = Todo('Test', 'test_text')
+    db.session.add(todo)
+    db.session.commit()
+    assert len(Todo.query.dynamic_filter([(Todo.title, 'eq', 'Test'), (Todo.text, 'eq', 'test_text')]).all()) == 1
+
+def test_dynamic_filtering_no_records(db, Todo):
+    # If an app was passed to the SQLAlchemy constructor,
+    # the query property is always available.
+    todo = Todo('Test', 'test')
+    db.session.add(todo)
+    db.session.commit()
+    assert len(Todo.query.dynamic_filter([(Todo.text, 'eq', 'not_exists')]).all()) == 0
+
 def test_app_bound(db, Todo):
     # If an app was passed to the SQLAlchemy constructor,
     # the query property is always available.
