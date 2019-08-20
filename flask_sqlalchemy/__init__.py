@@ -166,7 +166,7 @@ class SignallingSession(SessionBase):
     def get_bind(self, mapper=None, clause=None):
         # mapper is None if someone tries to just get a connection
         if mapper is not None:
-            info = getattr(mapper.mapped_table, 'info', {})
+            info = getattr(mapper.persist_selectable, "info", {})
             bind_key = info.get('bind_key')
             if bind_key is not None:
                 state = get_state(self.app)
