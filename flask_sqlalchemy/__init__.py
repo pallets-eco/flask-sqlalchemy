@@ -849,7 +849,7 @@ class SQLAlchemy(object):
                 if response_or_exc is None:
                     self.session.commit()
 
-            db.session.close_all()
+            self.session.close_all()
             return response_or_exc
 
     def apply_pool_defaults(self, app, options):
