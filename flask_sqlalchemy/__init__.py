@@ -24,7 +24,7 @@ from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
 from . import utils
 
-__version__ = "2.4.0"
+__version__ = "2.4.1"
 
 # the best timer function for the platform
 if sys.platform == 'win32':

@@ -1,7 +1,7 @@
 Version 2.4.1
 -------------
 
-Unreleased
+Released 2019-09-24
 
 -   Fix ``AttributeError`` when using multiple binds with polymorphic
     models. :pr:`651`
