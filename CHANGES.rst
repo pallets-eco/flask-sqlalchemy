@@ -7,6 +7,15 @@ Unreleased
     remove deprecation warning (:pr:`727`)
 
 
+Version 2.4.1
+-------------
+
+Released 2019-09-24
+
+-   Fix ``AttributeError`` when using multiple binds with polymorphic
+    models. :pr:`651`
+
+
 Version 2.4.0
 -------------
 
@@ -20,13 +29,6 @@ Released 2019-04-24
 -   Drop support for Python 2.6 and 3.3. (:pr:`687`)
 -   Add an example of Flask's tutorial project, Flaskr, adapted for
     Flask-SQLAlchemy. (:pr:`720`)
-
-Version 2.3.3
--------------
-
-Fix "AttributeError: 'NoneType' object has no attribute 'info'", when using polymorphic models. (`#651`_)
-
-.. _#651: https://github.com/mitsuhiko/flask-sqlalchemy/pull/651
 
 
 Version 2.3.2
