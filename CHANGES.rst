@@ -6,8 +6,11 @@ Unreleased
 -   Drop support for Python 3.4.
 -   Bump minimum version of Flask to 1.0.4.
 -   Bump minimum version of SQLAlchemy to 1.2.
--   Set `SQLALCHEMY_TRACK_MODIFICATIONS` to `False` by default,
+-   Set ``SQLALCHEMY_TRACK_MODIFICATIONS`` to ``False`` by default,
     remove deprecation warning (:pr:`727`)
+-   Remove default ``'sqlite:///:memory:'`` setting for
+    ``SQLALCHEMY_DATABASE_URI``, raise error when both ``SQLALCHEMY_DATABASE_URI``
+    and ``SQLALCHEMY_BINDS`` are unset (:pr:`731`)
 
 
 Version 2.4.1
