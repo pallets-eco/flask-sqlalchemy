@@ -8,10 +8,8 @@ matrix:
   include:
     - python: 2.7
       env: TOXENV=py,py27-lowest,codecov
-    - python: 3.4
     - python: 3.5
     - python: 3.6
-      env: TOXENV=py,py36-lowest,codecov
     - python: 3.7
       env: TOXENV=py,py37-lowest,codecov
     - python: 3.7

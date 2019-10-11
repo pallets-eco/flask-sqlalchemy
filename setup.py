@@ -27,8 +27,8 @@ setup(
     long_description=readme,
     packages=["flask_sqlalchemy"],
     include_package_data=True,
-    python_requires=">= 2.7, != 3.0.*, != 3.1.*, != 3.2.*, != 3.3.*",
-    install_requires=["Flask>=0.10", "SQLAlchemy>=0.8.0"],
+    python_requires=">= 2.7, != 3.0.*, != 3.1.*, != 3.2.*, != 3.3.*, !=3.4.*",
+    install_requires=["Flask>=1.0.4", "SQLAlchemy>=1.2"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
@@ -39,7 +39,6 @@ setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
