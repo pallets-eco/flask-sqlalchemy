@@ -181,7 +181,7 @@ which will allow you to keep all of the convenience methods provided by Flask-SQ
 However, you are likely to find yourself wanting those methods if you are converting
 pre-existing Flask-SQLAlchemy models to be accessible via plain SQLAlchemy.
 
-A complete worked example looks something like this:
+A complete worked example looks something like this::
 
 	import os
 	from sqlalchemy import create_engine, Column, String, Integer
@@ -228,7 +228,6 @@ A complete worked example looks something like this:
 	        'create_all': create_all,
 	        'mocked_obj': True
 	    })
-
 
 	# Example class with methods that can be used both inside and outside a flask context.
 	class User(Base):
