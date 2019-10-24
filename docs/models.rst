@@ -167,3 +167,82 @@ a query object using
 :meth:`Page.query.with_parent(some_tag) <sqlalchemy.orm.query.Query.with_parent>`
 and then use it exactly as you would with the query object from a dynamic
 relationship.
+
+Using Plain SQLAlchemy Models
+-----------------------------
+
+You may have pre-existing SQLAlchemy models that you would like to use
+with Flask-SQLAlchemy, or conversely you may find yourself needing to access
+the Flask-SQLAlchemy models you have already defined outside of a Flask context.
+
+The simplest method is to simply switch the base used for your models at run-time,
+which will allow you to keep all of the convenience methods provided by Flask-SQLAlchemy.
+
+However, you are likely to find yourself wanting those methods if you are converting
+pre-existing Flask-SQLAlchemy models to be accessible via plain SQLAlchemy.
+
+A complete worked example looks something like this:
+
+	import os
+	from sqlalchemy import create_engine, Column, String, Integer
+	from sqlalchemy.ext.declarative import declarative_base
+	from sqlalchemy.orm import scoped_session, sessionmaker
+	from flask_sqlalchemy import SQLAlchemy
+
+	# We can control this via `PLAIN_SQLALCHEMY_BASE=true python3 external_use.py`
+	PLAIN_SQLALCHEMY_BASE = "true" in os.getenv("PLAIN_SQLALCHEMY_BASE", "false").lower()
+
+	if not PLAIN_SQLALCHEMY_BASE:
+	    db = SQLAlchemy()
+	    # Default flask-sqlalchemy base.
+	    Base = db.Model
+	else:
+	    # Standard sqlalchemy declarative base.
+	    base = declarative_base()
+
+	    class Base(base):
+	        __abstract__ = True
+
+	    # To maintain the same methods as flask-sqlalchemy, the following will work:
+	    engine = create_engine()
+	    session = sessionmaker(bind=engine)
+	    db_session = scoped_session(session)
+
+	    # Enable `<Model>.query.<query_method>` like flask-sqlalchemy.
+	    Base.query = db_session.query_property()
+
+	    # Mock db.* to avoid altering methods on flask-sqlalchemy compatible models.
+	    class dot_dict(dict):
+	        def __getattr__(self, val):
+	            return self[val]
+
+	    def drop_all():
+	        Base.metadata.drop_all(bind=engine)
+
+	    def create_all():
+	        Base.metadata.create_all(bind=engine)
+
+	    db = dot_dict({
+	        'session': db_session,
+	        'drop_all': drop_all,
+	        'create_all': create_all,
+	        'mocked_obj': True
+	    })
+
+
+	# Example class with methods that can be used both inside and outside a flask context.
+	class User(Base):
+	    __tablename__ = 'users'
+	    user_id = Column(Integer, primary_key=True)
+	    name = Column(String(255))
+
+	    @staticmethod
+	    def get_all():
+	        # This will continue to work without flask-sqlalchemy via the compatibility code.
+	        return User.query.all()
+
+	    def delete(self):
+	        # This will also work without flask-sqlalchemy via the compatibility code.
+	        db.session.delete(self)
+	        db.session.commit()
+
