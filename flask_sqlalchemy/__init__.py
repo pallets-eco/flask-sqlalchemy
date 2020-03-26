@@ -326,6 +326,26 @@ class Pagination(object):
         self.total = total
         #: the items for the current page
         self.items = items
+        #: the number of items for the current page
+        self.items_length = len(self.items)
+    
+    @property
+    def first(self):
+        """The number of the first item on the current page"""
+        if self.total == 0:
+            first = 0
+        else:
+            first = ((self.page - 1) * self.per_page) + 1
+        return first
+
+    @property
+    def last(self):
+        """The number of the last item on the current page"""
+        if self.page == self.pages:
+            last = self.total
+        else:
+            last = self.page * self.per_page
+        return last
 
     @property
     def pages(self):
