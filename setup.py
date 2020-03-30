@@ -28,7 +28,7 @@ setup(
     packages=["flask_sqlalchemy"],
     include_package_data=True,
     python_requires=">= 2.7, != 3.0.*, != 3.1.*, != 3.2.*, != 3.3.*, !=3.4.*",
-    install_requires=["Flask>=1.0.4", "SQLAlchemy>=1.2"],
+    install_requires=["Flask>=1.0.4", "SQLAlchemy>=1.2", "psycopg2>=2.8.4"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
