@@ -498,12 +498,7 @@ class BaseQuery(orm.Query):
         if not items and page != 1 and error_out:
             abort(404)
 
-        # No need to count if we're on the first page and there are fewer
-        # items than we expected.
-        if page == 1 and len(items) < per_page:
-            total = len(items)
-        else:
-            total = self.order_by(None).count()
+        total = self.order_by(None).count()
 
         return Pagination(self, page, per_page, total, items)
 
