@@ -13,6 +13,14 @@ Unreleased
     and ``SQLALCHEMY_BINDS`` are unset (:pr:`731`)
 
 
+Version 2.4.2
+-------------
+
+Released 2020-05-25
+
+-   Fix bad pagination when records are de-duped. :pr:`812`
+
+
 Version 2.4.1
 -------------
 
