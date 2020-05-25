@@ -1,38 +1,39 @@
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import BaseQuery
+from flask_sqlalchemy import SQLAlchemy
 
 
 def test_default_query_class(db):
     class Parent(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        children = db.relationship("Child", backref="parent", lazy='dynamic')
+        children = db.relationship("Child", backref="parent", lazy="dynamic")
 
     class Child(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+        parent_id = db.Column(db.Integer, db.ForeignKey("parent.id"))
 
     p = Parent()
     c = Child()
     c.parent = p
 
-    assert type(Parent.query) == fsa.BaseQuery
-    assert type(Child.query) == fsa.BaseQuery
-    assert isinstance(p.children, fsa.BaseQuery)
-    assert isinstance(db.session.query(Parent), fsa.BaseQuery)
+    assert type(Parent.query) == BaseQuery
+    assert type(Child.query) == BaseQuery
+    assert isinstance(p.children, BaseQuery)
+    assert isinstance(db.session.query(Parent), BaseQuery)
 
 
 def test_custom_query_class(app):
-    class CustomQueryClass(fsa.BaseQuery):
+    class CustomQueryClass(BaseQuery):
         pass
 
-    db = fsa.SQLAlchemy(app, query_class=CustomQueryClass)
+    db = SQLAlchemy(app, query_class=CustomQueryClass)
 
     class Parent(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        children = db.relationship("Child", backref="parent", lazy='dynamic')
+        children = db.relationship("Child", backref="parent", lazy="dynamic")
 
     class Child(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+        parent_id = db.Column(db.Integer, db.ForeignKey("parent.id"))
 
     p = Parent()
     c = Child()
@@ -47,13 +48,13 @@ def test_custom_query_class(app):
 
 
 def test_dont_override_model_default(app):
-    class CustomQueryClass(fsa.BaseQuery):
+    class CustomQueryClass(BaseQuery):
         pass
 
-    db = fsa.SQLAlchemy(app, query_class=CustomQueryClass)
+    db = SQLAlchemy(app, query_class=CustomQueryClass)
 
     class SomeModel(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        query_class = fsa.BaseQuery
+        query_class = BaseQuery
 
-    assert type(SomeModel.query) == fsa.BaseQuery
+    assert type(SomeModel.query) == BaseQuery

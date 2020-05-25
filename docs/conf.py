@@ -52,11 +52,5 @@ html_show_sourcelink = False
 # LaTeX ----------------------------------------------------------------
 
 latex_documents = [
-    (
-        master_doc,
-        f"Flask-SQLAlchemy-{version}.tex",
-        html_title,
-        author,
-        "manual",
-    )
+    (master_doc, f"Flask-SQLAlchemy-{version}.tex", html_title, author, "manual",)
 ]

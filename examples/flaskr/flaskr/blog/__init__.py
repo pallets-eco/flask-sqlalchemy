@@ -1,1 +1,1 @@
-from .views import bp
+from .views import bp  # noqa: F401
