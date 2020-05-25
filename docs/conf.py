@@ -46,7 +46,7 @@ singlehtml_sidebars = {"index": ["project.html", "localtoc.html"]}
 html_static_path = ["_static"]
 html_favicon = "_static/flask-sqlalchemy-logo.png"
 html_logo = "_static/flask-sqlalchemy-logo.png"
-html_title = "Flask-SQLAlchemy Documentation ({})".format(version)
+html_title = f"Flask-SQLAlchemy Documentation ({version})"
 html_show_sourcelink = False
 
 # LaTeX ----------------------------------------------------------------
@@ -54,7 +54,7 @@ html_show_sourcelink = False
 latex_documents = [
     (
         master_doc,
-        "Flask-SQLAlchemy-{}.tex".format(version),
+        f"Flask-SQLAlchemy-{version}.tex",
         html_title,
         author,
         "manual",

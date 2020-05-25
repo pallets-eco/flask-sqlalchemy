@@ -1,14 +1,9 @@
 Signalling Support
 ==================
 
-Connect to the following signals to get notified before and after changes are committed to the database.
-These changes are only tracked if ``SQLALCHEMY_TRACK_MODIFICATIONS`` is enabled in the config.
-
-.. versionadded:: 0.10
-.. versionchanged:: 2.1
-   ``before_models_committed`` is triggered correctly.
-.. deprecated:: 2.1
-   This will be disabled by default in a future version.
+Connect to the following signals to get notified before and after changes
+are committed to the database. These changes are only tracked if
+``SQLALCHEMY_TRACK_MODIFICATIONS`` is enabled in the config.
 
 .. data:: models_committed
 

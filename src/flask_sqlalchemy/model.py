@@ -5,8 +5,6 @@ from sqlalchemy import inspect
 from sqlalchemy.ext.declarative import DeclarativeMeta, declared_attr
 from sqlalchemy.schema import _get_table_key
 
-from ._compat import to_str
-
 
 def should_set_tablename(cls):
     """Determine whether ``__tablename__`` should be automatically generated
@@ -52,19 +50,19 @@ def camel_to_snake_case(name):
         word = match.group()
 
         if len(word) > 1:
-            return ('_%s_%s' % (word[:-1], word[-1])).lower()
+            return f"_{word[:-1]}_{word[-1]}".lower()
 
-        return '_' + word.lower()
+        return f"_{word.lower()}"
 
     return camelcase_re.sub(_join, name).lstrip('_')
 
 
-class NameMetaMixin(object):
+class NameMetaMixin:
     def __init__(cls, name, bases, d):
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
-        super(NameMetaMixin, cls).__init__(name, bases, d)
+        super().__init__(name, bases, d)
 
         # __table_cls__ has run at this point
         # if no table was created, use the parent table
@@ -111,14 +109,14 @@ class NameMetaMixin(object):
             del cls.__tablename__
 
 
-class BindMetaMixin(object):
+class BindMetaMixin:
     def __init__(cls, name, bases, d):
         bind_key = (
             d.pop('__bind_key__', None)
             or getattr(cls, '__bind_key__', None)
         )
 
-        super(BindMetaMixin, cls).__init__(name, bases, d)
+        super().__init__(name, bases, d)
 
         if bind_key is not None and getattr(cls, '__table__', None) is not None:
             cls.__table__.info['bind_key'] = bind_key
@@ -128,7 +126,7 @@ class DefaultMeta(NameMetaMixin, BindMetaMixin, DeclarativeMeta):
     pass
 
 
-class Model(object):
+class Model:
     """Base class for SQLAlchemy declarative base model.
 
     To define models, subclass :attr:`db.Model <SQLAlchemy.Model>`, not this
@@ -147,8 +145,10 @@ class Model(object):
 
     def __repr__(self):
         identity = inspect(self).identity
+
         if identity is None:
-            pk = "(transient {})".format(id(self))
+            pk = f"(transient {id(self)})"
         else:
-            pk = ', '.join(to_str(value) for value in identity)
-        return '<{} {}>'.format(type(self).__name__, pk)
+            pk = ', '.join(str(value) for value in identity)
+
+        return f'<{type(self).__name__} {pk}>'

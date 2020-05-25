@@ -1,10 +1,8 @@
-# coding=utf8
 import pytest
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
 import flask_sqlalchemy as fsa
-from flask_sqlalchemy._compat import to_str
 from flask_sqlalchemy.model import BindMetaMixin
 
 
@@ -49,10 +47,10 @@ def test_repr(db):
     assert repr(u) == '<User test>'
     assert repr(u) == str(u)
 
-    u2 = User(name=u'🐍')
+    u2 = User(name='🐍')
     db.session.add(u2)
     db.session.flush()
-    assert repr(u2) == to_str(u'<User 🐍>')
+    assert repr(u2) == '<User 🐍>'
     assert repr(u2) == str(u2)
 
     r = Report(id=2, user_name=u.name)
@@ -60,11 +58,3 @@ def test_repr(db):
     db.session.flush()
     assert repr(r) == '<Report 2, test>'
     assert repr(u) == str(u)
-
-
-def test_deprecated_meta():
-    class OldMeta(fsa._BoundDeclarativeMeta):
-        pass
-
-    with pytest.warns(fsa.FSADeprecationWarning):
-        declarative_base(cls=fsa.Model, metaclass=OldMeta)

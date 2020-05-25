@@ -48,7 +48,7 @@ def test_mixin_id(db):
     """Primary key provided by mixin should still allow model to set
     tablename.
     """
-    class Base(object):
+    class Base:
         id = db.Column(db.Integer, primary_key=True)
 
     class Duck(Base, db.Model):
@@ -62,7 +62,7 @@ def test_mixin_attr(db):
     """A declared attr tablename will be used down multiple levels of
     inheritance.
     """
-    class Mixin(object):
+    class Mixin:
         @declared_attr
         def __tablename__(cls):
             return cls.__name__.upper()
@@ -103,7 +103,7 @@ def test_complex_inheritance(db):
     class Duck(db.Model):
         id = db.Column(db.Integer, primary_key=True)
 
-    class IdMixin(object):
+    class IdMixin:
         @declared_attr
         def id(cls):
             return db.Column(
@@ -166,7 +166,7 @@ def test_no_access_to_class_property(db):
     """Ensure the implementation doesn't access class properties or declared
     attrs while inspecting the unmapped model.
     """
-    class class_property(object):
+    class class_property:
         def __init__(self, f):
             self.f = f
 
@@ -176,7 +176,7 @@ def test_no_access_to_class_property(db):
     class Duck(db.Model):
         id = db.Column(db.Integer, primary_key=True)
 
-    class ns(object):
+    class ns:
         accessed = False
 
     class Witch(Duck):

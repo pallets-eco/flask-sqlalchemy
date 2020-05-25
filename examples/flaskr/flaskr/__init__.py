@@ -19,7 +19,8 @@ def create_app(test_config=None):
 
     if db_url is None:
         # default to a sqlite database in the instance folder
-        db_url = "sqlite:///" + os.path.join(app.instance_path, "flaskr.sqlite")
+        db_path = os.path.join(app.instance_path, "flaskr.sqlite")
+        db_url = f"sqlite:///{db_path}"
         # ensure the instance folder exists
         os.makedirs(app.instance_path, exist_ok=True)
 

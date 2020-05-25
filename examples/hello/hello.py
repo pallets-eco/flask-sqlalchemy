@@ -42,7 +42,7 @@ def new():
             todo = Todo(request.form['title'], request.form['text'])
             db.session.add(todo)
             db.session.commit()
-            flash(u'Todo item was successfully created')
+            flash('Todo item was successfully created')
             return redirect(url_for('show_all'))
     return render_template('new.html')
 
@@ -50,7 +50,7 @@ def new():
 @app.route('/update', methods=['POST'])
 def update_done():
     for todo in Todo.query.all():
-        todo.done = ('done.%d' % todo.id) in request.form
+        todo.done = f"done.{todo.id}" in request.form
     flash('Updated status')
     db.session.commit()
     return redirect(url_for('show_all'))

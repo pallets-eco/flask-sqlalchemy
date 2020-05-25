@@ -35,7 +35,7 @@ used to declare models::
         email = db.Column(db.String(120), unique=True, nullable=False)
 
         def __repr__(self):
-            return '<User %r>' % self.username
+            return f"<User {self.username!r}>"
 
 To create the initial database, just import the ``db`` object from an
 interactive Python shell and run the
@@ -100,7 +100,7 @@ application that uses two tables that have a relationship to each other::
             backref=db.backref('posts', lazy=True))
 
         def __repr__(self):
-            return '<Post %r>' % self.title
+            return f"<Post {self.title!r}>"
 
 
     class Category(db.Model):
@@ -108,7 +108,7 @@ application that uses two tables that have a relationship to each other::
         name = db.Column(db.String(50), nullable=False)
 
         def __repr__(self):
-            return '<Category %r>' % self.name
+            return f"<Category {self.name!r}>"
 
 First let's create some objects::
 

@@ -17,7 +17,7 @@ def app(app):
 
 
 def test_before_committed(app, db, Todo):
-    class Namespace(object):
+    class Namespace:
         is_received = False
 
     def before_committed(sender, changes):

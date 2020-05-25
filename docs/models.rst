@@ -32,7 +32,7 @@ A very simple example::
         email = db.Column(db.String(120), unique=True, nullable=False)
 
         def __repr__(self):
-            return '<User %r>' % self.username
+            return f"<User {self.username!r}>"
 
 Use :class:`~sqlalchemy.schema.Column` to define a column.  The name of the
 column is the name you assign it to.  If you want to use a different name
@@ -48,10 +48,10 @@ following types are the most common:
 
 ================================================ =====================================
 :class:`~sqlalchemy.types.Integer`               an integer
-:class:`String(size) <sqlalchemy.types.String>`  a string with a maximum length
-                                                 (optional in some databases, e.g.
-                                                 PostgreSQL)
-:class:`~sqlalchemy.types.Text`                  some longer unicode text
+:class:`String(size) <sqlalchemy.types.String>`  a string, size is optional in some
+                                                 databases, including SQLite and
+                                                 PostgreSQL
+:class:`~sqlalchemy.types.Text`                  some longer text
 :class:`~sqlalchemy.types.DateTime`              date and time expressed as Python
                                                  :class:`~datetime.datetime` object.
 :class:`~sqlalchemy.types.Float`                 stores floating point values
