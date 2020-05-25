@@ -49,8 +49,6 @@ Links
 -   Releases: https://pypi.org/project/Flask-SQLAlchemy/
 -   Code: https://github.com/pallets/flask-sqlalchemy
 -   Issue tracker: https://github.com/pallets/flask-sqlalchemy/issues
--   Test status: https://travis-ci.org/pallets/flask-sqlalchemy
--   Test coverage: https://codecov.io/gh/pallets/flask-sqlalchemy
 
 .. _Flask: https://palletsprojects.com/p/flask/
 .. _SQLAlchemy: https://www.sqlalchemy.org
