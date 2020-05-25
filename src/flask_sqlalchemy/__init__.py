@@ -79,10 +79,9 @@ class _DebugQueryTuple(tuple):
         return self.end_time - self.start_time
 
     def __repr__(self):
-        return '<query statement="{}" parameters={!r} duration={:.03f}>'.format(
-            self.statement,
-            self.parameters,
-            self.duration
+        return (
+            f"<query statement={self.statement!r} parameters={self.parameters!r}"
+            f" duration={self.duration:.03f}>"
         )
 
 
@@ -90,13 +89,9 @@ def _calling_context(app_path):
     frm = sys._getframe(1)
     while frm.f_back is not None:
         name = frm.f_globals.get('__name__')
-        if name and (name == app_path or name.startswith(app_path + '.')):
+        if name and (name == app_path or name.startswith(f"{app_path}.")):
             funcname = frm.f_code.co_name
-            return '{}:{} ({})'.format(
-                frm.f_code.co_filename,
-                frm.f_lineno,
-                funcname
-            )
+            return f"{frm.f_code.co_filename}:{frm.f_lineno} ({funcname})"
         frm = frm.f_back
     return '<unknown>'
 
@@ -529,8 +524,7 @@ class _EngineConnector:
             return self._app.config['SQLALCHEMY_DATABASE_URI']
         binds = self._app.config.get('SQLALCHEMY_BINDS') or ()
         assert self._bind in binds, \
-            'Bind %r is not specified.  Set it in the SQLALCHEMY_BINDS ' \
-            'configuration variable' % self._bind
+            f"Bind {self._bind!r} is not configured in 'SQLALCHEMY_BINDS'."
         return binds[self._bind]
 
     def get_engine(self):
@@ -976,7 +970,5 @@ class SQLAlchemy:
         self._execute_for_all_tables(app, bind, 'reflect', skip_tables=True)
 
     def __repr__(self):
-        return '<{} engine={!r}>'.format(
-            self.__class__.__name__,
-            self.engine.url if self.app or current_app else None
-        )
+        url = self.engine.url if self.app or current_app else None
+        return f"<{type(self).__name__} engine={url!r}>"

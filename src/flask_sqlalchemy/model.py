@@ -50,9 +50,9 @@ def camel_to_snake_case(name):
         word = match.group()
 
         if len(word) > 1:
-            return ('_{}_{}'.format(word[:-1], word[-1])).lower()
+            return f"_{word[:-1]}_{word[-1]}".lower()
 
-        return '_' + word.lower()
+        return f"_{word.lower()}"
 
     return camelcase_re.sub(_join, name).lstrip('_')
 
@@ -145,8 +145,10 @@ class Model:
 
     def __repr__(self):
         identity = inspect(self).identity
+
         if identity is None:
-            pk = "(transient {})".format(id(self))
+            pk = f"(transient {id(self)})"
         else:
             pk = ', '.join(str(value) for value in identity)
-        return '<{} {}>'.format(type(self).__name__, pk)
+
+        return f'<{type(self).__name__} {pk}>'

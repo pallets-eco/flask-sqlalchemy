@@ -32,7 +32,7 @@ A very simple example::
         email = db.Column(db.String(120), unique=True, nullable=False)
 
         def __repr__(self):
-            return '<User %r>' % self.username
+            return f"<User {self.username!r}>"
 
 Use :class:`~sqlalchemy.schema.Column` to define a column.  The name of the
 column is the name you assign it to.  If you want to use a different name
