@@ -50,19 +50,19 @@ def camel_to_snake_case(name):
         word = match.group()
 
         if len(word) > 1:
-            return ('_%s_%s' % (word[:-1], word[-1])).lower()
+            return ('_{}_{}'.format(word[:-1], word[-1])).lower()
 
         return '_' + word.lower()
 
     return camelcase_re.sub(_join, name).lstrip('_')
 
 
-class NameMetaMixin(object):
+class NameMetaMixin:
     def __init__(cls, name, bases, d):
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
-        super(NameMetaMixin, cls).__init__(name, bases, d)
+        super().__init__(name, bases, d)
 
         # __table_cls__ has run at this point
         # if no table was created, use the parent table
@@ -109,14 +109,14 @@ class NameMetaMixin(object):
             del cls.__tablename__
 
 
-class BindMetaMixin(object):
+class BindMetaMixin:
     def __init__(cls, name, bases, d):
         bind_key = (
             d.pop('__bind_key__', None)
             or getattr(cls, '__bind_key__', None)
         )
 
-        super(BindMetaMixin, cls).__init__(name, bases, d)
+        super().__init__(name, bases, d)
 
         if bind_key is not None and getattr(cls, '__table__', None) is not None:
             cls.__table__.info['bind_key'] = bind_key
@@ -126,7 +126,7 @@ class DefaultMeta(NameMetaMixin, BindMetaMixin, DeclarativeMeta):
     pass
 
 
-class Model(object):
+class Model:
     """Base class for SQLAlchemy declarative base model.
 
     To define models, subclass :attr:`db.Model <SQLAlchemy.Model>`, not this

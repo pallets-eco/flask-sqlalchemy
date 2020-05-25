@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
 import functools
 import os
 import sys
@@ -82,7 +79,7 @@ class _DebugQueryTuple(tuple):
         return self.end_time - self.start_time
 
     def __repr__(self):
-        return '<query statement="%s" parameters=%r duration=%.03f>' % (
+        return '<query statement="{}" parameters={!r} duration={:.03f}>'.format(
             self.statement,
             self.parameters,
             self.duration
@@ -95,7 +92,7 @@ def _calling_context(app_path):
         name = frm.f_globals.get('__name__')
         if name and (name == app_path or name.startswith(app_path + '.')):
             funcname = frm.f_code.co_name
-            return '%s:%s (%s)' % (
+            return '{}:{} ({})'.format(
                 frm.f_code.co_filename,
                 frm.f_lineno,
                 funcname
@@ -155,7 +152,7 @@ class SignallingSession(SessionBase):
         return SessionBase.get_bind(self, mapper, clause)
 
 
-class _SessionSignalEvents(object):
+class _SessionSignalEvents:
     @classmethod
     def register(cls, session):
         if not hasattr(session, '_model_changes'):
@@ -222,7 +219,7 @@ class _SessionSignalEvents(object):
         d.clear()
 
 
-class _EngineDebuggingSignalEvents(object):
+class _EngineDebuggingSignalEvents:
     """Sets up handlers for two events that let us track the execution time of
     queries."""
 
@@ -294,7 +291,7 @@ def get_debug_queries():
     return getattr(_app_ctx_stack.top, 'sqlalchemy_queries', [])
 
 
-class Pagination(object):
+class Pagination:
     """Internal helper class returned by :meth:`BaseQuery.paginate`.  You
     can also construct it from any other SQLAlchemy query object if you are
     working with other libraries.  Additionally it is possible to pass `None`
@@ -495,7 +492,7 @@ class BaseQuery(orm.Query):
         return Pagination(self, page, per_page, total, items)
 
 
-class _QueryProperty(object):
+class _QueryProperty:
     def __init__(self, sa):
         self.sa = sa
 
@@ -517,7 +514,7 @@ def _record_queries(app):
     return bool(app.config.get('TESTING'))
 
 
-class _EngineConnector(object):
+class _EngineConnector:
 
     def __init__(self, sa, app, bind=None):
         self._sa = sa
@@ -579,7 +576,7 @@ def get_state(app):
     return app.extensions['sqlalchemy']
 
 
-class _SQLAlchemyState(object):
+class _SQLAlchemyState:
     """Remembers configuration for the (db, app) tuple."""
 
     def __init__(self, db):
@@ -587,7 +584,7 @@ class _SQLAlchemyState(object):
         self.connectors = {}
 
 
-class SQLAlchemy(object):
+class SQLAlchemy:
     """This class is used to control the SQLAlchemy integration to one
     or more Flask applications.  Depending on how you initialize the
     object it is usable right away or will attach as needed to a
@@ -933,7 +930,7 @@ class SQLAlchemy(object):
         for bind in binds:
             engine = self.get_engine(app, bind)
             tables = self.get_tables_for_bind(bind)
-            retval.update(dict((table, engine) for table in tables))
+            retval.update({table: engine for table in tables})
         return retval
 
     def _execute_for_all_tables(self, app, bind, operation, skip_tables=False):
@@ -979,7 +976,7 @@ class SQLAlchemy(object):
         self._execute_for_all_tables(app, bind, 'reflect', skip_tables=True)
 
     def __repr__(self):
-        return '<%s engine=%r>' % (
+        return '<{} engine={!r}>'.format(
             self.__class__.__name__,
             self.engine.url if self.app or current_app else None
         )

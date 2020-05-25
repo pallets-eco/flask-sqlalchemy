@@ -1,4 +1,3 @@
-# coding=utf8
 import pytest
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
@@ -48,7 +47,7 @@ def test_repr(db):
     assert repr(u) == '<User test>'
     assert repr(u) == str(u)
 
-    u2 = User(name=u'🐍')
+    u2 = User(name='🐍')
     db.session.add(u2)
     db.session.flush()
     assert repr(u2) == '<User 🐍>'

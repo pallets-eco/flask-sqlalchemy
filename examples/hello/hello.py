@@ -42,7 +42,7 @@ def new():
             todo = Todo(request.form['title'], request.form['text'])
             db.session.add(todo)
             db.session.commit()
-            flash(u'Todo item was successfully created')
+            flash('Todo item was successfully created')
             return redirect(url_for('show_all'))
     return render_template('new.html')
 

@@ -15,7 +15,7 @@ def test_db_url_environ(monkeypatch):
 
 
 def test_init_db_command(runner, monkeypatch):
-    class Recorder(object):
+    class Recorder:
         called = False
 
     def fake_init_db():

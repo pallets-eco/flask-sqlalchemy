@@ -54,13 +54,13 @@ def test_joined_inheritance_relation(db):
     class SubBase(Base):
         id = db.Column(db.Integer, db.ForeignKey('base.id'),
                        primary_key=True)
-        __mapper_args__ = {'polymorphic_identity': u'sub'}
+        __mapper_args__ = {'polymorphic_identity': 'sub'}
         relations = db.relationship(Relation)
 
     db.create_all()
 
     base = SubBase()
-    base.relations = [Relation(name=u'foo')]
+    base.relations = [Relation(name='foo')]
     db.session.add(base)
     db.session.commit()
 
