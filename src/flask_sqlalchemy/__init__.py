@@ -337,9 +337,9 @@ class Pagination:
 
     def prev(self, error_out=False):
         """Returns a :class:`Pagination` object for the previous page."""
-        assert self.query is not None, (
-            "a query object is required " "for this method to work"
-        )
+        assert (
+            self.query is not None
+        ), "a query object is required for this method to work"
         return self.query.paginate(self.page - 1, self.per_page, error_out)
 
     @property
@@ -356,9 +356,9 @@ class Pagination:
 
     def next(self, error_out=False):
         """Returns a :class:`Pagination` object for the next page."""
-        assert self.query is not None, (
-            "a query object is required " "for this method to work"
-        )
+        assert (
+            self.query is not None
+        ), "a query object is required for this method to work"
         return self.query.paginate(self.page + 1, self.per_page, error_out)
 
     @property
@@ -414,23 +414,28 @@ class Pagination:
 
 
 class BaseQuery(orm.Query):
-    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with convenience methods for querying in a web application.
+    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with
+    convenience methods for querying in a web application.
 
-    This is the default :attr:`~Model.query` object used for models, and exposed as :attr:`~SQLAlchemy.Query`.
-    Override the query class for an individual model by subclassing this and setting :attr:`~Model.query_class`.
+    This is the default :attr:`~Model.query` object used for models, and
+    exposed as :attr:`~SQLAlchemy.Query`. Override the query class for
+    an individual model by subclassing this and setting
+    :attr:`~Model.query_class`.
     """
 
     def get_or_404(self, ident, description=None):
-        """Like :meth:`get` but aborts with 404 if not found instead of returning ``None``."""
-
+        """Like :meth:`get` but aborts with 404 if not found instead of
+        returning ``None``.
+        """
         rv = self.get(ident)
         if rv is None:
             abort(404, description=description)
         return rv
 
     def first_or_404(self, description=None):
-        """Like :meth:`first` but aborts with 404 if not found instead of returning ``None``."""
-
+        """Like :meth:`first` but aborts with 404 if not found instead
+        of returning ``None``.
+        """
         rv = self.first()
         if rv is None:
             abort(404, description=description)
@@ -658,8 +663,8 @@ class SQLAlchemy:
        `Table` interface, but is a function which allows omission of metadata.
 
     The ``session_options`` parameter, if provided, is a dict of parameters
-    to be passed to the session constructor.  See :class:`~sqlalchemy.orm.session.Session`
-    for the standard options.
+    to be passed to the session constructor. See
+    :class:`~sqlalchemy.orm.session.Session` for the standard options.
 
     The ``engine_options`` parameter, if provided, is a dict of parameters
     to be passed to create engine.  See :func:`~sqlalchemy.create_engine`
@@ -761,7 +766,8 @@ class SQLAlchemy:
         Valid factories include a :class:`~sqlalchemy.orm.session.Session`
         class or a :class:`~sqlalchemy.orm.session.sessionmaker`.
 
-        The default implementation creates a ``sessionmaker`` for :class:`SignallingSession`.
+        The default implementation creates a ``sessionmaker`` for
+        :class:`SignallingSession`.
 
         :param options: dict of keyword arguments passed to session class
         """
@@ -813,7 +819,7 @@ class SQLAlchemy:
             or app.config.get("SQLALCHEMY_BINDS")
         ):
             raise RuntimeError(
-                "Either SQLALCHEMY_DATABASE_URI " "or SQLALCHEMY_BINDS needs to be set."
+                "Either SQLALCHEMY_DATABASE_URI or SQLALCHEMY_BINDS needs to be set."
             )
 
         app.config.setdefault("SQLALCHEMY_DATABASE_URI", None)

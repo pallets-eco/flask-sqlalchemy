@@ -35,10 +35,9 @@ def test_session_scoping_changing(app):
 
 def test_insert_update_delete(db):
     # Ensure _SignalTrackingMapperExtension doesn't croak when
-    # faced with a vanilla SQLAlchemy session.
-    #
-    # Verifies that "AttributeError: 'SessionMaker' object has no attribute '_model_changes'"
-    # is not thrown.
+    # faced with a vanilla SQLAlchemy session. Verify that
+    # "AttributeError: 'SessionMaker' object has no attribute
+    # '_model_changes'" is not thrown.
     Session = sessionmaker(bind=db.engine)
 
     class QazWsx(db.Model):

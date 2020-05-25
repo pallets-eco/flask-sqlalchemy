@@ -41,5 +41,3 @@ Paste the full traceback if there was an exception.
 * Python version:
 * Flask-SQLAlchemy version:
 * SQLAlchemy version:
-
-

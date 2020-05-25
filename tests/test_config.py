@@ -34,9 +34,7 @@ class TestConfigKeys:
         with pytest.raises(RuntimeError) as exc_info:
             SQLAlchemy(app)
 
-        expected = (
-            "Either SQLALCHEMY_DATABASE_URI " "or SQLALCHEMY_BINDS needs to be set."
-        )
+        expected = "Either SQLALCHEMY_DATABASE_URI or SQLALCHEMY_BINDS needs to be set."
         assert exc_info.value.args[0] == expected
 
     def test_defaults_with_uri(self, app, recwarn):
@@ -59,8 +57,8 @@ class TestConfigKeys:
         assert app.config["SQLALCHEMY_ENGINE_OPTIONS"] == {}
 
     def test_engine_creation_ok(self, app):
-        """ create_engine() isn't called until needed.  Let's make sure we can do that without
-            errors or warnings.
+        """create_engine() isn't called until needed. Make sure we can
+        do that without errors or warnings.
         """
         assert SQLAlchemy(app).get_engine()
 

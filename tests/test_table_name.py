@@ -68,7 +68,7 @@ def test_mixin_attr(db):
 
     class Mixin:
         @declared_attr
-        def __tablename__(cls):
+        def __tablename__(cls):  # noqa: B902
             return cls.__name__.upper()
 
     class Bird(Mixin, db.Model):
@@ -111,7 +111,7 @@ def test_complex_inheritance(db):
 
     class IdMixin:
         @declared_attr
-        def id(cls):
+        def id(cls):  # noqa: B902
             return db.Column(db.Integer, db.ForeignKey(Duck.id), primary_key=True)
 
     class RubberDuck(IdMixin, Duck):
@@ -176,7 +176,8 @@ def test_no_access_to_class_property(db):
         id = db.Column(db.Integer, primary_key=True)
 
     class ns:
-        accessed = False
+        is_duck = False
+        floats = False
 
     class Witch(Duck):
         @declared_attr
@@ -185,13 +186,14 @@ def test_no_access_to_class_property(db):
             # but make sure they're not accessed before that
             info = inspect.getouterframes(inspect.currentframe())[2]
             assert info[3] != "_should_set_tablename"
-            ns.accessed = True
+            ns.is_duck = True
 
         @class_property
         def floats(self):
-            assert False
+            ns.floats = True
 
-    assert ns.accessed
+    assert ns.is_duck
+    assert not ns.floats
 
 
 def test_metadata_has_table(db):

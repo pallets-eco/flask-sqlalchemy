@@ -158,6 +158,3 @@ surfaces hard to debug, production environment only exceptions like ``2013: Lost
 If you are using a backend (or a pre-configured database-as-a-service) with a
 lower connection timeout, it is recommended that you set
 `SQLALCHEMY_POOL_RECYCLE` to a value less than your backend's timeout.
-
-
-
