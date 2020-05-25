@@ -10,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 def app(request):
     app = flask.Flask(request.module.__name__)
     app.testing = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     return app
 
 
@@ -22,8 +22,8 @@ def db(app):
 @pytest.fixture
 def Todo(db):
     class Todo(db.Model):
-        __tablename__ = 'todos'
-        id = db.Column('todo_id', db.Integer, primary_key=True)
+        __tablename__ = "todos"
+        id = db.Column("todo_id", db.Integer, primary_key=True)
         title = db.Column(db.String(60))
         text = db.Column(db.String)
         done = db.Column(db.Boolean)
@@ -34,6 +34,7 @@ def Todo(db):
             self.text = text
             self.done = False
             self.pub_date = datetime.utcnow()
+
     db.create_all()
     yield Todo
     db.drop_all()

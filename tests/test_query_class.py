@@ -5,11 +5,11 @@ from flask_sqlalchemy import SQLAlchemy
 def test_default_query_class(db):
     class Parent(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        children = db.relationship("Child", backref="parent", lazy='dynamic')
+        children = db.relationship("Child", backref="parent", lazy="dynamic")
 
     class Child(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+        parent_id = db.Column(db.Integer, db.ForeignKey("parent.id"))
 
     p = Parent()
     c = Child()
@@ -29,11 +29,11 @@ def test_custom_query_class(app):
 
     class Parent(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        children = db.relationship("Child", backref="parent", lazy='dynamic')
+        children = db.relationship("Child", backref="parent", lazy="dynamic")
 
     class Child(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        parent_id = db.Column(db.Integer, db.ForeignKey('parent.id'))
+        parent_id = db.Column(db.Integer, db.ForeignKey("parent.id"))
 
     p = Parent()
     c = Child()

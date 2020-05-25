@@ -13,12 +13,11 @@ def app_nr(app):
         Signal/event registration with record queries breaks when
         sqlalchemy.create_engine() is mocked out.
     """
-    app.config['SQLALCHEMY_RECORD_QUERIES'] = False
+    app.config["SQLALCHEMY_RECORD_QUERIES"] = False
     return app
 
 
 class TestConfigKeys:
-
     def test_default_error_without_uri_or_binds(self, app, recwarn):
         """
         Test that default configuration throws an error because
@@ -30,13 +29,14 @@ class TestConfigKeys:
         # Our pytest fixture for creating the app sets
         # SQLALCHEMY_DATABASE_URI, so undo that here so that we
         # can inspect what FSA does below:
-        del app.config['SQLALCHEMY_DATABASE_URI']
+        del app.config["SQLALCHEMY_DATABASE_URI"]
 
         with pytest.raises(RuntimeError) as exc_info:
             SQLAlchemy(app)
 
-        expected = 'Either SQLALCHEMY_DATABASE_URI ' \
-                   'or SQLALCHEMY_BINDS needs to be set.'
+        expected = (
+            "Either SQLALCHEMY_DATABASE_URI " "or SQLALCHEMY_BINDS needs to be set."
+        )
         assert exc_info.value.args[0] == expected
 
     def test_defaults_with_uri(self, app, recwarn):
@@ -52,11 +52,11 @@ class TestConfigKeys:
         # Expecting no warnings for default config with URI
         assert len(recwarn) == 0
 
-        assert app.config['SQLALCHEMY_BINDS'] is None
-        assert app.config['SQLALCHEMY_ECHO'] is False
-        assert app.config['SQLALCHEMY_RECORD_QUERIES'] is None
-        assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] is False
-        assert app.config['SQLALCHEMY_ENGINE_OPTIONS'] == {}
+        assert app.config["SQLALCHEMY_BINDS"] is None
+        assert app.config["SQLALCHEMY_ECHO"] is False
+        assert app.config["SQLALCHEMY_RECORD_QUERIES"] is None
+        assert app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] is False
+        assert app.config["SQLALCHEMY_ENGINE_OPTIONS"] == {}
 
     def test_engine_creation_ok(self, app):
         """ create_engine() isn't called until needed.  Let's make sure we can do that without
@@ -65,7 +65,7 @@ class TestConfigKeys:
         assert SQLAlchemy(app).get_engine()
 
 
-@mock.patch.object(sqlalchemy, 'create_engine', autospec=True, spec_set=True)
+@mock.patch.object(sqlalchemy, "create_engine", autospec=True, spec_set=True)
 class TestCreateEngine:
     """
         Tests for _EngineConnector and SQLAlchemy methods inolved in setting up
@@ -76,38 +76,38 @@ class TestCreateEngine:
         SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
-        assert 'echo' not in options
+        assert "echo" not in options
 
     def test_engine_echo_true(self, m_create_engine, app_nr):
-        app_nr.config['SQLALCHEMY_ECHO'] = True
+        app_nr.config["SQLALCHEMY_ECHO"] = True
         SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
-        assert options['echo'] is True
+        assert options["echo"] is True
 
     def test_config_from_engine_options(self, m_create_engine, app_nr):
-        app_nr.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'foo': 'bar'}
+        app_nr.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"foo": "bar"}
         SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
-        assert options['foo'] == 'bar'
+        assert options["foo"] == "bar"
 
     def test_config_from_init(self, m_create_engine, app_nr):
-        SQLAlchemy(app_nr, engine_options={'bar': 'baz'}).get_engine()
+        SQLAlchemy(app_nr, engine_options={"bar": "baz"}).get_engine()
 
         args, options = m_create_engine.call_args
-        assert options['bar'] == 'baz'
+        assert options["bar"] == "baz"
 
     def test_pool_class_default(self, m_create_engine, app_nr):
         SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
-        assert options['poolclass'].__name__ == 'StaticPool'
+        assert options["poolclass"].__name__ == "StaticPool"
 
     def test_pool_class_nullpool(self, m_create_engine, app_nr):
-        engine_options = {'poolclass': NullPool}
+        engine_options = {"poolclass": NullPool}
         SQLAlchemy(app_nr, engine_options=engine_options).get_engine()
 
         args, options = m_create_engine.call_args
-        assert options['poolclass'].__name__ == 'NullPool'
-        assert 'pool_size' not in options
+        assert options["poolclass"].__name__ == "NullPool"
+        assert "pool_size" not in options

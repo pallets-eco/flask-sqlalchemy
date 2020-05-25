@@ -24,10 +24,12 @@ def test_no_table_name():
     class NoNameMeta(BindMetaMixin, DeclarativeMeta):
         pass
 
-    db = SQLAlchemy(model_class=declarative_base(
-        cls=Model, metaclass=NoNameMeta, name='Model'))
+    db = SQLAlchemy(
+        model_class=declarative_base(cls=Model, metaclass=NoNameMeta, name="Model")
+    )
 
     with pytest.raises(InvalidRequestError):
+
         class User(db.Model):
             pass
 
@@ -42,21 +44,21 @@ def test_repr(db):
 
     db.create_all()
 
-    u = User(name='test')
+    u = User(name="test")
     assert repr(u).startswith("<User (transient ")
     db.session.add(u)
     db.session.flush()
-    assert repr(u) == '<User test>'
+    assert repr(u) == "<User test>"
     assert repr(u) == str(u)
 
-    u2 = User(name='🐍')
+    u2 = User(name="🐍")
     db.session.add(u2)
     db.session.flush()
-    assert repr(u2) == '<User 🐍>'
+    assert repr(u2) == "<User 🐍>"
     assert repr(u2) == str(u2)
 
     r = Report(id=2, user_name=u.name)
     db.session.add(r)
     db.session.flush()
-    assert repr(r) == '<Report 2, test>'
+    assert repr(r) == "<Report 2, test>"
     assert repr(u) == str(u)

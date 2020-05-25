@@ -43,7 +43,7 @@ def test_insert_update_delete(db):
 
     class QazWsx(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        x = db.Column(db.String, default='')
+        x = db.Column(db.String, default="")
 
     db.create_all()
     session = Session()
@@ -51,15 +51,15 @@ def test_insert_update_delete(db):
     session.flush()  # issues an INSERT.
     session.expunge_all()
     qaz_wsx = session.query(QazWsx).first()
-    assert qaz_wsx.x == ''
-    qaz_wsx.x = 'test'
+    assert qaz_wsx.x == ""
+    qaz_wsx.x = "test"
     session.flush()  # issues an UPDATE.
     session.expunge_all()
     qaz_wsx = session.query(QazWsx).first()
-    assert qaz_wsx.x == 'test'
+    assert qaz_wsx.x == "test"
     session.delete(qaz_wsx)  # issues a DELETE.
     assert session.query(QazWsx).first() is None
 
 
 def test_listen_to_session_event(db):
-    sa.event.listen(db.session, 'after_commit', lambda session: None)
+    sa.event.listen(db.session, "after_commit", lambda session: None)

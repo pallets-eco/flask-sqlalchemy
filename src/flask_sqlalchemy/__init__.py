@@ -27,24 +27,25 @@ from .model import Model
 __version__ = "3.0.0.dev"
 
 _signals = Namespace()
-models_committed = _signals.signal('models-committed')
-before_models_committed = _signals.signal('before-models-committed')
+models_committed = _signals.signal("models-committed")
+before_models_committed = _signals.signal("before-models-committed")
 
 
 def _make_table(db):
     def _make_table(*args, **kwargs):
         if len(args) > 1 and isinstance(args[1], db.Column):
             args = (args[0], db.metadata) + args[1:]
-        info = kwargs.pop('info', None) or {}
-        info.setdefault('bind_key', None)
-        kwargs['info'] = info
+        info = kwargs.pop("info", None) or {}
+        info.setdefault("bind_key", None)
+        kwargs["info"] = info
         return sqlalchemy.Table(*args, **kwargs)
+
     return _make_table
 
 
 def _set_default_query_class(d, cls):
-    if 'query_class' not in d:
-        d['query_class'] = cls
+    if "query_class" not in d:
+        d["query_class"] = cls
 
 
 def _wrap_with_default_query_class(fn, cls):
@@ -52,11 +53,12 @@ def _wrap_with_default_query_class(fn, cls):
     def newfn(*args, **kwargs):
         _set_default_query_class(kwargs, cls)
         if "backref" in kwargs:
-            backref = kwargs['backref']
+            backref = kwargs["backref"]
             if isinstance(backref, str):
                 backref = (backref, {})
             _set_default_query_class(backref[1], cls)
         return fn(*args, **kwargs)
+
     return newfn
 
 
@@ -94,12 +96,12 @@ class _DebugQueryTuple(tuple):
 def _calling_context(app_path):
     frm = sys._getframe(1)
     while frm.f_back is not None:
-        name = frm.f_globals.get('__name__')
+        name = frm.f_globals.get("__name__")
         if name and (name == app_path or name.startswith(f"{app_path}.")):
             funcname = frm.f_code.co_name
             return f"{frm.f_code.co_filename}:{frm.f_lineno} ({funcname})"
         frm = frm.f_back
-    return '<unknown>'
+    return "<unknown>"
 
 
 class SignallingSession(SessionBase):
@@ -120,16 +122,20 @@ class SignallingSession(SessionBase):
     def __init__(self, db, autocommit=False, autoflush=True, **options):
         #: The application that this session belongs to.
         self.app = app = db.get_app()
-        track_modifications = app.config['SQLALCHEMY_TRACK_MODIFICATIONS']
-        bind = options.pop('bind', None) or db.engine
-        binds = options.pop('binds', db.get_binds(app))
+        track_modifications = app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
+        bind = options.pop("bind", None) or db.engine
+        binds = options.pop("binds", db.get_binds(app))
 
         if track_modifications:
             _SessionSignalEvents.register(self)
 
         SessionBase.__init__(
-            self, autocommit=autocommit, autoflush=autoflush,
-            bind=bind, binds=binds, **options
+            self,
+            autocommit=autocommit,
+            autoflush=autoflush,
+            bind=bind,
+            binds=binds,
+            **options,
         )
 
     def get_bind(self, mapper=None, clause=None):
@@ -145,8 +151,8 @@ class SignallingSession(SessionBase):
                 # SA < 1.3
                 persist_selectable = mapper.mapped_table
 
-            info = getattr(persist_selectable, 'info', {})
-            bind_key = info.get('bind_key')
+            info = getattr(persist_selectable, "info", {})
+            bind_key = info.get("bind_key")
             if bind_key is not None:
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
@@ -156,25 +162,25 @@ class SignallingSession(SessionBase):
 class _SessionSignalEvents:
     @classmethod
     def register(cls, session):
-        if not hasattr(session, '_model_changes'):
+        if not hasattr(session, "_model_changes"):
             session._model_changes = {}
 
-        event.listen(session, 'before_flush', cls.record_ops)
-        event.listen(session, 'before_commit', cls.record_ops)
-        event.listen(session, 'before_commit', cls.before_commit)
-        event.listen(session, 'after_commit', cls.after_commit)
-        event.listen(session, 'after_rollback', cls.after_rollback)
+        event.listen(session, "before_flush", cls.record_ops)
+        event.listen(session, "before_commit", cls.record_ops)
+        event.listen(session, "before_commit", cls.before_commit)
+        event.listen(session, "after_commit", cls.after_commit)
+        event.listen(session, "after_rollback", cls.after_rollback)
 
     @classmethod
     def unregister(cls, session):
-        if hasattr(session, '_model_changes'):
+        if hasattr(session, "_model_changes"):
             del session._model_changes
 
-        event.remove(session, 'before_flush', cls.record_ops)
-        event.remove(session, 'before_commit', cls.record_ops)
-        event.remove(session, 'before_commit', cls.before_commit)
-        event.remove(session, 'after_commit', cls.after_commit)
-        event.remove(session, 'after_rollback', cls.after_rollback)
+        event.remove(session, "before_flush", cls.record_ops)
+        event.remove(session, "before_commit", cls.record_ops)
+        event.remove(session, "before_commit", cls.before_commit)
+        event.remove(session, "after_commit", cls.after_commit)
+        event.remove(session, "after_rollback", cls.after_rollback)
 
     @staticmethod
     def record_ops(session, flush_context=None, instances=None):
@@ -183,7 +189,11 @@ class _SessionSignalEvents:
         except AttributeError:
             return
 
-        for targets, operation in ((session.new, 'insert'), (session.dirty, 'update'), (session.deleted, 'delete')):
+        for targets, operation in (
+            (session.new, "insert"),
+            (session.dirty, "update"),
+            (session.deleted, "delete"),
+        ):
             for target in targets:
                 state = inspect(target)
                 key = state.identity_key if state.has_identity else id(target)
@@ -229,12 +239,8 @@ class _EngineDebuggingSignalEvents:
         self.app_package = import_name
 
     def register(self):
-        event.listen(
-            self.engine, 'before_cursor_execute', self.before_cursor_execute
-        )
-        event.listen(
-            self.engine, 'after_cursor_execute', self.after_cursor_execute
-        )
+        event.listen(self.engine, "before_cursor_execute", self.before_cursor_execute)
+        event.listen(self.engine, "after_cursor_execute", self.after_cursor_execute)
 
     def before_cursor_execute(
         self, conn, cursor, statement, parameters, context, executemany
@@ -251,10 +257,17 @@ class _EngineDebuggingSignalEvents:
             except AttributeError:
                 queries = _app_ctx_stack.top.sqlalchemy_queries = []
 
-            queries.append(_DebugQueryTuple((
-                statement, parameters, context._query_start_time, perf_counter(),
-                _calling_context(self.app_package)
-            )))
+            queries.append(
+                _DebugQueryTuple(
+                    (
+                        statement,
+                        parameters,
+                        context._query_start_time,
+                        perf_counter(),
+                        _calling_context(self.app_package),
+                    )
+                )
+            )
 
 
 def get_debug_queries():
@@ -289,7 +302,7 @@ def get_debug_queries():
         query was issued.  The exact format is undefined so don't try
         to reconstruct filename or function name.
     """
-    return getattr(_app_ctx_stack.top, 'sqlalchemy_queries', [])
+    return getattr(_app_ctx_stack.top, "sqlalchemy_queries", [])
 
 
 class Pagination:
@@ -324,8 +337,9 @@ class Pagination:
 
     def prev(self, error_out=False):
         """Returns a :class:`Pagination` object for the previous page."""
-        assert self.query is not None, 'a query object is required ' \
-                                       'for this method to work'
+        assert self.query is not None, (
+            "a query object is required " "for this method to work"
+        )
         return self.query.paginate(self.page - 1, self.per_page, error_out)
 
     @property
@@ -342,8 +356,9 @@ class Pagination:
 
     def next(self, error_out=False):
         """Returns a :class:`Pagination` object for the next page."""
-        assert self.query is not None, 'a query object is required ' \
-                                       'for this method to work'
+        assert self.query is not None, (
+            "a query object is required " "for this method to work"
+        )
         return self.query.paginate(self.page + 1, self.per_page, error_out)
 
     @property
@@ -358,8 +373,7 @@ class Pagination:
             return None
         return self.page + 1
 
-    def iter_pages(self, left_edge=2, left_current=2,
-                   right_current=5, right_edge=2):
+    def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
         """Iterates over the page numbers in the pagination.  The four
         parameters control the thresholds how many numbers should be produced
         from the sides.  Skipped page numbers are represented as `None`.
@@ -385,10 +399,14 @@ class Pagination:
         """
         last = 0
         for num in range(1, self.pages + 1):
-            if num <= left_edge or \
-               (num > self.page - left_current - 1 and
-                num < self.page + right_current) or \
-               num > self.pages - right_edge:
+            if (
+                num <= left_edge
+                or (
+                    num > self.page - left_current - 1
+                    and num < self.page + right_current
+                )
+                or num > self.pages - right_edge
+            ):
                 if last + 1 != num:
                     yield None
                 yield num
@@ -418,7 +436,9 @@ class BaseQuery(orm.Query):
             abort(404, description=description)
         return rv
 
-    def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None, count=True):
+    def paginate(
+        self, page=None, per_page=None, error_out=True, max_per_page=None, count=True
+    ):
         """Returns ``per_page`` items from page ``page``.
 
         If ``page`` or ``per_page`` are ``None``, they will be retrieved from
@@ -443,7 +463,7 @@ class BaseQuery(orm.Query):
         if request:
             if page is None:
                 try:
-                    page = int(request.args.get('page', 1))
+                    page = int(request.args.get("page", 1))
                 except (TypeError, ValueError):
                     if error_out:
                         abort(404)
@@ -452,7 +472,7 @@ class BaseQuery(orm.Query):
 
             if per_page is None:
                 try:
-                    per_page = int(request.args.get('per_page', 20))
+                    per_page = int(request.args.get("per_page", 20))
                 except (TypeError, ValueError):
                     if error_out:
                         abort(404)
@@ -509,14 +529,13 @@ class _QueryProperty:
 def _record_queries(app):
     if app.debug:
         return True
-    rq = app.config['SQLALCHEMY_RECORD_QUERIES']
+    rq = app.config["SQLALCHEMY_RECORD_QUERIES"]
     if rq is not None:
         return rq
-    return bool(app.config.get('TESTING'))
+    return bool(app.config.get("TESTING"))
 
 
 class _EngineConnector:
-
     def __init__(self, sa, app, bind=None):
         self._sa = sa
         self._app = app
@@ -527,16 +546,17 @@ class _EngineConnector:
 
     def get_uri(self):
         if self._bind is None:
-            return self._app.config['SQLALCHEMY_DATABASE_URI']
-        binds = self._app.config.get('SQLALCHEMY_BINDS') or ()
-        assert self._bind in binds, \
-            f"Bind {self._bind!r} is not configured in 'SQLALCHEMY_BINDS'."
+            return self._app.config["SQLALCHEMY_DATABASE_URI"]
+        binds = self._app.config.get("SQLALCHEMY_BINDS") or ()
+        assert (
+            self._bind in binds
+        ), f"Bind {self._bind!r} is not configured in 'SQLALCHEMY_BINDS'."
         return binds[self._bind]
 
     def get_engine(self):
         with self._lock:
             uri = self.get_uri()
-            echo = self._app.config['SQLALCHEMY_ECHO']
+            echo = self._app.config["SQLALCHEMY_ECHO"]
             if (uri, echo) == self._connected_for:
                 return self._engine
 
@@ -545,8 +565,9 @@ class _EngineConnector:
             self._engine = rv = self._sa.create_engine(sa_url, options)
 
             if _record_queries(self._app):
-                _EngineDebuggingSignalEvents(self._engine,
-                                             self._app.import_name).register()
+                _EngineDebuggingSignalEvents(
+                    self._engine, self._app.import_name
+                ).register()
 
             self._connected_for = (uri, echo)
 
@@ -558,11 +579,11 @@ class _EngineConnector:
         self._sa.apply_driver_hacks(self._app, sa_url, options)
 
         if echo:
-            options['echo'] = echo
+            options["echo"] = echo
 
         # Give the config options set by a developer explicitly priority
         # over decisions FSA makes.
-        options.update(self._app.config['SQLALCHEMY_ENGINE_OPTIONS'])
+        options.update(self._app.config["SQLALCHEMY_ENGINE_OPTIONS"])
         # Give options set in SQLAlchemy.__init__() ultimate priority
         options.update(self._sa._engine_options)
         return options
@@ -570,10 +591,11 @@ class _EngineConnector:
 
 def get_state(app):
     """Gets the state for the application"""
-    assert 'sqlalchemy' in app.extensions, \
-        'The sqlalchemy extension was not registered to the current ' \
-        'application.  Please make sure to call init_app() first.'
-    return app.extensions['sqlalchemy']
+    assert "sqlalchemy" in app.extensions, (
+        "The sqlalchemy extension was not registered to the current "
+        "application.  Please make sure to call init_app() first."
+    )
+    return app.extensions["sqlalchemy"]
 
 
 class _SQLAlchemyState:
@@ -682,9 +704,15 @@ class SQLAlchemy:
     #: Defaults to :class:`BaseQuery`.
     Query = None
 
-    def __init__(self, app=None, session_options=None,
-                 metadata=None, query_class=BaseQuery, model_class=Model,
-                 engine_options=None):
+    def __init__(
+        self,
+        app=None,
+        session_options=None,
+        metadata=None,
+        query_class=BaseQuery,
+        model_class=Model,
+        engine_options=None,
+    ):
 
         self.Query = query_class
         self.session = self.create_scoped_session(session_options)
@@ -720,11 +748,9 @@ class SQLAlchemy:
         if options is None:
             options = {}
 
-        scopefunc = options.pop('scopefunc', _app_ctx_stack.__ident_func__)
-        options.setdefault('query_cls', self.Query)
-        return orm.scoped_session(
-            self.create_session(options), scopefunc=scopefunc
-        )
+        scopefunc = options.pop("scopefunc", _app_ctx_stack.__ident_func__)
+        options.setdefault("query_cls", self.Query)
+        return orm.scoped_session(self.create_session(options), scopefunc=scopefunc)
 
     def create_session(self, options):
         """Create the session factory used by :meth:`create_scoped_session`.
@@ -758,10 +784,7 @@ class SQLAlchemy:
         """
         if not isinstance(model, DeclarativeMeta):
             model = declarative_base(
-                cls=model,
-                name='Model',
-                metadata=metadata,
-                metaclass=DefaultMeta
+                cls=model, name="Model", metadata=metadata, metaclass=DefaultMeta
             )
 
         # if user passed in a declarative base and a metaclass for some reason,
@@ -769,7 +792,7 @@ class SQLAlchemy:
         if metadata is not None and model.metadata is not metadata:
             model.metadata = metadata
 
-        if not getattr(model, 'query_class', None):
+        if not getattr(model, "query_class", None):
             model.query_class = self.Query
 
         model.query = _QueryProperty(self)
@@ -786,25 +809,26 @@ class SQLAlchemy:
         # applications. If the app is passed in the constructor,
         # we set it and don't support multiple applications.
         if not (
-            app.config.get('SQLALCHEMY_DATABASE_URI')
-            or app.config.get('SQLALCHEMY_BINDS')
+            app.config.get("SQLALCHEMY_DATABASE_URI")
+            or app.config.get("SQLALCHEMY_BINDS")
         ):
-            raise RuntimeError('Either SQLALCHEMY_DATABASE_URI '
-                               'or SQLALCHEMY_BINDS needs to be set.')
+            raise RuntimeError(
+                "Either SQLALCHEMY_DATABASE_URI " "or SQLALCHEMY_BINDS needs to be set."
+            )
 
-        app.config.setdefault('SQLALCHEMY_DATABASE_URI', None)
-        app.config.setdefault('SQLALCHEMY_BINDS', None)
-        app.config.setdefault('SQLALCHEMY_ECHO', False)
-        app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
-        app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
-        app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', False)
-        app.config.setdefault('SQLALCHEMY_ENGINE_OPTIONS', {})
+        app.config.setdefault("SQLALCHEMY_DATABASE_URI", None)
+        app.config.setdefault("SQLALCHEMY_BINDS", None)
+        app.config.setdefault("SQLALCHEMY_ECHO", False)
+        app.config.setdefault("SQLALCHEMY_RECORD_QUERIES", None)
+        app.config.setdefault("SQLALCHEMY_COMMIT_ON_TEARDOWN", False)
+        app.config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)
+        app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
 
-        app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
+        app.extensions["sqlalchemy"] = _SQLAlchemyState(self)
 
         @app.teardown_appcontext
         def shutdown_session(response_or_exc):
-            if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
+            if app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"]:
                 if response_or_exc is None:
                     self.session.commit()
 
@@ -820,34 +844,38 @@ class SQLAlchemy:
         The default implementation provides some defaults for things
         like pool sizes for MySQL and SQLite.
         """
-        if sa_url.drivername.startswith('mysql'):
-            sa_url.query.setdefault('charset', 'utf8')
-            if sa_url.drivername != 'mysql+gaerdbms':
-                options.setdefault('pool_size', 10)
-                options.setdefault('pool_recycle', 7200)
-        elif sa_url.drivername == 'sqlite':
-            pool_size = options.get('pool_size')
+        if sa_url.drivername.startswith("mysql"):
+            sa_url.query.setdefault("charset", "utf8")
+            if sa_url.drivername != "mysql+gaerdbms":
+                options.setdefault("pool_size", 10)
+                options.setdefault("pool_recycle", 7200)
+        elif sa_url.drivername == "sqlite":
+            pool_size = options.get("pool_size")
             detected_in_memory = False
-            if sa_url.database in (None, '', ':memory:'):
+            if sa_url.database in (None, "", ":memory:"):
                 detected_in_memory = True
                 from sqlalchemy.pool import StaticPool
-                options['poolclass'] = StaticPool
-                if 'connect_args' not in options:
-                    options['connect_args'] = {}
-                options['connect_args']['check_same_thread'] = False
+
+                options["poolclass"] = StaticPool
+                if "connect_args" not in options:
+                    options["connect_args"] = {}
+                options["connect_args"]["check_same_thread"] = False
 
                 # we go to memory and the pool size was explicitly set
                 # to 0 which is fail.  Let the user know that
                 if pool_size == 0:
-                    raise RuntimeError('SQLite in memory database with an '
-                                       'empty queue not possible due to data '
-                                       'loss.')
+                    raise RuntimeError(
+                        "SQLite in memory database with an "
+                        "empty queue not possible due to data "
+                        "loss."
+                    )
             # if pool size is None or explicitly set to 0 we assume the
             # user did not want a queue for this sqlite connection and
             # hook in the null pool.
             elif not pool_size:
                 from sqlalchemy.pool import NullPool
-                options['poolclass'] = NullPool
+
+                options["poolclass"] = NullPool
 
             # if it's not an in memory database we make the path absolute.
             if not detected_in_memory:
@@ -906,16 +934,16 @@ class SQLAlchemy:
             return self.app
 
         raise RuntimeError(
-            'No application found. Either work inside a view function or push'
-            ' an application context. See'
-            ' http://flask-sqlalchemy.pocoo.org/contexts/.'
+            "No application found. Either work inside a view function or push"
+            " an application context. See"
+            " http://flask-sqlalchemy.pocoo.org/contexts/."
         )
 
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
         for table in self.Model.metadata.tables.values():
-            if table.info.get('bind_key') == bind:
+            if table.info.get("bind_key") == bind:
                 result.append(table)
         return result
 
@@ -925,7 +953,7 @@ class SQLAlchemy:
         This is suitable for use of sessionmaker(binds=db.get_binds(app)).
         """
         app = self.get_app(app)
-        binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
+        binds = [None] + list(app.config.get("SQLALCHEMY_BINDS") or ())
         retval = {}
         for bind in binds:
             engine = self.get_engine(app, bind)
@@ -936,8 +964,8 @@ class SQLAlchemy:
     def _execute_for_all_tables(self, app, bind, operation, skip_tables=False):
         app = self.get_app(app)
 
-        if bind == '__all__':
-            binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
+        if bind == "__all__":
+            binds = [None] + list(app.config.get("SQLALCHEMY_BINDS") or ())
         elif isinstance(bind, str) or bind is None:
             binds = [bind]
         else:
@@ -947,33 +975,33 @@ class SQLAlchemy:
             extra = {}
             if not skip_tables:
                 tables = self.get_tables_for_bind(bind)
-                extra['tables'] = tables
+                extra["tables"] = tables
             op = getattr(self.Model.metadata, operation)
             op(bind=self.get_engine(app, bind), **extra)
 
-    def create_all(self, bind='__all__', app=None):
+    def create_all(self, bind="__all__", app=None):
         """Creates all tables.
 
         .. versionchanged:: 0.12
            Parameters were added
         """
-        self._execute_for_all_tables(app, bind, 'create_all')
+        self._execute_for_all_tables(app, bind, "create_all")
 
-    def drop_all(self, bind='__all__', app=None):
+    def drop_all(self, bind="__all__", app=None):
         """Drops all tables.
 
         .. versionchanged:: 0.12
            Parameters were added
         """
-        self._execute_for_all_tables(app, bind, 'drop_all')
+        self._execute_for_all_tables(app, bind, "drop_all")
 
-    def reflect(self, bind='__all__', app=None):
+    def reflect(self, bind="__all__", app=None):
         """Reflects tables from the database.
 
         .. versionchanged:: 0.12
            Parameters were added
         """
-        self._execute_for_all_tables(app, bind, 'reflect', skip_tables=True)
+        self._execute_for_all_tables(app, bind, "reflect", skip_tables=True)
 
     def __repr__(self):
         url = self.engine.url if self.app or current_app else None
