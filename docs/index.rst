@@ -19,14 +19,6 @@ Flask-SQLAlchemy.
 
 .. _the SQLAlchemy documentation: https://docs.sqlalchemy.org/en/latest/
 
-Requirements
-------------
-
-.. csv-table::
-   :header: "Our Version", "Python", "Flask", "SQLAlchemy"
-
-   "2.x", "2.7, 3.4+", 0.12+, "0.8+ or 1.0.10+ w/ Python 3.7"
-   "3.0+ (in dev)", "2.7, 3.5+", 1.0.4+, 1.2+
 
 User Guide
 ----------

@@ -3,7 +3,7 @@ Version 3.0.0
 
 Unreleased
 
--   Drop support for Python 3.4.
+-   Drop support for Python 2, Python 3.4, and Python 3.5.
 -   Bump minimum version of Flask to 1.0.4.
 -   Bump minimum version of SQLAlchemy to 1.2.
 -   Set ``SQLALCHEMY_TRACK_MODIFICATIONS`` to ``False`` by default,
