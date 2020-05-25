@@ -1,3 +1,10 @@
+Version 2.4.2
+-------------
+
+Released 2020-04-22
+
+-   Fix bad pagination when records are de-duped. :pr:`812`
+
 Version 2.4.1
 -------------
 
