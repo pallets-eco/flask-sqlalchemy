@@ -1,5 +1,6 @@
-import flask_sqlalchemy as fsa
-from sqlalchemy.ext.declarative import declared_attr
+from flask_sqlalchemy import get_state
+from flask_sqlalchemy import SQLAlchemy
+
 
 def test_basic_binds(app, db):
     app.config['SQLALCHEMY_BINDS'] = {
@@ -83,13 +84,13 @@ def test_abstract_binds(app, db):
 
 
 def test_connector_cache(app):
-    db = fsa.SQLAlchemy()
+    db = SQLAlchemy()
     db.init_app(app)
 
     with app.app_context():
         db.get_engine()
 
-    connector = fsa.get_state(app).connectors[None]
+    connector = get_state(app).connectors[None]
     assert connector._app is app
 
 

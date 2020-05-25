@@ -1,10 +1,10 @@
 import sqlalchemy as sa
 
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import SQLAlchemy
 
 
 def test_default_metadata(app):
-    db = fsa.SQLAlchemy(app, metadata=None)
+    db = SQLAlchemy(app, metadata=None)
 
     class One(db.Model):
         id = db.Column(db.Integer, primary_key=True)
@@ -27,7 +27,7 @@ def test_custom_metadata(app):
         pass
 
     custom_metadata = CustomMetaData(schema="test_schema")
-    db = fsa.SQLAlchemy(app, metadata=custom_metadata)
+    db = SQLAlchemy(app, metadata=custom_metadata)
 
     class One(db.Model):
         id = db.Column(db.Integer, primary_key=True)

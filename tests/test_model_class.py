@@ -1,16 +1,18 @@
 import pytest
 from sqlalchemy.exc import InvalidRequestError
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import DeclarativeMeta
 
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.model import BindMetaMixin
+from flask_sqlalchemy.model import Model
 
 
 def test_custom_model_class():
-    class CustomModelClass(fsa.Model):
+    class CustomModelClass(Model):
         pass
 
-    db = fsa.SQLAlchemy(model_class=CustomModelClass)
+    db = SQLAlchemy(model_class=CustomModelClass)
 
     class SomeModel(db.Model):
         id = db.Column(db.Integer, primary_key=True)
@@ -22,8 +24,8 @@ def test_no_table_name():
     class NoNameMeta(BindMetaMixin, DeclarativeMeta):
         pass
 
-    db = fsa.SQLAlchemy(model_class=declarative_base(
-        cls=fsa.Model, metaclass=NoNameMeta, name='Model'))
+    db = SQLAlchemy(model_class=declarative_base(
+        cls=Model, metaclass=NoNameMeta, name='Model'))
 
     with pytest.raises(InvalidRequestError):
         class User(db.Model):

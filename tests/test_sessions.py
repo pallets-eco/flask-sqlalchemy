@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker
 
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import SQLAlchemy
 
 
 def test_default_session_scoping(app, db):
@@ -20,7 +20,7 @@ def test_session_scoping_changing(app):
     def scopefunc():
         return id(dict())
 
-    db = fsa.SQLAlchemy(app, session_options=dict(scopefunc=scopefunc))
+    db = SQLAlchemy(app, session_options=dict(scopefunc=scopefunc))
 
     class FOOBar(db.Model):
         id = db.Column(db.Integer, primary_key=True)

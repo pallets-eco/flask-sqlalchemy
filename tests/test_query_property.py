@@ -1,11 +1,11 @@
 import pytest
 from werkzeug.exceptions import NotFound
 
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import SQLAlchemy
 
 
 def test_no_app_bound(app):
-    db = fsa.SQLAlchemy()
+    db = SQLAlchemy()
     db.init_app(app)
 
     class Foo(db.Model):

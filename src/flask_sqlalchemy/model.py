@@ -2,7 +2,8 @@ import re
 
 import sqlalchemy as sa
 from sqlalchemy import inspect
-from sqlalchemy.ext.declarative import DeclarativeMeta, declared_attr
+from sqlalchemy.ext.declarative import DeclarativeMeta
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import _get_table_key
 
 

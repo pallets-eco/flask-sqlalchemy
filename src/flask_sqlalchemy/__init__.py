@@ -7,16 +7,22 @@ from threading import Lock
 from time import perf_counter
 
 import sqlalchemy
-from flask import _app_ctx_stack, abort, current_app, request
+from flask import _app_ctx_stack
+from flask import abort
+from flask import current_app
+from flask import request
 from flask.signals import Namespace
-from sqlalchemy import event, inspect, orm
+from sqlalchemy import event
+from sqlalchemy import inspect
+from sqlalchemy import orm
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
-from flask_sqlalchemy.model import Model
 from .model import DefaultMeta
+from .model import Model
 
 __version__ = "3.0.0.dev"
 

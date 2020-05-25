@@ -1,8 +1,10 @@
 from unittest import mock
+
 import pytest
+import sqlalchemy
 from sqlalchemy.pool import NullPool
 
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import SQLAlchemy
 
 
 @pytest.fixture
@@ -23,7 +25,7 @@ class TestConfigKeys:
         SQLALCHEMY_DATABASE_URI and SQLALCHEMY_BINDS are unset
         """
 
-        fsa.SQLAlchemy(app)
+        SQLAlchemy(app)
 
         # Our pytest fixture for creating the app sets
         # SQLALCHEMY_DATABASE_URI, so undo that here so that we
@@ -31,7 +33,7 @@ class TestConfigKeys:
         del app.config['SQLALCHEMY_DATABASE_URI']
 
         with pytest.raises(RuntimeError) as exc_info:
-            fsa.SQLAlchemy(app)
+            SQLAlchemy(app)
 
         expected = 'Either SQLALCHEMY_DATABASE_URI ' \
                    'or SQLALCHEMY_BINDS needs to be set.'
@@ -45,7 +47,7 @@ class TestConfigKeys:
         Our pytest fixture for creating the app sets SQLALCHEMY_DATABASE_URI
         """
 
-        fsa.SQLAlchemy(app)
+        SQLAlchemy(app)
 
         # Expecting no warnings for default config with URI
         assert len(recwarn) == 0
@@ -60,10 +62,10 @@ class TestConfigKeys:
         """ create_engine() isn't called until needed.  Let's make sure we can do that without
             errors or warnings.
         """
-        assert fsa.SQLAlchemy(app).get_engine()
+        assert SQLAlchemy(app).get_engine()
 
 
-@mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
+@mock.patch.object(sqlalchemy, 'create_engine', autospec=True, spec_set=True)
 class TestCreateEngine:
     """
         Tests for _EngineConnector and SQLAlchemy methods inolved in setting up
@@ -71,40 +73,40 @@ class TestCreateEngine:
     """
 
     def test_engine_echo_default(self, m_create_engine, app_nr):
-        fsa.SQLAlchemy(app_nr).get_engine()
+        SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
         assert 'echo' not in options
 
     def test_engine_echo_true(self, m_create_engine, app_nr):
         app_nr.config['SQLALCHEMY_ECHO'] = True
-        fsa.SQLAlchemy(app_nr).get_engine()
+        SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
         assert options['echo'] is True
 
     def test_config_from_engine_options(self, m_create_engine, app_nr):
         app_nr.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'foo': 'bar'}
-        fsa.SQLAlchemy(app_nr).get_engine()
+        SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
         assert options['foo'] == 'bar'
 
     def test_config_from_init(self, m_create_engine, app_nr):
-        fsa.SQLAlchemy(app_nr, engine_options={'bar': 'baz'}).get_engine()
+        SQLAlchemy(app_nr, engine_options={'bar': 'baz'}).get_engine()
 
         args, options = m_create_engine.call_args
         assert options['bar'] == 'baz'
 
     def test_pool_class_default(self, m_create_engine, app_nr):
-        fsa.SQLAlchemy(app_nr).get_engine()
+        SQLAlchemy(app_nr).get_engine()
 
         args, options = m_create_engine.call_args
         assert options['poolclass'].__name__ == 'StaticPool'
 
     def test_pool_class_nullpool(self, m_create_engine, app_nr):
         engine_options = {'poolclass': NullPool}
-        fsa.SQLAlchemy(app_nr, engine_options=engine_options).get_engine()
+        SQLAlchemy(app_nr, engine_options=engine_options).get_engine()
 
         args, options = m_create_engine.call_args
         assert options['poolclass'].__name__ == 'NullPool'

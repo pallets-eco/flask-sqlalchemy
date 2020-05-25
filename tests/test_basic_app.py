@@ -1,6 +1,6 @@
 import flask
 
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import get_debug_queries
 
 
 def test_basic_insert(app, db, Todo):
@@ -31,7 +31,7 @@ def test_query_recording(app, db, Todo):
         todo.done = True
         db.session.commit()
 
-        queries = fsa.get_debug_queries()
+        queries = get_debug_queries()
         assert len(queries) == 2
 
         query = queries[0]

@@ -1,6 +1,11 @@
 from datetime import datetime
-from flask import Flask, request, flash, url_for, redirect, \
-     render_template
+
+from flask import flash
+from flask import Flask
+from flask import redirect
+from flask import render_template
+from flask import request
+from flask import url_for
 from flask_sqlalchemy import SQLAlchemy
 
 

@@ -1,11 +1,11 @@
 import pytest
 from werkzeug.exceptions import NotFound
 
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import Pagination
 
 
 def test_basic_pagination():
-    p = fsa.Pagination(None, 1, 20, 500, [])
+    p = Pagination(None, 1, 20, 500, [])
     assert p.page == 1
     assert not p.has_prev
     assert p.has_next
@@ -18,12 +18,12 @@ def test_basic_pagination():
 
 
 def test_pagination_pages_when_0_items_per_page():
-    p = fsa.Pagination(None, 1, 0, 500, [])
+    p = Pagination(None, 1, 0, 500, [])
     assert p.pages == 0
 
 
 def test_pagination_pages_when_total_is_none():
-    p = fsa.Pagination(None, 1, 100, None, [])
+    p = Pagination(None, 1, 100, None, [])
     assert p.pages == 0
 
 

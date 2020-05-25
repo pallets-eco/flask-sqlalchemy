@@ -3,7 +3,7 @@ from datetime import datetime
 import flask
 import pytest
 
-import flask_sqlalchemy as fsa
+from flask_sqlalchemy import SQLAlchemy
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def app(request):
 
 @pytest.fixture
 def db(app):
-    return fsa.SQLAlchemy(app)
+    return SQLAlchemy(app)
 
 
 @pytest.fixture
