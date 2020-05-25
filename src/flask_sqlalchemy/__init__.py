@@ -4,11 +4,11 @@ from __future__ import absolute_import
 import functools
 import os
 import sys
-import time
 import warnings
 from math import ceil
 from operator import itemgetter
 from threading import Lock
+from time import perf_counter
 
 import sqlalchemy
 from flask import _app_ctx_stack, abort, current_app, request
@@ -20,20 +20,10 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
 from flask_sqlalchemy.model import Model
-from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
 from . import utils
 
 __version__ = "3.0.0.dev"
-
-# the best timer function for the platform
-if sys.platform == 'win32':
-    if sys.version_info >= (3, 3):
-        _timer = time.perf_counter
-    else:
-        _timer = time.clock
-else:
-    _timer = time.time
 
 _signals = Namespace()
 models_committed = _signals.signal('models-committed')
@@ -62,7 +52,7 @@ def _wrap_with_default_query_class(fn, cls):
         _set_default_query_class(kwargs, cls)
         if "backref" in kwargs:
             backref = kwargs['backref']
-            if isinstance(backref, string_types):
+            if isinstance(backref, str):
                 backref = (backref, {})
             _set_default_query_class(backref[1], cls)
         return fn(*args, **kwargs)
@@ -254,7 +244,7 @@ class _EngineDebuggingSignalEvents(object):
         self, conn, cursor, statement, parameters, context, executemany
     ):
         if current_app:
-            context._query_start_time = _timer()
+            context._query_start_time = perf_counter()
 
     def after_cursor_execute(
         self, conn, cursor, statement, parameters, context, executemany
@@ -266,7 +256,7 @@ class _EngineDebuggingSignalEvents(object):
                 queries = _app_ctx_stack.top.sqlalchemy_queries = []
 
             queries.append(_DebugQueryTuple((
-                statement, parameters, context._query_start_time, _timer(),
+                statement, parameters, context._query_start_time, perf_counter(),
                 _calling_context(self.app_package)
             )))
 
@@ -398,7 +388,7 @@ class Pagination(object):
             {% endmacro %}
         """
         last = 0
-        for num in xrange(1, self.pages + 1):
+        for num in range(1, self.pages + 1):
             if num <= left_edge or \
                (num > self.page - left_current - 1 and
                 num < self.page + right_current) or \
@@ -979,7 +969,7 @@ class SQLAlchemy(object):
     def get_tables_for_bind(self, bind=None):
         """Returns a list of all tables relevant for a bind."""
         result = []
-        for table in itervalues(self.Model.metadata.tables):
+        for table in self.Model.metadata.tables.values():
             if table.info.get('bind_key') == bind:
                 result.append(table)
         return result
@@ -1003,7 +993,7 @@ class SQLAlchemy(object):
 
         if bind == '__all__':
             binds = [None] + list(app.config.get('SQLALCHEMY_BINDS') or ())
-        elif isinstance(bind, string_types) or bind is None:
+        elif isinstance(bind, str) or bind is None:
             binds = [bind]
         else:
             binds = bind

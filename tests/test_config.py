@@ -3,7 +3,6 @@ import pytest
 from sqlalchemy.pool import NullPool
 
 import flask_sqlalchemy as fsa
-from flask_sqlalchemy import _compat, utils
 
 
 @pytest.fixture
@@ -62,19 +61,11 @@ class TestConfigKeys:
         assert app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] is False
         assert app.config['SQLALCHEMY_ENGINE_OPTIONS'] == {}
 
-    def test_engine_creation_ok(self, app, recwarn):
+    def test_engine_creation_ok(self, app):
         """ create_engine() isn't called until needed.  Let's make sure we can do that without
             errors or warnings.
         """
         assert fsa.SQLAlchemy(app).get_engine()
-        if utils.sqlalchemy_version('==', '0.8.0') and not _compat.PY2:
-            # In CI, we test Python 3.6 and SA 0.8.0, which produces a warning for
-            # inspect.getargspec()
-            expected_warnings = 1
-        else:
-            expected_warnings = 0
-
-        assert len(recwarn) == expected_warnings
 
     @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
     def test_native_unicode_deprecation_config_opt(self, m_create_engine, app_nr, recwarn):

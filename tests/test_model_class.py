@@ -4,7 +4,6 @@ from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
 import flask_sqlalchemy as fsa
-from flask_sqlalchemy._compat import to_str
 from flask_sqlalchemy.model import BindMetaMixin
 
 
@@ -52,7 +51,7 @@ def test_repr(db):
     u2 = User(name=u'🐍')
     db.session.add(u2)
     db.session.flush()
-    assert repr(u2) == to_str(u'<User 🐍>')
+    assert repr(u2) == '<User 🐍>'
     assert repr(u2) == str(u2)
 
     r = Report(id=2, user_name=u.name)

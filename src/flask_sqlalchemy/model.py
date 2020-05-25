@@ -5,8 +5,6 @@ from sqlalchemy import inspect
 from sqlalchemy.ext.declarative import DeclarativeMeta, declared_attr
 from sqlalchemy.schema import _get_table_key
 
-from ._compat import to_str
-
 
 def should_set_tablename(cls):
     """Determine whether ``__tablename__`` should be automatically generated
@@ -150,5 +148,5 @@ class Model(object):
         if identity is None:
             pk = "(transient {})".format(id(self))
         else:
-            pk = ', '.join(to_str(value) for value in identity)
+            pk = ', '.join(str(value) for value in identity)
         return '<{} {}>'.format(type(self).__name__, pk)
