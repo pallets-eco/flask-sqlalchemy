@@ -33,12 +33,6 @@ A list of configuration keys currently understood by the extension:
                                    automatically happens in debug or testing
                                    mode.  See :func:`get_debug_queries` for
                                    more information.
-``SQLALCHEMY_NATIVE_UNICODE``      Can be used to explicitly disable native
-                                   unicode support.  This is required for
-                                   some database adapters (like PostgreSQL
-                                   on some Ubuntu versions) when used with
-                                   improper database defaults that specify
-                                   encoding-less databases.
 ``SQLALCHEMY_ENGINE_OPTIONS``      A dictionary of keyword args to send to
                                    :func:`~sqlalchemy.create_engine`.  See
                                    also ``engine_options`` to :class:`SQLAlchemy`.

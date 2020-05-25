@@ -48,10 +48,10 @@ following types are the most common:
 
 ================================================ =====================================
 :class:`~sqlalchemy.types.Integer`               an integer
-:class:`String(size) <sqlalchemy.types.String>`  a string with a maximum length
-                                                 (optional in some databases, e.g.
-                                                 PostgreSQL)
-:class:`~sqlalchemy.types.Text`                  some longer unicode text
+:class:`String(size) <sqlalchemy.types.String>`  a string, size is optional in some
+                                                 databases, including SQLite and
+                                                 PostgreSQL
+:class:`~sqlalchemy.types.Text`                  some longer text
 :class:`~sqlalchemy.types.DateTime`              date and time expressed as Python
                                                  :class:`~datetime.datetime` object.
 :class:`~sqlalchemy.types.Float`                 stores floating point values

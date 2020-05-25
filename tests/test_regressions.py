@@ -10,7 +10,7 @@ def db(app, db):
 def test_joined_inheritance(db):
     class Base(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        type = db.Column(db.Unicode(20))
+        type = db.Column(db.String(20))
         __mapper_args__ = {'polymorphic_on': type}
 
     class SubBase(Base):
@@ -26,7 +26,7 @@ def test_joined_inheritance(db):
 def test_single_table_inheritance(db):
     class Base(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        type = db.Column(db.Unicode(20))
+        type = db.Column(db.String(20))
         __mapper_args__ = {'polymorphic_on': type}
 
     class SubBase(Base):
@@ -41,14 +41,14 @@ def test_joined_inheritance_relation(db):
     class Relation(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         base_id = db.Column(db.Integer, db.ForeignKey('base.id'))
-        name = db.Column(db.Unicode(20))
+        name = db.Column(db.String(20))
 
         def __init__(self, name):
             self.name = name
 
     class Base(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        type = db.Column(db.Unicode(20))
+        type = db.Column(db.String(20))
         __mapper_args__ = {'polymorphic_on': type}
 
     class SubBase(Base):
