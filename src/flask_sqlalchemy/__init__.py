@@ -4,7 +4,6 @@ from __future__ import absolute_import
 import functools
 import os
 import sys
-import warnings
 from math import ceil
 from operator import itemgetter
 from threading import Lock
@@ -21,7 +20,6 @@ from sqlalchemy.orm.session import Session as SessionBase
 
 from flask_sqlalchemy.model import Model
 from .model import DefaultMeta
-from . import utils
 
 __version__ = "3.0.0.dev"
 
@@ -560,18 +558,16 @@ class _EngineConnector(object):
     def get_options(self, sa_url, echo):
         options = {}
 
-        self._sa.apply_pool_defaults(self._app, options)
         self._sa.apply_driver_hacks(self._app, sa_url, options)
+
         if echo:
             options['echo'] = echo
 
         # Give the config options set by a developer explicitly priority
         # over decisions FSA makes.
         options.update(self._app.config['SQLALCHEMY_ENGINE_OPTIONS'])
-
         # Give options set in SQLAlchemy.__init__() ultimate priority
         options.update(self._sa._engine_options)
-
         return options
 
 
@@ -620,17 +616,6 @@ class SQLAlchemy(object):
     By default Flask-SQLAlchemy will apply some backend-specific settings
     to improve your experience with them.
 
-    As of SQLAlchemy 0.6 SQLAlchemy
-    will probe the library for native unicode support.  If it detects
-    unicode it will let the library handle that, otherwise do that itself.
-    Sometimes this detection can fail in which case you might want to set
-    ``use_native_unicode`` (or the ``SQLALCHEMY_NATIVE_UNICODE`` configuration
-    key) to ``False``.  Note that the configuration key overrides the
-    value you pass to the constructor.  Direct support for ``use_native_unicode``
-    and SQLALCHEMY_NATIVE_UNICODE are deprecated as of v2.4 and will be removed
-    in v3.0.  ``engine_options`` and ``SQLALCHEMY_ENGINE_OPTIONS`` may be used
-    instead.
-
     This class also provides access to all the SQLAlchemy functions and classes
     from the :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` modules.  So you can
     declare models like this::
@@ -663,31 +648,36 @@ class SQLAlchemy(object):
     override anything set in the ``'SQLALCHEMY_ENGINE_OPTIONS'`` config
     variable or othewise set by this library.
 
-    .. versionadded:: 0.10
-       The `session_options` parameter was added.
-
-    .. versionadded:: 0.16
-       `scopefunc` is now accepted on `session_options`. It allows specifying
-        a custom function which will define the SQLAlchemy session's scoping.
-
-    .. versionadded:: 2.1
-       The `metadata` parameter was added. This allows for setting custom
-       naming conventions among other, non-trivial things.
-
-       The `query_class` parameter was added, to allow customisation
-       of the query class, in place of the default of :class:`BaseQuery`.
-
-       The `model_class` parameter was added, which allows a custom model
-       class to be used in place of :class:`Model`.
-
-    .. versionchanged:: 2.1
-       Utilise the same query class across `session`, `Model.query` and `Query`.
-
-    .. versionadded:: 2.4
-       The `engine_options` parameter was added.
+    .. versionchanged:: 3.0
+        Removed the ``use_native_unicode`` parameter and config.
 
     .. versionchanged:: 2.4
-       The `use_native_unicode` parameter was deprecated.
+        Added the ``engine_options`` parameter.
+
+    .. versionchanged:: 2.1
+        Added the ``metadata`` parameter. This allows for setting custom
+        naming conventions among other, non-trivial things.
+
+    .. versionchanged:: 2.1
+        Added the ``query_class`` parameter, to allow customisation
+        of the query class, in place of the default of
+        :class:`BaseQuery`.
+
+    .. versionchanged:: 2.1
+        Added the ``model_class`` parameter, which allows a custom model
+        class to be used in place of :class:`Model`.
+
+    .. versionchanged:: 2.1
+        Use the same query class across ``session``, ``Model.query`` and
+        ``Query``.
+
+    .. versionchanged:: 0.16
+        ``scopefunc`` is now accepted on ``session_options``. It allows
+        specifying a custom function which will define the SQLAlchemy
+        session's scoping.
+
+    .. versionchanged:: 0.10
+        Added the ``session_options`` parameter.
     """
 
     #: Default query class used by :attr:`Model.query` and other queries.
@@ -695,11 +685,10 @@ class SQLAlchemy(object):
     #: Defaults to :class:`BaseQuery`.
     Query = None
 
-    def __init__(self, app=None, use_native_unicode=True, session_options=None,
+    def __init__(self, app=None, session_options=None,
                  metadata=None, query_class=BaseQuery, model_class=Model,
                  engine_options=None):
 
-        self.use_native_unicode = use_native_unicode
         self.Query = query_class
         self.session = self.create_scoped_session(session_options)
         self.Model = self.make_declarative_base(model_class, metadata)
@@ -808,22 +797,11 @@ class SQLAlchemy(object):
 
         app.config.setdefault('SQLALCHEMY_DATABASE_URI', None)
         app.config.setdefault('SQLALCHEMY_BINDS', None)
-        app.config.setdefault('SQLALCHEMY_NATIVE_UNICODE', None)
         app.config.setdefault('SQLALCHEMY_ECHO', False)
         app.config.setdefault('SQLALCHEMY_RECORD_QUERIES', None)
-        app.config.setdefault('SQLALCHEMY_POOL_SIZE', None)
-        app.config.setdefault('SQLALCHEMY_POOL_TIMEOUT', None)
-        app.config.setdefault('SQLALCHEMY_POOL_RECYCLE', None)
-        app.config.setdefault('SQLALCHEMY_MAX_OVERFLOW', None)
         app.config.setdefault('SQLALCHEMY_COMMIT_ON_TEARDOWN', False)
         app.config.setdefault('SQLALCHEMY_TRACK_MODIFICATIONS', False)
         app.config.setdefault('SQLALCHEMY_ENGINE_OPTIONS', {})
-
-        # Deprecation warnings for config keys that should be replaced by SQLALCHEMY_ENGINE_OPTIONS.
-        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_SIZE', 'pool_size')
-        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_TIMEOUT', 'pool_timeout')
-        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_POOL_RECYCLE', 'pool_recycle')
-        utils.engine_config_warning(app.config, '3.0', 'SQLALCHEMY_MAX_OVERFLOW', 'max_overflow')
 
         app.extensions['sqlalchemy'] = _SQLAlchemyState(self)
 
@@ -836,25 +814,14 @@ class SQLAlchemy(object):
             self.session.remove()
             return response_or_exc
 
-    def apply_pool_defaults(self, app, options):
-        def _setdefault(optionkey, configkey):
-            value = app.config[configkey]
-            if value is not None:
-                options[optionkey] = value
-        _setdefault('pool_size', 'SQLALCHEMY_POOL_SIZE')
-        _setdefault('pool_timeout', 'SQLALCHEMY_POOL_TIMEOUT')
-        _setdefault('pool_recycle', 'SQLALCHEMY_POOL_RECYCLE')
-        _setdefault('max_overflow', 'SQLALCHEMY_MAX_OVERFLOW')
-
     def apply_driver_hacks(self, app, sa_url, options):
         """This method is called before engine creation and used to inject
         driver specific hacks into the options.  The `options` parameter is
         a dictionary of keyword arguments that will then be used to call
         the :func:`sqlalchemy.create_engine` function.
 
-        The default implementation provides some saner defaults for things
-        like pool sizes for MySQL and sqlite.  Also it injects the setting of
-        `SQLALCHEMY_NATIVE_UNICODE`.
+        The default implementation provides some defaults for things
+        like pool sizes for MySQL and SQLite.
         """
         if sa_url.drivername.startswith('mysql'):
             sa_url.query.setdefault('charset', 'utf8')
@@ -888,25 +855,6 @@ class SQLAlchemy(object):
             # if it's not an in memory database we make the path absolute.
             if not detected_in_memory:
                 sa_url.database = os.path.join(app.root_path, sa_url.database)
-
-        unu = app.config['SQLALCHEMY_NATIVE_UNICODE']
-        if unu is None:
-            unu = self.use_native_unicode
-        if not unu:
-            options['use_native_unicode'] = False
-
-        if app.config['SQLALCHEMY_NATIVE_UNICODE'] is not None:
-            warnings.warn(
-                "The 'SQLALCHEMY_NATIVE_UNICODE' config option is deprecated and will be removed in"
-                " v3.0.  Use 'SQLALCHEMY_ENGINE_OPTIONS' instead.",
-                DeprecationWarning
-            )
-        if not self.use_native_unicode:
-            warnings.warn(
-                "'use_native_unicode' is deprecated and will be removed in v3.0."
-                "  Use the 'engine_options' parameter instead.",
-                DeprecationWarning
-            )
 
     @property
     def engine(self):
@@ -1035,19 +983,3 @@ class SQLAlchemy(object):
             self.__class__.__name__,
             self.engine.url if self.app or current_app else None
         )
-
-
-class _BoundDeclarativeMeta(DefaultMeta):
-    def __init__(cls, name, bases, d):
-        warnings.warn(FSADeprecationWarning(
-            '"_BoundDeclarativeMeta" has been renamed to "DefaultMeta". The'
-            ' old name will be removed in 3.0.'
-        ), stacklevel=3)
-        super(_BoundDeclarativeMeta, cls).__init__(name, bases, d)
-
-
-class FSADeprecationWarning(DeprecationWarning):
-    pass
-
-
-warnings.simplefilter('always', FSADeprecationWarning)

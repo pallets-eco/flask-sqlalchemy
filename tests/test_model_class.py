@@ -59,11 +59,3 @@ def test_repr(db):
     db.session.flush()
     assert repr(r) == '<Report 2, test>'
     assert repr(u) == str(u)
-
-
-def test_deprecated_meta():
-    class OldMeta(fsa._BoundDeclarativeMeta):
-        pass
-
-    with pytest.warns(fsa.FSADeprecationWarning):
-        declarative_base(cls=fsa.Model, metaclass=OldMeta)
