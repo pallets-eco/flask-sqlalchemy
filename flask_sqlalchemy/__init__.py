@@ -431,6 +431,14 @@ class BaseQuery(orm.Query):
         if rv is None:
             abort(404, description=description)
         return rv
+    
+    def one_or_404(self):
+        """Like :meth:`one_or_none` but aborts with 404 if not found instead of returning ``None``."""
+
+        rv = self.one_or_none()
+        if rv is None:
+            abort(404)
+        return rv
 
     def paginate(self, page=None, per_page=None, error_out=True, max_per_page=None, count=True):
         """Returns ``per_page`` items from page ``page``.
