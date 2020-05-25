@@ -1,12 +1,13 @@
 import io
 import re
 
+from setuptools import find_packages
 from setuptools import setup
 
 with io.open("README.rst", "rt", encoding="utf8") as f:
     readme = f.read()
 
-with io.open("flask_sqlalchemy/__init__.py", "rt", encoding="utf8") as f:
+with io.open("src/flask_sqlalchemy/__init__.py", "rt", encoding="utf8") as f:
     version = re.search(r'__version__ = "(.*?)"', f.read(), re.M).group(1)
 
 setup(
@@ -25,7 +26,8 @@ setup(
     maintainer_email="contact@palletsprojects.com",
     description="Adds SQLAlchemy support to your Flask application.",
     long_description=readme,
-    packages=["flask_sqlalchemy"],
+    package_dir={"": "src"},
+    packages=find_packages(where="src"),
     include_package_data=True,
     python_requires=">= 2.7, != 3.0.*, != 3.1.*, != 3.2.*, != 3.3.*, !=3.4.*",
     install_requires=["Flask>=1.0.4", "SQLAlchemy>=1.2"],
