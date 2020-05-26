@@ -6,6 +6,9 @@ Flask-SQLAlchemy is an extension for `Flask`_ that adds support for
 with Flask by providing useful defaults and extra helpers that make it
 easier to accomplish common tasks.
 
+.. _Flask: https://palletsprojects.com/p/flask/
+.. _SQLAlchemy: https://www.sqlalchemy.org
+
 
 Installing
 ----------
@@ -15,6 +18,8 @@ Install and update using `pip`_:
 .. code-block:: text
 
   $ pip install -U Flask-SQLAlchemy
+
+.. _pip: https://pip.pypa.io/en/stable/quickstart/
 
 
 A Simple Example
@@ -42,6 +47,25 @@ A Simple Example
     users = User.query.all()
 
 
+Contributing
+------------
+
+For guidance on setting up a development environment and how to make a
+contribution to Flask-SQLAlchemy, see the `contributing guidelines`_.
+
+.. _contributing guidelines: https://github.com/pallets/flask-sqlalchemy/blob/master/CONTRIBUTING.rst
+
+
+Donate
+------
+
+The Pallets organization develops and supports Flask-SQLAlchemy. In
+order to grow the community of contributors and users, and allow the
+maintainers to devote more time to the projects, `please donate today`_.
+
+.. _please donate today: https://palletsprojects.com/donate
+
+
 Links
 -----
 
@@ -49,7 +73,4 @@ Links
 -   Releases: https://pypi.org/project/Flask-SQLAlchemy/
 -   Code: https://github.com/pallets/flask-sqlalchemy
 -   Issue tracker: https://github.com/pallets/flask-sqlalchemy/issues
-
-.. _Flask: https://palletsprojects.com/p/flask/
-.. _SQLAlchemy: https://www.sqlalchemy.org
-.. _pip: https://pip.pypa.io/en/stable/quickstart/
+-   Official chat: https://discord.gg/t6rrQZH
