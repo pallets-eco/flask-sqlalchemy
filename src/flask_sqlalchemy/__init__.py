@@ -882,8 +882,10 @@ class SQLAlchemy:
 
                 options["poolclass"] = NullPool
 
-            # if it's not an in memory database we make the path absolute.
-            if not detected_in_memory:
+            # If the database path is not absolute, it's relative to the
+            # app instance path, which might need to be created.
+            if not detected_in_memory and not os.path.isabs(sa_url.database):
+                os.makedirs(app.instance_path, exist_ok=True)
                 sa_url.database = os.path.join(app.instance_path, sa_url.database)
 
     @property

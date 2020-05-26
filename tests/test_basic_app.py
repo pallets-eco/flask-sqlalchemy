@@ -1,6 +1,7 @@
 import flask
 
 from flask_sqlalchemy import get_debug_queries
+from flask_sqlalchemy import SQLAlchemy
 
 
 def test_basic_insert(app, db, Todo):
@@ -61,3 +62,24 @@ def test_persist_selectable(app, db, Todo, recwarn):
         db.session.commit()
 
     assert len(recwarn) == 0
+
+
+def test_sqlite_relative_path(app, tmp_path):
+    """If a SQLite URI has a relative path, it should be relative to the
+    instance path, and that directory should be created.
+    """
+    app.instance_path = tmp_path / "instance"
+
+    # tests default to memory, shouldn't create
+    SQLAlchemy(app).get_engine()
+    assert not app.instance_path.exists()
+
+    # absolute path, shouldn't create
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////tmp/test.sqlite"
+    SQLAlchemy(app).get_engine()
+    assert not app.instance_path.exists()
+
+    # relative path, should create
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.sqlite"
+    SQLAlchemy(app).get_engine()
+    assert app.instance_path.exists()
