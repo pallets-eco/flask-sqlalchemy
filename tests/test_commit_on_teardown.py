@@ -22,12 +22,16 @@ def client(app, db, Todo):
 
 
 def test_commit_on_success(client):
-    resp = client.post('/create')
+    with pytest.warns(DeprecationWarning, match="COMMIT_ON_TEARDOWN"):
+        resp = client.post('/create')
+
     assert resp.status_code == 200
     assert client.get('/').data == b'Test one'
 
 
 def test_roll_back_on_failure(client):
-    resp = client.post('/create', data={'fail': 'on'})
+    with pytest.warns(DeprecationWarning, match="COMMIT_ON_TEARDOWN"):
+        resp = client.post('/create', data={'fail': 'on'})
+
     assert resp.status_code == 500
     assert client.get('/').data == b''
