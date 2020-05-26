@@ -1,9 +1,20 @@
+Version 2.4.3
+-------------
+
+Unreleased
+
+-   Deprecate ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` as it can cause various
+    design issues that are difficult to debug. Call
+    ``db.session.commit()`` directly instead. :issue:`216`
+
+
 Version 2.4.2
 -------------
 
 Released 2020-05-25
 
 -   Fix bad pagination when records are de-duped. :pr:`812`
+
 
 Version 2.4.1
 -------------

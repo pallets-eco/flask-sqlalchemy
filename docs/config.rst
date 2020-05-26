@@ -98,15 +98,17 @@ A list of configuration keys currently understood by the extension:
    ``SQLALCHEMY_TRACK_MODIFICATIONS`` will warn if unset.
 
 .. versionchanged:: 2.4
+    * ``SQLALCHEMY_ENGINE_OPTIONS`` configuration key was added.
+    * Deprecated keys
 
-* ``SQLALCHEMY_ENGINE_OPTIONS`` configuration key was added.
-* Deprecated keys
+      * ``SQLALCHEMY_NATIVE_UNICODE``
+      * ``SQLALCHEMY_POOL_SIZE``
+      * ``SQLALCHEMY_POOL_TIMEOUT``
+      * ``SQLALCHEMY_POOL_RECYCLE``
+      * ``SQLALCHEMY_MAX_OVERFLOW``
 
-  * ``SQLALCHEMY_NATIVE_UNICODE``
-  * ``SQLALCHEMY_POOL_SIZE``
-  * ``SQLALCHEMY_POOL_TIMEOUT``
-  * ``SQLALCHEMY_POOL_RECYCLE``
-  * ``SQLALCHEMY_MAX_OVERFLOW``
+.. versionchanged:: 2.4.3
+    Deprecated ``SQLALCHEMY_COMMIT_ON_TEARDOWN``.
 
 
 Connection URI Format

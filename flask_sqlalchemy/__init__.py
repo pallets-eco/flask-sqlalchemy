@@ -694,6 +694,10 @@ class SQLAlchemy(object):
 
     .. versionchanged:: 2.4
        The `use_native_unicode` parameter was deprecated.
+
+    .. versionchanged:: 2.4.3
+        ``COMMIT_ON_TEARDOWN`` is deprecated and will be removed in
+        version 3.1. Call ``db.session.commit()`` directly instead.
     """
 
     #: Default query class used by :attr:`Model.query` and other queries.
@@ -843,6 +847,13 @@ class SQLAlchemy(object):
         @app.teardown_appcontext
         def shutdown_session(response_or_exc):
             if app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN']:
+                warnings.warn(
+                    "'COMMIT_ON_TEARDOWN' is deprecated and will be"
+                    " removed in version 3.1. Call"
+                    " 'db.session.commit()'` directly instead.",
+                    DeprecationWarning,
+                )
+
                 if response_or_exc is None:
                     self.session.commit()
 
