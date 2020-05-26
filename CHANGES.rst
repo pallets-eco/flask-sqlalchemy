@@ -12,6 +12,9 @@ Unreleased
 -   Remove default ``'sqlite:///:memory:'`` setting for
     ``SQLALCHEMY_DATABASE_URI``, raise error when both it and
     ``SQLALCHEMY_BINDS`` are unset. :pr:`731`
+-   Configuring SQLite with a relative path is relative to
+    ``app.instance_path`` instead of ``app.root_path``. The instance
+    folder is created if necessary. :issue:`462`
 
 
 Version 2.4.2
