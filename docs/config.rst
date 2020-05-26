@@ -50,6 +50,9 @@ A list of configuration keys currently understood by the extension:
     ``SQLALCHEMY_POOL_TIMEOUT``, ``SQLALCHEMY_POOL_RECYCLE``, and
     ``SQLALCHEMY_MAX_OVERFLOW``.
 
+.. versionchanged:: 3.0
+    Deprecated ``SQLALCHEMY_COMMIT_ON_TEARDOWN``.
+
 .. versionadded:: 2.4
     Added ``SQLALCHEMY_ENGINE_OPTIONS``.
 

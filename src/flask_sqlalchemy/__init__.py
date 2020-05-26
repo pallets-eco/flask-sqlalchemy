@@ -1,6 +1,7 @@
 import functools
 import os
 import sys
+import warnings
 from math import ceil
 from operator import itemgetter
 from threading import Lock
@@ -674,6 +675,10 @@ class SQLAlchemy:
     .. versionchanged:: 3.0
         Removed the ``use_native_unicode`` parameter and config.
 
+    .. versionchanged:: 3.0
+        ``COMMIT_ON_TEARDOWN`` is deprecated and will be removed in
+        version 3.1. Call ``db.session.commit()`` directly instead.
+
     .. versionchanged:: 2.4
         Added the ``engine_options`` parameter.
 
@@ -834,6 +839,13 @@ class SQLAlchemy:
         @app.teardown_appcontext
         def shutdown_session(response_or_exc):
             if app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"]:
+                warnings.warn(
+                    "'COMMIT_ON_TEARDOWN' is deprecated and will be"
+                    " removed in version 3.1. Call"
+                    " 'db.session.commit()'` directly instead.",
+                    DeprecationWarning,
+                )
+
                 if response_or_exc is None:
                     self.session.commit()
 

@@ -15,6 +15,19 @@ Unreleased
 -   Configuring SQLite with a relative path is relative to
     ``app.instance_path`` instead of ``app.root_path``. The instance
     folder is created if necessary. :issue:`462`
+-   Deprecate ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` as it can cause various
+    design issues that are difficult to debug. Call
+    ``db.session.commit()`` directly instead. :issue:`216`
+
+
+Version 2.4.3
+-------------
+
+Released 2020-05-26
+
+-   Deprecate ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` as it can cause various
+    design issues that are difficult to debug. Call
+    ``db.session.commit()`` directly instead. :issue:`216`
 
 
 Version 2.4.2
