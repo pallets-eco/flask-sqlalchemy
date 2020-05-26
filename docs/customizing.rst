@@ -33,7 +33,7 @@ key for joined-table inheritance.
 
     from flask_sqlalchemy import Model, SQLAlchemy
     import sqlalchemy as sa
-    from sqlalchemy.ext.declarative import declared_attr, has_inherited_table
+    from sqlalchemy.ext.declarative import declared_attr
 
     class IdModel(Model):
         @declared_attr
