@@ -1,7 +1,7 @@
 Version 2.4.3
 -------------
 
-Unreleased
+Released 2020-05-26
 
 -   Deprecate ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` as it can cause various
     design issues that are difficult to debug. Call
