@@ -20,6 +20,15 @@ Unreleased
     ``db.session.commit()`` directly instead. :issue:`216`
 
 
+Version 2.4.4
+-------------
+
+Released 2020-07-14
+
+-   Change base class of meta mixins to ``type``. This fixes an issue
+    caused by a regression in CPython 3.8.4. :issue:`852`
+
+
 Version 2.4.3
 -------------
 
