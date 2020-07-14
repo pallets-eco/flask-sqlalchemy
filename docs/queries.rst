@@ -110,6 +110,10 @@ Getting user by primary key:
 >>> User.query.get(1)
 <User u'admin'>
 
+Select specific columns:
+
+>>> db.session.query(User.username, User.email).all()
+[<User u'admin'>, <User u'guest'>, <User u'peter'>]
 
 Queries in Views
 ----------------
