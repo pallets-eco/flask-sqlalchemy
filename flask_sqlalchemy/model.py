@@ -59,7 +59,7 @@ def camel_to_snake_case(name):
     return camelcase_re.sub(_join, name).lstrip('_')
 
 
-class NameMetaMixin(object):
+class NameMetaMixin(type):
     def __init__(cls, name, bases, d):
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
@@ -111,7 +111,7 @@ class NameMetaMixin(object):
             del cls.__tablename__
 
 
-class BindMetaMixin(object):
+class BindMetaMixin(type):
     def __init__(cls, name, bases, d):
         bind_key = (
             d.pop('__bind_key__', None)
