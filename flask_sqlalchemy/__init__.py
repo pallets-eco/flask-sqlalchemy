@@ -701,7 +701,7 @@ class SQLAlchemy(object):
     """
 
     #: Default query class used by :attr:`Model.query` and other queries.
-    #: Customize this by passing ``query_class`` to :func:`SQLAlchemy`.
+    #: Customize this by passing ``query_class`` to :class:`SQLAlchemy`.
     #: Defaults to :class:`BaseQuery`.
     Query = None
 
@@ -967,7 +967,7 @@ class SQLAlchemy(object):
             is created.
 
             In most cases, you will want to use ``'SQLALCHEMY_ENGINE_OPTIONS'``
-            config variable or set ``engine_options`` for :func:`SQLAlchemy`.
+            config variable or set ``engine_options`` for :class:`SQLAlchemy`.
         """
         return sqlalchemy.create_engine(sa_url, **engine_opts)
 

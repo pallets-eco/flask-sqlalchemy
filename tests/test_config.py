@@ -157,9 +157,8 @@ class TestConfigKeys:
 
 @mock.patch.object(fsa.sqlalchemy, 'create_engine', autospec=True, spec_set=True)
 class TestCreateEngine:
-    """
-        Tests for _EngineConnector and SQLAlchemy methods inolved in setting up
-        the SQLAlchemy engine.
+    """Tests for _EngineConnector and SQLAlchemy methods involved
+    in setting up the SQLAlchemy engine.
     """
 
     def test_engine_echo_default(self, m_create_engine, app_nr):
