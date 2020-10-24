@@ -727,7 +727,6 @@ class SQLAlchemy:
         self.session = self.create_scoped_session(session_options)
         self.Model = self.make_declarative_base(model_class, metadata)
         self._engine_lock = Lock()
-        self.app = app
         self._engine_options = engine_options or {}
         _include_sqlalchemy(self, query_class)
 
@@ -814,6 +813,8 @@ class SQLAlchemy:
         of an application not initialized that way or connections will
         leak.
         """
+
+        self.app = app
 
         # We intentionally don't set self.app = app, to support multiple
         # applications. If the app is passed in the constructor,
