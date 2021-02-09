@@ -7,19 +7,19 @@ Thank you for considering contributing to Flask-SQLAlchemy!
 Support questions
 -----------------
 
-Please, don't use the issue tracker for this. The issue tracker is a
-tool to address bugs and feature requests in Flask-SQLAlchemy itself.
-Use one of the following resources for questions about using
-Flask-SQLAlchemy or issues with your own code:
+Please don't use the issue tracker for this. The issue tracker is a tool
+to address bugs and feature requests in Flask-SQLAlchemy itself. Use one
+of the following resources for questions about using Flask-SQLAlchemy or
+issues with your own code:
 
 -   The ``#get-help`` channel on our Discord chat:
-    https://discord.gg/t6rrQZH
+    https://discord.gg/pallets
 -   The mailing list flask@python.org for long term discussion or larger
     issues.
 -   Ask on `Stack Overflow`_. Search with Google first using:
-    ``site:stackoverflow.com flask sqlalchemy {search term, exception message, etc.}``
+    ``site:stackoverflow.com flask-sqlalchemy {search term, exception message, etc.}``
 
-.. _Stack Overflow: https://stackoverflow.com/questions/tagged/flask-sqlalchemy?sort=linked
+.. _Stack Overflow: https://stackoverflow.com/questions/tagged/flask-sqlalchemy?tab=Frequent
 
 
 Reporting issues
@@ -58,7 +58,7 @@ an issue that interests you.
 
 Include the following in your patch:
 
--   Use `Black`_ to format your code. This and other checks will run
+-   Use `Black`_ to format your code. This and other tools will run
     automatically if you install `pre-commit`_ using the instructions
     below.
 -   Include tests if your patch adds or changes code. Make sure the test
@@ -95,7 +95,8 @@ First time setup
         $ cd flask-sqlalchemy
 
 -   Add your fork as a remote to push your work to. Replace
-    ``{username}`` with your username.
+    ``{username}`` with your username. This names the remote "fork", the
+    default Pallets remote is "origin".
 
     .. code-block:: text
 
@@ -114,12 +115,12 @@ First time setup
 
         > env\Scripts\activate
 
--   Install Flask-SQLAlchemy in editable mode with development
-    dependencies.
+-   Install the development dependencies, then install Flask-SQLAlchemy
+    in editable mode.
 
     .. code-block:: text
 
-        $ pip install -e . -r requirements/dev.txt
+        $ pip install -r requirements/dev.txt && pip install -e .
 
 -   Install the pre-commit hooks.
 
@@ -128,11 +129,11 @@ First time setup
         $ pre-commit install
 
 .. _latest version of git: https://git-scm.com/downloads
-.. _username: https://help.github.com/en/articles/setting-your-username-in-git
-.. _email: https://help.github.com/en/articles/setting-your-commit-email-address-in-git
+.. _username: https://docs.github.com/en/github/using-git/setting-your-username-in-git
+.. _email: https://docs.github.com/en/github/setting-up-and-managing-your-github-user-account/setting-your-commit-email-address
 .. _GitHub account: https://github.com/join
-.. _Fork: https://github.com/pallets/flask/fork
-.. _Clone: https://help.github.com/en/articles/fork-a-repo#step-2-create-a-local-clone-of-your-fork
+.. _Fork: https://github.com/pallets/jinja/fork
+.. _Clone: https://docs.github.com/en/github/getting-started-with-github/fork-a-repo#step-2-create-a-local-clone-of-your-fork
 
 
 Start coding
@@ -144,6 +145,7 @@ Start coding
 
     .. code-block:: text
 
+        $ git fetch origin
         $ git checkout -b your-branch-name origin/2.x
 
     If you're submitting a feature addition or change, branch off of the
@@ -151,6 +153,7 @@ Start coding
 
     .. code-block:: text
 
+        $ git fetch origin
         $ git checkout -b your-branch-name origin/master
 
 -   Using your favorite editor, make your changes,
@@ -166,7 +169,7 @@ Start coding
         $ git push --set-upstream fork your-branch-name
 
 .. _committing as you go: https://dont-be-afraid-to-commit.readthedocs.io/en/latest/git/commandlinegit.html#commit-your-changes
-.. _create a pull request: https://help.github.com/en/articles/creating-a-pull-request
+.. _create a pull request: https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request
 
 
 Running the tests
