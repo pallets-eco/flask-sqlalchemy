@@ -930,12 +930,12 @@ class SQLAlchemy:
             return connector.get_engine()
 
     def create_engine(self, sa_url, engine_opts):
-        """
-            Override this method to have final say over how the SQLAlchemy engine
-            is created.
+        """Override this method to have final say over how the
+        SQLAlchemy engine is created.
 
-            In most cases, you will want to use ``'SQLALCHEMY_ENGINE_OPTIONS'``
-            config variable or set ``engine_options`` for :func:`SQLAlchemy`.
+        In most cases, you will want to use
+        ``'SQLALCHEMY_ENGINE_OPTIONS'`` config variable or set
+        ``engine_options`` for :func:`SQLAlchemy`.
         """
         return sqlalchemy.create_engine(sa_url, **engine_opts)
 
