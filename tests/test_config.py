@@ -9,9 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 @pytest.fixture
 def app_nr(app):
-    """
-        Signal/event registration with record queries breaks when
-        sqlalchemy.create_engine() is mocked out.
+    """Signal/event registration with record queries breaks when
+    sqlalchemy.create_engine() is mocked out.
     """
     app.config["SQLALCHEMY_RECORD_QUERIES"] = False
     return app
@@ -65,9 +64,8 @@ class TestConfigKeys:
 
 @mock.patch.object(sqlalchemy, "create_engine", autospec=True, spec_set=True)
 class TestCreateEngine:
-    """
-        Tests for _EngineConnector and SQLAlchemy methods inolved in setting up
-        the SQLAlchemy engine.
+    """Tests for _EngineConnector and SQLAlchemy methods involved in
+    setting up the SQLAlchemy engine.
     """
 
     def test_engine_echo_default(self, m_create_engine, app_nr):
