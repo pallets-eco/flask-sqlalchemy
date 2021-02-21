@@ -17,8 +17,8 @@ from sqlalchemy import event
 from sqlalchemy import inspect
 from sqlalchemy import orm
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.declarative import DeclarativeMeta
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
