@@ -548,6 +548,7 @@ class _EngineConnector:
         self._connected_for = None
         self._bind = bind
         self._lock = Lock()
+        self.sa_url = None
 
     def get_uri(self):
         if self._bind is None:
@@ -565,9 +566,9 @@ class _EngineConnector:
             if (uri, echo) == self._connected_for:
                 return self._engine
 
-            sa_url = make_url(uri)
-            options = self.get_options(sa_url, echo)
-            self._engine = rv = self._sa.create_engine(sa_url, options)
+            self.sa_url = make_url(uri)
+            options = self.get_options(echo)
+            self._engine = rv = self._sa.create_engine(self.sa_url, options)
 
             if _record_queries(self._app):
                 _EngineDebuggingSignalEvents(
@@ -578,10 +579,10 @@ class _EngineConnector:
 
             return rv
 
-    def get_options(self, sa_url, echo):
+    def get_options(self, echo):
         options = {}
 
-        self._sa.apply_driver_hacks(self._app, sa_url, options)
+        self.apply_driver_hacks(options)
 
         if echo:
             options["echo"] = echo
@@ -592,6 +593,56 @@ class _EngineConnector:
         # Give options set in SQLAlchemy.__init__() ultimate priority
         options.update(self._sa._engine_options)
         return options
+
+    def apply_driver_hacks(self, options):
+        """This method is called before engine creation and used to inject
+        driver specific hacks into the options.  The `options` parameter is
+        a dictionary of keyword arguments that will then be used to call
+        the :func:`sqlalchemy.create_engine` function.
+
+        The default implementation provides some defaults for things
+        like pool sizes for MySQL and SQLite.
+        """
+        if self.sa_url.drivername.startswith("mysql"):
+            self.sa_url.query.setdefault("charset", "utf8")
+            if self.sa_url.drivername != "mysql+gaerdbms":
+                options.setdefault("pool_size", 10)
+                options.setdefault("pool_recycle", 7200)
+        elif self.sa_url.drivername == "sqlite":
+            pool_size = options.get("pool_size")
+            detected_in_memory = False
+            if self.sa_url.database in (None, "", ":memory:"):
+                detected_in_memory = True
+                from sqlalchemy.pool import StaticPool
+
+                options["poolclass"] = StaticPool
+                if "connect_args" not in options:
+                    options["connect_args"] = {}
+                options["connect_args"]["check_same_thread"] = False
+
+                # we go to memory and the pool size was explicitly set
+                # to 0 which is fail.  Let the user know that
+                if pool_size == 0:
+                    raise RuntimeError(
+                        "SQLite in memory database with an "
+                        "empty queue not possible due to data "
+                        "loss."
+                    )
+            # if pool size is None or explicitly set to 0 we assume the
+            # user did not want a queue for this sqlite connection and
+            # hook in the null pool.
+            elif not pool_size:
+                from sqlalchemy.pool import NullPool
+
+                options["poolclass"] = NullPool
+
+            # If the database path is not absolute, it's relative to the
+            # app instance path, which might need to be created.
+            if not detected_in_memory and not os.path.isabs(self.sa_url.database):
+                os.makedirs(self._app.instance_path, exist_ok=True)
+                self.sa_url = self.sa_url.set(
+                    database=os.path.join(self._app.instance_path, self.sa_url.database)
+                )
 
 
 def get_state(app):
@@ -851,54 +902,6 @@ class SQLAlchemy:
 
             self.session.remove()
             return response_or_exc
-
-    def apply_driver_hacks(self, app, sa_url, options):
-        """This method is called before engine creation and used to inject
-        driver specific hacks into the options.  The `options` parameter is
-        a dictionary of keyword arguments that will then be used to call
-        the :func:`sqlalchemy.create_engine` function.
-
-        The default implementation provides some defaults for things
-        like pool sizes for MySQL and SQLite.
-        """
-        if sa_url.drivername.startswith("mysql"):
-            sa_url.query.setdefault("charset", "utf8")
-            if sa_url.drivername != "mysql+gaerdbms":
-                options.setdefault("pool_size", 10)
-                options.setdefault("pool_recycle", 7200)
-        elif sa_url.drivername == "sqlite":
-            pool_size = options.get("pool_size")
-            detected_in_memory = False
-            if sa_url.database in (None, "", ":memory:"):
-                detected_in_memory = True
-                from sqlalchemy.pool import StaticPool
-
-                options["poolclass"] = StaticPool
-                if "connect_args" not in options:
-                    options["connect_args"] = {}
-                options["connect_args"]["check_same_thread"] = False
-
-                # we go to memory and the pool size was explicitly set
-                # to 0 which is fail.  Let the user know that
-                if pool_size == 0:
-                    raise RuntimeError(
-                        "SQLite in memory database with an "
-                        "empty queue not possible due to data "
-                        "loss."
-                    )
-            # if pool size is None or explicitly set to 0 we assume the
-            # user did not want a queue for this sqlite connection and
-            # hook in the null pool.
-            elif not pool_size:
-                from sqlalchemy.pool import NullPool
-
-                options["poolclass"] = NullPool
-
-            # If the database path is not absolute, it's relative to the
-            # app instance path, which might need to be created.
-            if not detected_in_memory and not os.path.isabs(sa_url.database):
-                os.makedirs(app.instance_path, exist_ok=True)
-                sa_url.database = os.path.join(app.instance_path, sa_url.database)
 
     @property
     def engine(self):
