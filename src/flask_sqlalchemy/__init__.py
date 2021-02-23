@@ -18,9 +18,15 @@ from sqlalchemy import inspect
 from sqlalchemy import orm
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.declarative import DeclarativeMeta
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
+
+try:
+    # SQLAlchemy 1.4
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    # SQLAlchemy 1.3
+    from sqlalchemy.ext.declarative import declarative_base
 
 from .model import DefaultMeta
 from .model import Model
@@ -640,9 +646,18 @@ class _EngineConnector:
             # app instance path, which might need to be created.
             if not detected_in_memory and not os.path.isabs(self.sa_url.database):
                 os.makedirs(self._app.instance_path, exist_ok=True)
-                self.sa_url = self.sa_url.set(
-                    database=os.path.join(self._app.instance_path, self.sa_url.database)
-                )
+                if hasattr(self.sa_url, "set"):
+                    # SQLAlchemy 1.4
+                    self.sa_url = self.sa_url.set(
+                        database=os.path.join(
+                            self._app.instance_path, self.sa_url.database
+                        )
+                    )
+                else:
+                    # SQLAlchemy 1.3
+                    self.sa_url.database = os.path.join(
+                        self._app.instance_path, self.sa_url.database
+                    )
 
 
 def get_state(app):
