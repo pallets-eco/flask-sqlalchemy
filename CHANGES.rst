@@ -3,6 +3,7 @@ Version 3.0.0
 
 Unreleased
 
+-   Add support for SQLAlchemy 1.4
 -   Drop support for Python 2, 3.4, and 3.5.
 -   Bump minimum version of Flask to 1.0.4.
 -   Bump minimum version of SQLAlchemy to 1.2.
