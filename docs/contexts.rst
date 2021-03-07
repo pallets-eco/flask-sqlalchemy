@@ -36,7 +36,7 @@ You will have to setup an application context.  If you are working inside
 a Flask view function or a CLI command, that automatically happens. However,
 if you are working inside the interactive shell, you will have to do that
 yourself (see `Creating an Application Context
-<http://flask.pocoo.org/docs/1.0/appcontext/#manually-push-a-context>`_).
+<https://flask.palletsprojects.com/appcontext/#manually-push-a-context>`_).
 
 If you try to perform database operations outside an application context, you
 will see the following error:

@@ -19,7 +19,7 @@ extensions = [
 ]
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
-    "flask": ("http://flask.pocoo.org/docs/", None),
+    "flask": ("https://flask.palletsprojects.com/", None),
     "sqlalchemy": ("https://docs.sqlalchemy.org/en/latest/", None),
 }
 issues_github_path = "pallets/flask-sqlalchemy"
