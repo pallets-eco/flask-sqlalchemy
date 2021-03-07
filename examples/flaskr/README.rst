@@ -4,7 +4,7 @@ Flaskr
 The basic blog app built in the Flask `tutorial`_, modified to use
 Flask-SQLAlchemy instead of plain SQL.
 
-.. _tutorial: http://flask.pocoo.org/docs/tutorial/
+.. _tutorial: https://flask.palletsprojects.com/tutorial/
 
 
 Install

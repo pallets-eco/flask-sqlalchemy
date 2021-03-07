@@ -11,7 +11,7 @@ application.  It aims to simplify using SQLAlchemy with Flask by providing usefu
 helpers that make it easier to accomplish common tasks.
 
 .. _SQLAlchemy: https://www.sqlalchemy.org/
-.. _Flask: http://flask.pocoo.org/
+.. _Flask: https://palletsprojects.com/p/flask/
 
 See `the SQLAlchemy documentation`_ to learn how to work with the ORM in depth.  The following
 documentation is a brief overview of the most common tasks, as well as the features specific to

@@ -955,7 +955,7 @@ class SQLAlchemy:
         raise RuntimeError(
             "No application found. Either work inside a view function or push"
             " an application context. See"
-            " http://flask-sqlalchemy.pocoo.org/contexts/."
+            " https://flask-sqlalchemy.palletsprojects.com/contexts/."
         )
 
     def get_tables_for_bind(self, bind=None):

@@ -39,7 +39,7 @@ class TestConfigKeys:
     def test_defaults_with_uri(self, app, recwarn):
         """
         Test default config values when URI is provided, in the order they
-        appear in the documentation: http://flask-sqlalchemy.pocoo.org/dev/config/
+        appear in the documentation: https://flask-sqlalchemy.palletsprojects.com/config
 
         Our pytest fixture for creating the app sets SQLALCHEMY_DATABASE_URI
         """
