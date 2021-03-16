@@ -5,7 +5,7 @@ Unreleased
 
 -   Drop support for Python 2, 3.4, and 3.5.
 -   Bump minimum version of Flask to 1.0.4.
--   Bump minimum version of SQLAlchemy to 1.2.
+-   Bump minimum version of SQLAlchemy to 1.2 and restrict to < 1.4 `885`.
 -   Remove previously deprecated code.
 -   Set ``SQLALCHEMY_TRACK_MODIFICATIONS`` to ``False`` by default.
     :pr:`727`
