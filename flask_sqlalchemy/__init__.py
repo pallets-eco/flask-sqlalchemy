@@ -15,14 +15,21 @@ from flask import _app_ctx_stack, abort, current_app, request
 from flask.signals import Namespace
 from sqlalchemy import event, inspect, orm
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
-from flask_sqlalchemy.model import Model
 from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
+from .model import Model
 from . import utils
+
+try:
+    from sqlalchemy.orm import declarative_base
+    from sqlalchemy.orm import DeclarativeMeta
+except ImportError:
+    # SQLAlchemy <= 1.3
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy.ext.declarative import DeclarativeMeta
 
 __version__ = "2.4.4"
 
