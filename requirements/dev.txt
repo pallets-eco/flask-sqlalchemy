@@ -30,7 +30,7 @@ filelock==3.0.12
     # via
     #   tox
     #   virtualenv
-identify==1.5.13
+identify==2.1.3
     # via pre-commit
 idna==2.10
     # via requests
@@ -54,19 +54,21 @@ packaging==20.9
     #   tox
 pallets-sphinx-themes==1.2.3
     # via -r requirements/docs.in
-pip-tools==5.5.0
+pep517==0.10.0
+    # via pip-tools
+pip-tools==6.0.1
     # via -r requirements/dev.in
 pluggy==0.13.1
     # via
     #   pytest
     #   tox
-pre-commit==2.10.1
+pre-commit==2.11.1
     # via -r requirements/dev.in
 py==1.10.0
     # via
     #   pytest
     #   tox
-pygments==2.7.4
+pygments==2.8.1
     # via sphinx
 pyparsing==2.4.7
     # via packaging
@@ -86,7 +88,7 @@ snowballstemmer==2.1.0
     # via sphinx
 sphinx-issues==1.2.0
     # via -r requirements/docs.in
-sphinx==3.5.1
+sphinx==3.5.2
     # via
     #   -r requirements/docs.in
     #   pallets-sphinx-themes
@@ -108,14 +110,15 @@ sphinxcontrib-serializinghtml==1.1.4
     # via sphinx
 toml==0.10.2
     # via
+    #   pep517
     #   pre-commit
     #   pytest
     #   tox
-tox==3.22.0
+tox==3.23.0
     # via -r requirements/dev.in
-urllib3==1.26.3
+urllib3==1.26.4
     # via requests
-virtualenv==20.4.2
+virtualenv==20.4.3
     # via
     #   pre-commit
     #   tox

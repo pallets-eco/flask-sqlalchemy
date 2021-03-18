@@ -29,13 +29,15 @@ issues_github_path = "pallets/flask-sqlalchemy"
 html_theme = "flask"
 html_context = {
     "project_links": [
-        ProjectLink("Donate to Pallets", "https://palletsprojects.com/donate"),
-        ProjectLink("Website", "https://palletsprojects.com/"),
-        ProjectLink("PyPI releases", "https://pypi.org/project/Flask-SQLAlchemy/"),
+        ProjectLink("Donate", "https://palletsprojects.com/donate"),
+        ProjectLink("PyPI Releases", "https://pypi.org/project/Flask-SQLAlchemy/"),
         ProjectLink("Source Code", "https://github.com/pallets/flask-sqlalchemy/"),
         ProjectLink(
             "Issue Tracker", "https://github.com/pallets/flask-sqlalchemy/issues/"
         ),
+        ProjectLink("Website", "https://palletsprojects.com/"),
+        ProjectLink("Twitter", "https://twitter.com/PalletsTeam"),
+        ProjectLink("Chat", "https://discord.gg/pallets"),
     ]
 }
 html_sidebars = {
