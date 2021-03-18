@@ -1,3 +1,13 @@
+Version 2.5
+-----------
+
+Unreleased
+
+-   Update to support SQLAlchemy 1.4.
+-   SQLAlchemy ``URL`` objects are immutable. Some internal methods have
+    changed to return a new URL instead of ``None``. :issue:`885`
+
+
 Version 2.4.4
 -------------
 
