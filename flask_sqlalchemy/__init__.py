@@ -36,7 +36,11 @@ except ImportError:
 try:
     from greenlet import getcurrent as _ident_func
 except ImportError:
-    from threading import get_ident as _ident_func
+    try:
+        from threading import get_ident as _ident_func
+    except ImportError:
+        # Python 2.7
+        from thread import get_ident as _ident_func
 
 __version__ = "2.5.0"
 
