@@ -59,9 +59,10 @@ contribution to Flask-SQLAlchemy, see the `contributing guidelines`_.
 Donate
 ------
 
-The Pallets organization develops and supports Flask-SQLAlchemy. In
-order to grow the community of contributors and users, and allow the
-maintainers to devote more time to the projects, `please donate today`_.
+The Pallets organization develops and supports Flask-SQLAlchemy and
+other popular packages. In order to grow the community of contributors
+and users, and allow the maintainers to devote more time to the
+projects, `please donate today`_.
 
 .. _please donate today: https://palletsprojects.com/donate
 
@@ -70,7 +71,10 @@ Links
 -----
 
 -   Documentation: https://flask-sqlalchemy.palletsprojects.com/
--   Releases: https://pypi.org/project/Flask-SQLAlchemy/
--   Code: https://github.com/pallets/flask-sqlalchemy
--   Issue tracker: https://github.com/pallets/flask-sqlalchemy/issues
--   Official chat: https://discord.gg/t6rrQZH
+-   Changes: https://flask-sqlalchemy.palletsprojects.com/changes/
+-   PyPI Releases: https://pypi.org/project/Flask-SQLAlchemy/
+-   Source Code: https://github.com/pallets/flask-sqlalchemy/
+-   Issue Tracker: https://github.com/pallets/flask-sqlalchemy/issues/
+-   Website: https://palletsprojects.com/
+-   Twitter: https://twitter.com/PalletsTeam
+-   Chat: https://discord.gg/pallets
