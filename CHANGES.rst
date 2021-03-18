@@ -1,7 +1,7 @@
 Version 2.5.1
 -------------
 
-Unreleased
+Released 2021-03-18
 
 -   Fix compatibility with Python 2.7.
 

@@ -42,7 +42,7 @@ except ImportError:
         # Python 2.7
         from thread import get_ident as _ident_func
 
-__version__ = "2.5.0"
+__version__ = "2.5.1"
 
 # the best timer function for the platform
 if sys.platform == 'win32':
