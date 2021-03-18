@@ -1,3 +1,11 @@
+Version 2.5.1
+-------------
+
+Unreleased
+
+-   Fix compatibility with Python 2.7.
+
+
 Version 2.5.0
 -------------
 
