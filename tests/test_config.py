@@ -1,3 +1,4 @@
+import os
 from unittest import mock
 
 import pytest
@@ -107,3 +108,9 @@ class TestCreateEngine:
         args, options = m_create_engine.call_args
         assert options["poolclass"].__name__ == "NullPool"
         assert "pool_size" not in options
+
+
+def test_sqlite_relative_to_app_root(app):
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
+    db = SQLAlchemy(app)
+    assert db.engine.url.database == os.path.join(app.root_path, "test.db")

@@ -17,19 +17,52 @@ from sqlalchemy import event
 from sqlalchemy import inspect
 from sqlalchemy import orm
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
 from .model import DefaultMeta
 from .model import Model
 
-__version__ = "3.0.0.dev"
+try:
+    from sqlalchemy.orm import declarative_base
+    from sqlalchemy.orm import DeclarativeMeta
+except ImportError:
+    # SQLAlchemy <= 1.3
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy.ext.declarative import DeclarativeMeta
+
+# Scope the session to the current greenlet if greenlet is available,
+# otherwise fall back to the current thread.
+try:
+    from greenlet import getcurrent as _ident_func
+except ImportError:
+    from threading import get_ident as _ident_func
+
+__version__ = "3.0.0.dev0"
 
 _signals = Namespace()
 models_committed = _signals.signal("models-committed")
 before_models_committed = _signals.signal("before-models-committed")
+
+
+def _sa_url_set(url, **kwargs):
+    try:
+        url = url.set(**kwargs)
+    except AttributeError:
+        # SQLAlchemy <= 1.3
+        for key, value in kwargs.items():
+            setattr(url, key, value)
+
+    return url
+
+
+def _sa_url_query_setdefault(url, **kwargs):
+    query = dict(url.query)
+
+    for key, value in kwargs.items():
+        query.setdefault(key, value)
+
+    return _sa_url_set(url, query=query)
 
 
 def _make_table(db):
@@ -566,7 +599,7 @@ class _EngineConnector:
                 return self._engine
 
             sa_url = make_url(uri)
-            options = self.get_options(sa_url, echo)
+            sa_url, options = self.get_options(sa_url, echo)
             self._engine = rv = self._sa.create_engine(sa_url, options)
 
             if _record_queries(self._app):
@@ -580,8 +613,7 @@ class _EngineConnector:
 
     def get_options(self, sa_url, echo):
         options = {}
-
-        self._sa.apply_driver_hacks(self._app, sa_url, options)
+        sa_url, options = self._sa.apply_driver_hacks(self._app, sa_url, options)
 
         if echo:
             options["echo"] = echo
@@ -591,7 +623,7 @@ class _EngineConnector:
         options.update(self._app.config["SQLALCHEMY_ENGINE_OPTIONS"])
         # Give options set in SQLAlchemy.__init__() ultimate priority
         options.update(self._sa._engine_options)
-        return options
+        return sa_url, options
 
 
 def get_state(app):
@@ -757,7 +789,7 @@ class SQLAlchemy:
         if options is None:
             options = {}
 
-        scopefunc = options.pop("scopefunc", _app_ctx_stack.__ident_func__)
+        scopefunc = options.pop("scopefunc", _ident_func)
         options.setdefault("query_cls", self.Query)
         return orm.scoped_session(self.create_session(options), scopefunc=scopefunc)
 
@@ -860,9 +892,15 @@ class SQLAlchemy:
 
         The default implementation provides some defaults for things
         like pool sizes for MySQL and SQLite.
+
+        .. versionchanged:: 2.5
+            Returns ``(sa_url, options)``. SQLAlchemy 1.4 made the URL
+            immutable, so any changes to it must now be passed back up
+            to the original caller.
         """
         if sa_url.drivername.startswith("mysql"):
-            sa_url.query.setdefault("charset", "utf8")
+            sa_url = _sa_url_query_setdefault(sa_url, charset="utf8")
+
             if sa_url.drivername != "mysql+gaerdbms":
                 options.setdefault("pool_size", 10)
                 options.setdefault("pool_recycle", 7200)
@@ -898,7 +936,11 @@ class SQLAlchemy:
             # app instance path, which might need to be created.
             if not detected_in_memory and not os.path.isabs(sa_url.database):
                 os.makedirs(app.instance_path, exist_ok=True)
-                sa_url.database = os.path.join(app.instance_path, sa_url.database)
+                sa_url = _sa_url_set(
+                    sa_url, database=os.path.join(app.root_path, sa_url.database)
+                )
+
+        return sa_url, options
 
     @property
     def engine(self):
