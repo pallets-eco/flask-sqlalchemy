@@ -15,14 +15,21 @@ from flask import _app_ctx_stack, abort, current_app, request
 from flask.signals import Namespace
 from sqlalchemy import event, inspect, orm
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
 
-from flask_sqlalchemy.model import Model
 from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
+from .model import Model
 from . import utils
+
+try:
+    from sqlalchemy.orm import declarative_base
+    from sqlalchemy.orm import DeclarativeMeta
+except ImportError:
+    # SQLAlchemy <= 1.3
+    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy.ext.declarative import DeclarativeMeta
 
 __version__ = "2.4.4"
 
@@ -38,6 +45,26 @@ else:
 _signals = Namespace()
 models_committed = _signals.signal('models-committed')
 before_models_committed = _signals.signal('before-models-committed')
+
+
+def _sa_url_set(url, **kwargs):
+    try:
+        url = url.set(**kwargs)
+    except AttributeError:
+        # SQLAlchemy <= 1.3
+        for key, value in kwargs.items():
+            setattr(url, key, value)
+
+    return url
+
+
+def _sa_url_query_setdefault(url, **kwargs):
+    query = dict(url.query)
+
+    for key, value in kwargs.items():
+        query.setdefault(key, value)
+
+    return _sa_url_set(url, query=query)
 
 
 def _make_table(db):
@@ -552,7 +579,7 @@ class _EngineConnector(object):
                 return self._engine
 
             sa_url = make_url(uri)
-            options = self.get_options(sa_url, echo)
+            sa_url, options = self.get_options(sa_url, echo)
             self._engine = rv = self._sa.create_engine(sa_url, options)
 
             if _record_queries(self._app):
@@ -566,8 +593,9 @@ class _EngineConnector(object):
     def get_options(self, sa_url, echo):
         options = {}
 
-        self._sa.apply_pool_defaults(self._app, options)
-        self._sa.apply_driver_hacks(self._app, sa_url, options)
+        options = self._sa.apply_pool_defaults(self._app, options)
+        sa_url, options = self._sa.apply_driver_hacks(self._app, sa_url, options)
+
         if echo:
             options['echo'] = echo
 
@@ -578,7 +606,7 @@ class _EngineConnector(object):
         # Give options set in SQLAlchemy.__init__() ultimate priority
         options.update(self._sa._engine_options)
 
-        return options
+        return sa_url, options
 
 
 def get_state(app):
@@ -861,6 +889,11 @@ class SQLAlchemy(object):
             return response_or_exc
 
     def apply_pool_defaults(self, app, options):
+        """
+        .. versionchanged:: 2.5
+            Returns the ``options`` dict, for consistency with
+            :meth:`apply_driver_hacks`.
+        """
         def _setdefault(optionkey, configkey):
             value = app.config[configkey]
             if value is not None:
@@ -869,6 +902,7 @@ class SQLAlchemy(object):
         _setdefault('pool_timeout', 'SQLALCHEMY_POOL_TIMEOUT')
         _setdefault('pool_recycle', 'SQLALCHEMY_POOL_RECYCLE')
         _setdefault('max_overflow', 'SQLALCHEMY_MAX_OVERFLOW')
+        return options
 
     def apply_driver_hacks(self, app, sa_url, options):
         """This method is called before engine creation and used to inject
@@ -879,9 +913,15 @@ class SQLAlchemy(object):
         The default implementation provides some saner defaults for things
         like pool sizes for MySQL and sqlite.  Also it injects the setting of
         `SQLALCHEMY_NATIVE_UNICODE`.
+
+        .. versionchanged:: 2.5
+            Returns ``(sa_url, options)``. SQLAlchemy 1.4 made the URL
+            immutable, so any changes to it must now be passed back up
+            to the original caller.
         """
         if sa_url.drivername.startswith('mysql'):
-            sa_url.query.setdefault('charset', 'utf8')
+            sa_url = _sa_url_query_setdefault(sa_url, charset="utf8")
+
             if sa_url.drivername != 'mysql+gaerdbms':
                 options.setdefault('pool_size', 10)
                 options.setdefault('pool_recycle', 7200)
@@ -911,7 +951,9 @@ class SQLAlchemy(object):
 
             # if it's not an in memory database we make the path absolute.
             if not detected_in_memory:
-                sa_url.database = os.path.join(app.root_path, sa_url.database)
+                sa_url = _sa_url_set(
+                    sa_url, database=os.path.join(app.root_path, sa_url.database)
+                )
 
         unu = app.config['SQLALCHEMY_NATIVE_UNICODE']
         if unu is None:
@@ -931,6 +973,8 @@ class SQLAlchemy(object):
                 "  Use the 'engine_options' parameter instead.",
                 DeprecationWarning
             )
+
+        return sa_url, options
 
     @property
     def engine(self):
