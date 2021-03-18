@@ -20,6 +20,14 @@ Unreleased
     ``db.session.commit()`` directly instead. :issue:`216`
 
 
+Version 2.5.1
+-------------
+
+Released 2021-03-18
+
+-   Fix compatibility with Python 2.7.
+
+
 Version 2.5.0
 -------------
 
