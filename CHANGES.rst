@@ -1,7 +1,7 @@
-Version 2.5
------------
+Version 2.5.0
+-------------
 
-Unreleased
+Released 2021-03-18
 
 -   Update to support SQLAlchemy 1.4.
 -   SQLAlchemy ``URL`` objects are immutable. Some internal methods have
