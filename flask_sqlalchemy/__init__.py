@@ -31,6 +31,13 @@ except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
     from sqlalchemy.ext.declarative import DeclarativeMeta
 
+# Scope the session to the current greenlet if greenlet is available,
+# otherwise fall back to the current thread.
+try:
+    from greenlet import getcurrent as _ident_func
+except ImportError:
+    from threading import get_ident as _ident_func
+
 __version__ = "2.4.4"
 
 # the best timer function for the platform
@@ -772,7 +779,7 @@ class SQLAlchemy(object):
         if options is None:
             options = {}
 
-        scopefunc = options.pop('scopefunc', _app_ctx_stack.__ident_func__)
+        scopefunc = options.pop('scopefunc', _ident_func)
         options.setdefault('query_cls', self.Query)
         return orm.scoped_session(
             self.create_session(options), scopefunc=scopefunc
