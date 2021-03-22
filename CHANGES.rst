@@ -7,6 +7,10 @@ Unreleased
 -   Bump minimum version of Flask to 1.0.4.
 -   Bump minimum version of SQLAlchemy to 1.2.
 -   Remove previously deprecated code.
+-   The CamelCase to snake_case table name converter handles more
+    patterns correctly. If such a name was already created in the
+    database, either use Alembic to rename the table, or set
+    ``__tablename__`` to keep the old name. :issue:`406`
 -   Set ``SQLALCHEMY_TRACK_MODIFICATIONS`` to ``False`` by default.
     :pr:`727`
 -   Remove default ``'sqlite:///:memory:'`` setting for

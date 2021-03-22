@@ -42,19 +42,9 @@ def should_set_tablename(cls):
     return True
 
 
-camelcase_re = re.compile(r"([A-Z]+)(?=[a-z0-9])")
-
-
 def camel_to_snake_case(name):
-    def _join(match):
-        word = match.group()
-
-        if len(word) > 1:
-            return f"_{word[:-1]}_{word[-1]}".lower()
-
-        return f"_{word.lower()}"
-
-    return camelcase_re.sub(_join, name).lstrip("_")
+    name = re.sub(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))", r"_\1", name)
+    return name.lower().lstrip("_")
 
 
 class NameMetaMixin(type):

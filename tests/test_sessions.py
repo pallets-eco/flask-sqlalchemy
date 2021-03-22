@@ -1,3 +1,5 @@
+import random
+
 import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker
 
@@ -17,20 +19,15 @@ def test_default_session_scoping(app, db):
 
 
 def test_session_scoping_changing(app):
-    def scopefunc():
-        return id(dict())
+    db = SQLAlchemy(app, session_options={"scopefunc": random.random})
 
-    db = SQLAlchemy(app, session_options=dict(scopefunc=scopefunc))
-
-    class FOOBar(db.Model):
+    class Example(db.Model):
         id = db.Column(db.Integer, primary_key=True)
 
     db.create_all()
-
-    with app.test_request_context():
-        fb = FOOBar()
-        db.session.add(fb)
-        assert fb not in db.session  # because a new scope is generated on each call
+    fb = Example()
+    db.session.add(fb)
+    assert fb not in db.session  # because a new scope is generated on each call
 
 
 def test_insert_update_delete(db):

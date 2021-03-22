@@ -4,6 +4,44 @@ import pytest
 from sqlalchemy.exc import ArgumentError
 from sqlalchemy.ext.declarative import declared_attr
 
+from flask_sqlalchemy.model import camel_to_snake_case
+
+
+@pytest.mark.parametrize(
+    ("name", "expect"),
+    [
+        ("CamelCase", "camel_case"),
+        ("Snake_case", "snake_case"),
+        ("HTMLLayout", "html_layout"),
+        ("LayoutHTML", "layout_html"),
+        ("HTTP2Request", "http2_request"),
+        ("ShoppingCartSession", "shopping_cart_session"),
+        ("ABC", "abc"),
+        ("PreABC", "pre_abc"),
+        ("ABCPost", "abc_post"),
+        ("PreABCPost", "pre_abc_post"),
+        ("HTTP2RequestSession", "http2_request_session"),
+        ("UserST4", "user_st4"),
+        (
+            "HTTP2ClientType3EncoderParametersSSE",
+            "http2_client_type3_encoder_parameters_sse",
+        ),
+        (
+            "LONGName4TestingCamelCase2snake_caseXYZ",
+            "long_name4_testing_camel_case2snake_case_xyz",
+        ),
+        ("FooBarSSE2", "foo_bar_sse2"),
+        ("AlarmMessageSS2SignalTransformer", "alarm_message_ss2_signal_transformer"),
+        ("AstV2Node", "ast_v2_node"),
+        ("HTTPResponseCodeXYZ", "http_response_code_xyz"),
+        ("get2HTTPResponse123Code", "get2_http_response123_code"),
+        # ("getHTTPresponseCode", "get_htt_presponse_code"),
+        # ("__test__Method", "test___method"),
+    ],
+)
+def test_camel_to_snake_case(name, expect):
+    assert camel_to_snake_case(name) == expect
+
 
 def test_name(db):
     class FOOBar(db.Model):
