@@ -1041,26 +1041,40 @@ class SQLAlchemy:
             op(bind=self.get_engine(app, bind), **extra)
 
     def create_all(self, bind="__all__", app=None):
-        """Creates all tables.
+        """Create all tables that do not already exist in the database.
+        This does not update existing tables, use a migration library
+        for that.
+
+        :param bind: A bind key or list of keys to create the tables
+            for. Defaults to all binds.
+        :param app: Use this app instead of requiring an app context.
 
         .. versionchanged:: 0.12
-           Parameters were added
+            Added the ``bind`` and ``app`` parameters.
         """
         self._execute_for_all_tables(app, bind, "create_all")
 
     def drop_all(self, bind="__all__", app=None):
-        """Drops all tables.
+        """Drop all tables.
+
+        :param bind: A bind key or list of keys to drop the tables for.
+            Defaults to all binds.
+        :param app: Use this app instead of requiring an app context.
 
         .. versionchanged:: 0.12
-           Parameters were added
+            Added the ``bind`` and ``app`` parameters.
         """
         self._execute_for_all_tables(app, bind, "drop_all")
 
     def reflect(self, bind="__all__", app=None):
         """Reflects tables from the database.
 
+        :param bind: A bind key or list of keys to reflect the tables
+            from. Defaults to all binds.
+        :param app: Use this app instead of requiring an app context.
+
         .. versionchanged:: 0.12
-           Parameters were added
+            Added the ``bind`` and ``app`` parameters.
         """
         self._execute_for_all_tables(app, bind, "reflect", skip_tables=True)
 
