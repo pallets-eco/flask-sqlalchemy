@@ -621,7 +621,8 @@ class _EngineConnector:
 
         # Give the config options set by a developer explicitly priority
         # over decisions FSA makes.
-        options.update(self._app.config["SQLALCHEMY_ENGINE_OPTIONS"])
+        if self._app.config["SQLALCHEMY_ENGINE_OPTIONS"]:
+            options.update(self._app.config["SQLALCHEMY_ENGINE_OPTIONS"])
         # Give options set in SQLAlchemy.__init__() ultimate priority
         options.update(self._sa._engine_options)
         return sa_url, options
