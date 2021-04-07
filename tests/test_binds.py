@@ -1,4 +1,6 @@
 import flask_sqlalchemy as fsa
+import pytest
+from sqlalchemy import Column, MetaData, Table, Text, select
 from sqlalchemy.ext.declarative import declared_attr
 
 def test_basic_binds(app, db):
@@ -123,3 +125,42 @@ def test_polymorphic_bind(app, db):
 
     assert Base.__table__.info['bind_key'] == bind_key
     assert Child1.__table__.info['bind_key'] == bind_key
+
+
+def test_non_mapper_binds(app, db):
+    app.config['SQLALCHEMY_BINDS'] = {
+        'foo': 'sqlite:///',
+        'bar': 'sqlite:///',
+    }
+
+    def _setup_bind(bind_key):
+        table = Table(
+            "test_table",
+            MetaData(),
+            Column("key", Text(), nullable=True),
+            info={"bind_key": bind_key}
+        )
+        engine = db.get_engine(bind=bind_key)
+        with engine.connect() as connection:
+            table.create(connection, checkfirst=False)
+            connection.execute(table.insert().values({"key": bind_key}))
+        return table
+
+    def _test_bind(table, bind_key):
+        results = db.session.execute(select([table.c.key])).fetchall()
+        assert results == [(bind_key,)]
+
+    default_table = _setup_bind(None)
+    foo_table = _setup_bind("foo")
+    bar_table = _setup_bind("bar")
+
+    _test_bind(default_table, None)
+    _test_bind(foo_table, "foo")
+    _test_bind(bar_table, "bar")
+
+    cross_bind_query = select(
+        [foo_table.c.key],
+        from_obj=foo_table.join(bar_table, foo_table.c.key == bar_table.c.key)
+    )
+    with pytest.raises(ValueError):
+        db.session.execute(cross_bind_query)

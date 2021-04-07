@@ -13,10 +13,12 @@ from threading import Lock
 import sqlalchemy
 from flask import _app_ctx_stack, abort, current_app, request
 from flask.signals import Namespace
-from sqlalchemy import event, inspect, orm
+from sqlalchemy import Table, event, inspect, orm
 from sqlalchemy.engine.url import make_url
 from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.orm.session import Session as SessionBase
+from sqlalchemy.sql.visitors import ClauseVisitor
+from sqlalchemy.sql.expression import UpdateBase, ValuesBase
 
 from ._compat import itervalues, string_types, xrange
 from .model import DefaultMeta
@@ -189,6 +191,19 @@ class SignallingSession(SessionBase):
         table, using the ``__bind_key__`` if it is set.
         """
         # mapper is None if someone tries to just get a connection
+        bind_key = self._get_bind_key(mapper, clause)
+
+        if bind_key is not None:
+            state = get_state(self.app)
+            return state.db.get_engine(self.app, bind=bind_key)
+
+        return SessionBase.get_bind(self, mapper, clause)
+
+    def _get_bind_key(self, mapper, clause):
+        """Return the bind_key for a given model or
+        table, using the ``__bind_key__`` if it is set.
+        """
+        # mapper is None if someone tries to just get a connection
         if mapper is not None:
             try:
                 # SA >= 1.3
@@ -200,9 +215,48 @@ class SignallingSession(SessionBase):
             info = getattr(persist_selectable, 'info', {})
             bind_key = info.get('bind_key')
             if bind_key is not None:
-                state = get_state(self.app)
-                return state.db.get_engine(self.app, bind=bind_key)
-        return SessionBase.get_bind(self, mapper, clause)
+                return bind_key
+
+        bind_keys = self._get_clause_bind_keys(clause)
+
+        if bind_keys:
+            try:
+                (bind_key,) = bind_keys
+            except ValueError:
+                raise ValueError("Query uses multiple binds: %r" % bind_keys)
+            return bind_key
+
+        return None
+
+    def _get_clause_bind_keys(self, clause):
+        """Return the bind_keys associated with a given clause."""
+        bind_keys = set()
+
+        for table in self._iter_clause_tables(clause):
+            try:
+                info = table.info
+            except AttributeError:
+                continue
+
+            bind_key = info.get("bind_key")
+
+            if bind_key is not None:
+                bind_keys.add(bind_key)
+
+        return bind_keys
+
+    def _iter_clause_tables(self, clause):
+        """Return a generator that iterates over Table objects
+        associated with the given clause.
+        """
+        if clause is not None:
+            visitor = ClauseVisitor()
+
+            for e in visitor.iterate(clause):
+                if isinstance(e, Table):
+                    yield e
+                elif isinstance(e, (ValuesBase, UpdateBase)):
+                    yield e.table
 
 
 class _SessionSignalEvents(object):
