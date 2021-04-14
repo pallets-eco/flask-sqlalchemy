@@ -1,6 +1,7 @@
 import random
 
 import sqlalchemy as sa
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
 
 from flask_sqlalchemy import SQLAlchemy
@@ -59,3 +60,8 @@ def test_insert_update_delete(db):
 
 def test_listen_to_session_event(db):
     sa.event.listen(db.session, "after_commit", lambda session: None)
+
+
+def test_session_get_bind(app, db):
+    with app.test_request_context():
+        assert isinstance(db.session.get_bind(), Engine)

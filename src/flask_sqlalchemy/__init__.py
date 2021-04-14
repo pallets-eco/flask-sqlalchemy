@@ -172,7 +172,14 @@ class SignallingSession(SessionBase):
             **options,
         )
 
-    def get_bind(self, mapper=None, **kwargs):
+    def get_bind(
+        self,
+        mapper=None,
+        clause=None,
+        bind=None,
+        _sa_skip_events=None,
+        _sa_skip_for_implicit_returning=False,
+    ):
         """Return the engine or connection for a given model or
         table, using the ``__bind_key__`` if it is set.
         """
@@ -191,7 +198,13 @@ class SignallingSession(SessionBase):
                 state = get_state(self.app)
                 return state.db.get_engine(self.app, bind=bind_key)
 
-        return super().get_bind(mapper, **kwargs)
+        return super().get_bind(
+            mapper=mapper,
+            clause=clause,
+            bind=bind,
+            _sa_skip_events=_sa_skip_events,
+            _sa_skip_for_implicit_returning=_sa_skip_for_implicit_returning,
+        )
 
 
 class _SessionSignalEvents:
