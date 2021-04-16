@@ -904,7 +904,10 @@ class SQLAlchemy:
 
             if sa_url.drivername != "mysql+gaerdbms":
                 pool_class = options.get("poolclass")
-                if pool_class and pool_class.status(0) not in ('NullPool', 'StaticPool'):
+                if pool_class and pool_class.status(0) not in (
+                    "NullPool",
+                    "StaticPool",
+                ):
                     options.setdefault("pool_size", 10)
                     options.setdefault("pool_recycle", 7200)
         elif sa_url.drivername == "sqlite":
