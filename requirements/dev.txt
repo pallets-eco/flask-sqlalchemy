@@ -72,7 +72,7 @@ pygments==2.8.1
     # via sphinx
 pyparsing==2.4.7
     # via packaging
-pytest==6.2.3
+pytest==6.2.4
     # via -r requirements/tests.in
 pytz==2021.1
     # via babel
