@@ -1,6 +1,7 @@
 import functools
 import os
 import sys
+import typing
 import warnings
 from math import ceil
 from operator import itemgetter
@@ -8,10 +9,10 @@ from threading import Lock
 from time import perf_counter
 
 import sqlalchemy
-from flask import _app_ctx_stack
 from flask import abort
 from flask import current_app
 from flask import request
+from flask.globals import _app_ctx_stack
 from flask.signals import Namespace
 from sqlalchemy import event
 from sqlalchemy import inspect
@@ -117,7 +118,7 @@ class _DebugQueryTuple(tuple):
     context = property(itemgetter(4))
 
     @property
-    def duration(self):
+    def duration(self) -> float:
         return self.end_time - self.start_time
 
     def __repr__(self):
@@ -347,7 +348,7 @@ class Pagination:
     no longer work.
     """
 
-    def __init__(self, query, page, per_page, total, items):
+    def __init__(self, query, page, per_page, total, items) -> None:
         #: the unlimited query object that was used to create this
         #: pagination object.
         self.query = query
@@ -361,7 +362,7 @@ class Pagination:
         self.items = items
 
     @property
-    def pages(self):
+    def pages(self) -> int:
         """The total number of pages"""
         if self.per_page == 0 or self.total is None:
             pages = 0
@@ -369,7 +370,7 @@ class Pagination:
             pages = int(ceil(self.total / float(self.per_page)))
         return pages
 
-    def prev(self, error_out=False):
+    def prev(self, error_out=False) -> "Pagination":
         """Returns a :class:`Pagination` object for the previous page."""
         assert (
             self.query is not None
@@ -377,18 +378,18 @@ class Pagination:
         return self.query.paginate(self.page - 1, self.per_page, error_out)
 
     @property
-    def prev_num(self):
+    def prev_num(self) -> typing.Optional[int]:
         """Number of the previous page."""
         if not self.has_prev:
             return None
         return self.page - 1
 
     @property
-    def has_prev(self):
+    def has_prev(self) -> bool:
         """True if a previous page exists"""
         return self.page > 1
 
-    def next(self, error_out=False):
+    def next(self, error_out=False) -> "Pagination":
         """Returns a :class:`Pagination` object for the next page."""
         assert (
             self.query is not None
@@ -396,18 +397,20 @@ class Pagination:
         return self.query.paginate(self.page + 1, self.per_page, error_out)
 
     @property
-    def has_next(self):
+    def has_next(self) -> bool:
         """True if a next page exists."""
         return self.page < self.pages
 
     @property
-    def next_num(self):
+    def next_num(self) -> typing.Optional[int]:
         """Number of the next page"""
         if not self.has_next:
             return None
         return self.page + 1
 
-    def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
+    def iter_pages(
+        self, left_edge=2, left_current=2, right_current=5, right_edge=2
+    ) -> typing.Iterator[typing.Optional[int]]:
         """Iterates over the page numbers in the pagination.  The four
         parameters control the thresholds how many numbers should be produced
         from the sides.  Skipped page numbers are represented as `None`.
@@ -477,7 +480,7 @@ class BaseQuery(orm.Query):
 
     def paginate(
         self, page=None, per_page=None, error_out=True, max_per_page=None, count=True
-    ):
+    ) -> "Pagination":
         """Returns ``per_page`` items from page ``page``.
 
         If ``page`` or ``per_page`` are ``None``, they will be retrieved from
@@ -754,7 +757,7 @@ class SQLAlchemy:
         query_class=BaseQuery,
         model_class=Model,
         engine_options=None,
-    ):
+    ) -> None:
 
         self.Query = query_class
         self.session = self.create_scoped_session(session_options)
@@ -773,7 +776,9 @@ class SQLAlchemy:
 
         return self.Model.metadata
 
-    def create_scoped_session(self, options=None):
+    def create_scoped_session(
+        self, options=None
+    ) -> sqlalchemy.orm.scoping.scoped_session:
         """Create a :class:`~sqlalchemy.orm.scoping.scoped_session`
         on the factory from :meth:`create_session`.
 
@@ -1079,6 +1084,6 @@ class SQLAlchemy:
         """
         self._execute_for_all_tables(app, bind, "reflect", skip_tables=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         url = self.engine.url if self.app or current_app else None
         return f"<{type(self).__name__} engine={url!r}>"

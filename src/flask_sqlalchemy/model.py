@@ -1,4 +1,5 @@
 import re
+import typing
 
 import sqlalchemy as sa
 from sqlalchemy import inspect
@@ -7,7 +8,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.schema import _get_table_key
 
 
-def should_set_tablename(cls):
+def should_set_tablename(cls) -> bool:
     """Determine whether ``__tablename__`` should be automatically generated
     for a model.
 
@@ -42,12 +43,15 @@ def should_set_tablename(cls):
     return True
 
 
-def camel_to_snake_case(name):
+def camel_to_snake_case(name) -> str:
     name = re.sub(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))", r"_\1", name)
     return name.lower().lstrip("_")
 
 
 class NameMetaMixin(type):
+
+    metadata: sa.schema.MetaData
+
     def __init__(cls, name, bases, d):
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
@@ -63,7 +67,7 @@ class NameMetaMixin(type):
         ):
             del cls.__table__
 
-    def __table_cls__(cls, *args, **kwargs):
+    def __table_cls__(cls, *args, **kwargs) -> typing.Optional[sa.sql.schema.Table]:
         """This is called by SQLAlchemy during mapper setup. It determines the
         final table object that the model will use.
 
@@ -96,6 +100,7 @@ class NameMetaMixin(type):
         # single-table inheritance, use the parent tablename
         if "__tablename__" in cls.__dict__:
             del cls.__tablename__
+        return None
 
 
 class BindMetaMixin(type):
