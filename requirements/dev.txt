@@ -13,7 +13,7 @@ attrs==20.3.0
 babel==2.9.0
     # via sphinx
 blinker==1.4
-    # via -r tests.in
+    # via -r requirements/tests.in
 certifi==2020.12.5
     # via requests
 cfgv==3.2.0
@@ -43,7 +43,7 @@ jinja2==2.11.3
 markupsafe==1.1.1
     # via jinja2
 mock==4.0.3
-    # via -r tests.in
+    # via -r requirements/tests.in
 nodeenv==1.5.0
     # via pre-commit
 packaging==20.9
@@ -53,17 +53,17 @@ packaging==20.9
     #   sphinx
     #   tox
 pallets-sphinx-themes==2.0.1
-    # via -r docs.in
+    # via -r requirements/docs.in
 pep517==0.10.0
     # via pip-tools
-pip-tools==6.1.0
-    # via -r dev.in
+pip-tools==6.2.0
+    # via -r requirements/dev.in
 pluggy==0.13.1
     # via
     #   pytest
     #   tox
 pre-commit==2.13.0
-    # via -r dev.in
+    # via -r requirements/dev.in
 py==1.10.0
     # via
     #   pytest
@@ -73,7 +73,7 @@ pygments==2.8.1
 pyparsing==2.4.7
     # via packaging
 pytest==6.2.4
-    # via -r tests.in
+    # via -r requirements/tests.in
 pytz==2021.1
     # via babel
 pyyaml==5.4.1
@@ -86,14 +86,14 @@ six==1.15.0
     #   virtualenv
 snowballstemmer==2.1.0
     # via sphinx
-sphinx-issues==1.2.0
-    # via -r docs.in
 sphinx==4.0.2
     # via
-    #   -r docs.in
+    #   -r requirements/docs.in
     #   pallets-sphinx-themes
     #   sphinx-issues
     #   sphinxcontrib-log-cabinet
+sphinx-issues==1.2.0
+    # via -r requirements/docs.in
 sphinxcontrib-applehelp==1.0.2
     # via sphinx
 sphinxcontrib-devhelp==1.0.2
@@ -103,7 +103,7 @@ sphinxcontrib-htmlhelp==1.0.3
 sphinxcontrib-jsmath==1.0.1
     # via sphinx
 sphinxcontrib-log-cabinet==1.0.1
-    # via -r docs.in
+    # via -r requirements/docs.in
 sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.4
@@ -115,13 +115,15 @@ toml==0.10.2
     #   pytest
     #   tox
 tox==3.23.1
-    # via -r dev.in
+    # via -r requirements/dev.in
 urllib3==1.26.5
     # via requests
 virtualenv==20.4.3
     # via
     #   pre-commit
     #   tox
+wheel==0.36.2
+    # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
