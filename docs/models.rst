@@ -131,6 +131,18 @@ How do you define the lazy status for backrefs?  By using the
         addresses = db.relationship('Address', lazy='select',
             backref=db.backref('person', lazy='joined'))
 
+
+To use this when inserting a record, use the .append() function:
+
+    p = Person()
+    p.id = 0
+    p.name = "John Doe"
+    a = Address()
+    a.id = 0
+    a.person_id = 0
+    a.email = "john.doe@example.com"
+    p.addresses.append(a)
+
 Many-to-Many Relationships
 --------------------------
 
