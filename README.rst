@@ -16,6 +16,8 @@ Install and update using `pip`_:
 
   $ pip install -U Flask-SQLAlchemy
 
+.. _pip: https://pip.pypa.io/en/stable/getting-started/
+
 
 A Simple Example
 ----------------
@@ -54,4 +56,3 @@ Links
 
 .. _Flask: https://palletsprojects.com/p/flask/
 .. _SQLAlchemy: https://www.sqlalchemy.org
-.. _pip: https://pip.pypa.io/en/stable/quickstart/
