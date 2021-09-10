@@ -1,3 +1,11 @@
+Version 2.5.2
+-------------
+
+Unreleased
+
+-   Fix session ``get_bind`` signature for SQLAlchemy 1.4. :issue:`953`
+
+
 Version 2.5.1
 -------------
 
