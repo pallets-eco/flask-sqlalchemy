@@ -62,3 +62,17 @@ def test_repr(db):
     db.session.flush()
     assert repr(r) == "<Report 2, test>"
     assert repr(u) == str(u)
+
+
+def test_subclass_hook(db):
+    class SomeMixin:
+        def __init_subclass__(cls, default=None, **kwargs):
+            super().__init_subclass__(**kwargs)
+
+            cls.default = default
+
+    class SomeModel(db.Model, SomeMixin, default=2):
+        id = db.Column(db.Integer, primary_key=True)
+
+    assert hasattr(SomeModel, 'default')
+    assert SomeModel.default == 2
