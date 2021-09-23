@@ -22,6 +22,7 @@ Unreleased
 -   Deprecate ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` as it can cause various
     design issues that are difficult to debug. Call
     ``db.session.commit()`` directly instead. :issue:`216`
+-   Support ``__init_subclass__()`` hooks in models :issue:`1002`
 
 
 Version 2.5.1
