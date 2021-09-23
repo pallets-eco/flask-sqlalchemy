@@ -48,11 +48,11 @@ def camel_to_snake_case(name):
 
 
 class NameMetaMixin(type):
-    def __init__(cls, name, bases, d):
+    def __init__(cls, name, bases, d, **kw):
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
-        super().__init__(name, bases, d)
+        super().__init__(name, bases, d, **kw)
 
         # __table_cls__ has run at this point
         # if no table was created, use the parent table
@@ -99,10 +99,10 @@ class NameMetaMixin(type):
 
 
 class BindMetaMixin(type):
-    def __init__(cls, name, bases, d):
+    def __init__(cls, name, bases, d, **kw):
         bind_key = d.pop("__bind_key__", None) or getattr(cls, "__bind_key__", None)
 
-        super().__init__(name, bases, d)
+        super().__init__(name, bases, d, **kw)
 
         if bind_key is not None and getattr(cls, "__table__", None) is not None:
             cls.__table__.info["bind_key"] = bind_key
