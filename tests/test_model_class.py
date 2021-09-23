@@ -74,5 +74,5 @@ def test_subclass_hook(db):
     class SomeModel(db.Model, SomeMixin, default=2):
         id = db.Column(db.Integer, primary_key=True)
 
-    assert hasattr(SomeModel, 'default')
+    assert hasattr(SomeModel, "default")
     assert SomeModel.default == 2
