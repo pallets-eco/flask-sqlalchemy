@@ -12,3 +12,6 @@ htmlcov/
 .coverage
 .coverage.*
 .vscode/
+env/
+venv/
+.venv/
