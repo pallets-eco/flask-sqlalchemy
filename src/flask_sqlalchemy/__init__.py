@@ -894,13 +894,16 @@ class SQLAlchemy:
         The default implementation provides some defaults for things
         like pool sizes for MySQL and SQLite.
 
+        .. versionchanged:: 3.0
+            Change the default MySQL character set to "utf8mb4".
+
         .. versionchanged:: 2.5
             Returns ``(sa_url, options)``. SQLAlchemy 1.4 made the URL
             immutable, so any changes to it must now be passed back up
             to the original caller.
         """
         if sa_url.drivername.startswith("mysql"):
-            sa_url = _sa_url_query_setdefault(sa_url, charset="utf8")
+            sa_url = _sa_url_query_setdefault(sa_url, charset="utf8mb4")
 
             if sa_url.drivername != "mysql+gaerdbms":
                 options.setdefault("pool_size", 10)
