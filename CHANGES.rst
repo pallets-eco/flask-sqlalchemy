@@ -22,6 +22,7 @@ Unreleased
 -   Deprecate ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` as it can cause various
     design issues that are difficult to debug. Call
     ``db.session.commit()`` directly instead. :issue:`216`
+-   Change the default MySQL character set to "utf8mb4". :issue:`875`
 
 
 Version 2.5.1
