@@ -9,6 +9,13 @@ Flask-SQLAlchemy is fun to use, incredibly easy for basic applications, and
 readily extends for larger applications.  For the complete guide, checkout
 the API documentation on the :class:`SQLAlchemy` class.
 
+Installation
+------------
+
+Install and update using `pip <https://pip.pypa.io/en/stable/quickstart/>`_::
+
+    $ pip install -U Flask-SQLAlchemy
+
 A Minimal Application
 ---------------------
 
