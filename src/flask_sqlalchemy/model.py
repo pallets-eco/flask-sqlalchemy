@@ -1,5 +1,4 @@
 import re
-
 import sqlalchemy as sa
 from sqlalchemy import inspect
 from sqlalchemy.ext.declarative import DeclarativeMeta
