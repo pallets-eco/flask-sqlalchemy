@@ -1,14 +1,14 @@
 from pallets_sphinx_themes import get_version
 from pallets_sphinx_themes import ProjectLink
 
-# Project --------------------------------------------------------------
+# ------------------------------ Project --------------------------------
 
 project = "Flask-SQLAlchemy"
 copyright = "2010 Pallets"
 author = "Pallets"
 release, version = get_version("Flask-SQLAlchemy", version_length=1)
 
-# General --------------------------------------------------------------
+# ------------------------------ General --------------------------------
 
 master_doc = "index"
 extensions = [
@@ -24,7 +24,7 @@ intersphinx_mapping = {
 }
 issues_github_path = "pallets/flask-sqlalchemy"
 
-# HTML -----------------------------------------------------------------
+# -------------------------------- HTML ---------------------------------
 
 html_theme = "flask"
 html_context = {
@@ -51,7 +51,7 @@ html_logo = "_static/flask-sqlalchemy-logo.png"
 html_title = f"Flask-SQLAlchemy Documentation ({version})"
 html_show_sourcelink = False
 
-# LaTeX ----------------------------------------------------------------
+# -------------------------------- LaTeX --------------------------------
 
 latex_documents = [
     (master_doc, f"{project}-{version}.tex", html_title, author, "manual")
