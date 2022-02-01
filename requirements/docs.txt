@@ -44,7 +44,7 @@ sphinx==4.2.0
     #   pallets-sphinx-themes
     #   sphinx-issues
     #   sphinxcontrib-log-cabinet
-sphinx-issues==1.2.0
+sphinx-issues==3.0.1
     # via -r requirements/docs.in
 sphinxcontrib-applehelp==1.0.2
     # via sphinx
