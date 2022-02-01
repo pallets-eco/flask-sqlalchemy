@@ -38,7 +38,7 @@ requests==2.26.0
     # via sphinx
 snowballstemmer==2.1.0
     # via sphinx
-sphinx==4.2.0
+sphinx==4.4.0
     # via
     #   -r requirements/docs.in
     #   pallets-sphinx-themes
@@ -62,6 +62,3 @@ sphinxcontrib-serializinghtml==1.1.5
     # via sphinx
 urllib3==1.26.7
     # via requests
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
