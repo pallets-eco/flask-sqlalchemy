@@ -164,9 +164,7 @@ Start coding
     test fails without your patch. Run the tests as described below.
 -   Push your commits to your fork on GitHub and
     `create a pull request`_. Link to the issue being addressed with
-    ``fixes #123`` in the pull request. There is no need to open an
-    issue if your change does not effect code and is very simple like
-    a typo.
+    ``fixes #123`` in the pull request.
 
     .. code-block:: text
 
