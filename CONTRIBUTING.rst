@@ -149,12 +149,12 @@ Start coding
         $ git checkout -b your-branch-name origin/2.x
 
     If you're submitting a feature addition or change, branch off of the
-    "master" branch.
+    "main" branch.
 
     .. code-block:: text
 
         $ git fetch origin
-        $ git checkout -b your-branch-name origin/master
+        $ git checkout -b your-branch-name origin/main
 
 -   Using your favorite editor, make your changes,
     `committing as you go`_.
