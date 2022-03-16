@@ -51,10 +51,12 @@ Submitting patches
 ------------------
 
 If there is not an open issue for what you want to submit, prefer
-opening one for discussion before working on a PR. You can work on any
-issue that doesn't have an open PR linked to it or a maintainer assigned
-to it. These show up in the sidebar. No need to ask if you can work on
-an issue that interests you.
+opening one for discussion before working on a PR. You do not need to
+open an issue if your change only effects documentation and is only a
+simple change such as a typo. You can work on any issue that doesn't
+have an open PR linked to it or a maintainer assigned to it. These
+show up in the sidebar. No need to ask if you can work on an issue that
+interests you.
 
 Include the following in your patch:
 
@@ -162,7 +164,9 @@ Start coding
     test fails without your patch. Run the tests as described below.
 -   Push your commits to your fork on GitHub and
     `create a pull request`_. Link to the issue being addressed with
-    ``fixes #123`` in the pull request.
+    ``fixes #123`` in the pull request. There is no need to open an
+    issue if your change does not effect code and is very simple like
+    a typo.
 
     .. code-block:: text
 
