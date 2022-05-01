@@ -10,7 +10,7 @@ attrs==21.2.0
     # via pytest
 babel==2.9.1
     # via sphinx
-backports.entry-points-selectable==1.1.0
+backports-entry-points-selectable==1.1.0
     # via virtualenv
 blinker==1.4
     # via -r requirements/tests.in
@@ -64,7 +64,7 @@ pluggy==1.0.0
     # via
     #   pytest
     #   tox
-pre-commit==2.15.0
+pre-commit==2.18.1
     # via -r requirements/dev.in
 py==1.10.0
     # via
