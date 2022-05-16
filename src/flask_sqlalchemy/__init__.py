@@ -1041,6 +1041,8 @@ class SQLAlchemy:
             if not skip_tables:
                 tables = self.get_tables_for_bind(bind)
                 extra["tables"] = tables
+            if operation == "reflect":
+                extra["info"] = {"bind_key": bind}
             op = getattr(self.Model.metadata, operation)
             op(bind=self.get_engine(app, bind), **extra)
 
