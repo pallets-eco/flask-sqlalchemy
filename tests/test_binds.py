@@ -124,3 +124,27 @@ def test_execute_with_binds_arguments(app, db):
     db.session.execute(
         "SELECT true", bind_arguments={"bind": db.get_engine(app, "foo")}
     )
+
+
+def test_reflect(app, db):
+    app.config["SQLALCHEMY_BINDS"] = {"foo": "sqlite://"}
+    db.get_engine(app, "foo").execute("CREATE TABLE foo_table (id INTEGER PRIMARY KEY)")
+    db.get_engine(app).execute(
+        "CREATE TABLE default_bind_table (id INTEGER PRIMARY KEY)"
+    )
+
+    db.reflect("foo", app=app)
+
+    assert db.metadata.tables.get("default_bind_table") is None
+
+    foo_table = db.metadata.tables.get("foo_table")
+    assert foo_table is not None
+    assert foo_table in db.get_tables_for_bind("foo")
+    assert foo_table.info.get("bind_key") == "foo"
+
+    db.reflect(app=app)
+
+    default_bind_table = db.metadata.tables.get("default_bind_table")
+    assert default_bind_table is not None
+    assert default_bind_table in db.get_tables_for_bind(None)
+    assert default_bind_table.info.get("bind_key") is None
