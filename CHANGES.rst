@@ -23,6 +23,7 @@ Unreleased
     design issues that are difficult to debug. Call
     ``db.session.commit()`` directly instead. :issue:`216`
 -   Change the default MySQL character set to "utf8mb4". :issue:`875`
+-   Add `bind_key` to reflected tables. :issue:`660`
 
 
 Version 2.5.1
