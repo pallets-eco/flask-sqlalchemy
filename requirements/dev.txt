@@ -10,7 +10,7 @@ attrs==21.2.0
     # via pytest
 babel==2.9.1
     # via sphinx
-backports.entry-points-selectable==1.1.0
+backports-entry-points-selectable==1.1.0
     # via virtualenv
 blinker==1.4
     # via -r requirements/tests.in
@@ -56,7 +56,7 @@ pallets-sphinx-themes==2.0.1
     # via -r requirements/docs.in
 pep517==0.12.0
     # via pip-tools
-pip-tools==6.4.0
+pip-tools==6.6.2
     # via -r requirements/dev.in
 platformdirs==2.4.0
     # via virtualenv
