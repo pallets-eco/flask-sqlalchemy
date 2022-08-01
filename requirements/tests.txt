@@ -6,7 +6,7 @@
 #
 attrs==21.2.0
     # via pytest
-blinker==1.4
+blinker==1.5
     # via -r requirements/tests.in
 iniconfig==1.1.1
     # via pytest
