@@ -8,9 +8,9 @@ from threading import Lock
 from time import perf_counter
 
 import sqlalchemy
-from flask import _app_ctx_stack
 from flask import abort
 from flask import current_app
+from flask import g
 from flask import request
 from flask.signals import Namespace
 from sqlalchemy import event
@@ -24,12 +24,10 @@ from .model import DefaultMeta
 from .model import Model
 
 try:
-    from sqlalchemy.orm import declarative_base
-    from sqlalchemy.orm import DeclarativeMeta
+    from sqlalchemy.orm import DeclarativeMeta, declarative_base
 except ImportError:
     # SQLAlchemy <= 1.3
-    from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy.ext.declarative import DeclarativeMeta
+    from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
 # Scope the session to the current greenlet if greenlet is available,
 # otherwise fall back to the current thread.
@@ -288,9 +286,9 @@ class _EngineDebuggingSignalEvents:
     ):
         if current_app:
             try:
-                queries = _app_ctx_stack.top.sqlalchemy_queries
+                queries = g._sqlalchemy_queries
             except AttributeError:
-                queries = _app_ctx_stack.top.sqlalchemy_queries = []
+                queries = g._sqlalchemy_queries = []
 
             queries.append(
                 _DebugQueryTuple(
@@ -336,7 +334,7 @@ def get_debug_queries():
         query was issued.  The exact format is undefined so don't try
         to reconstruct filename or function name.
     """
-    return getattr(_app_ctx_stack.top, "sqlalchemy_queries", [])
+    return getattr(g, "_sqlalchemy_queries", [])
 
 
 class Pagination:
