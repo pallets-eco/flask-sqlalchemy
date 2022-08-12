@@ -334,7 +334,7 @@ def get_debug_queries():
         query was issued.  The exact format is undefined so don't try
         to reconstruct filename or function name.
     """
-    return getattr(g, "_sqlalchemy_queries", [])
+    return g.get("_sqlalchemy_queries", [])
 
 
 class Pagination:
