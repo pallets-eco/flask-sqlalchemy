@@ -1,8 +1,9 @@
 version: 2
 updates:
-- package-ecosystem: pip
+- package-ecosystem: "github-actions"
   directory: "/"
   schedule:
-    interval: monthly
-    time: "08:00"
-  open-pull-requests-limit: 99
+    interval: "monthly"
+    day: "monday"
+    time: "16:00"
+    timezone: "UTC"
