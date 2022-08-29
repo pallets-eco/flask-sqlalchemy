@@ -1,8 +1,8 @@
 import flask
 import pytest
 
-from flask_sqlalchemy.extension import before_models_committed
-from flask_sqlalchemy.extension import models_committed
+from flask_sqlalchemy.track_modifications import before_models_committed
+from flask_sqlalchemy.track_modifications import models_committed
 
 pytestmark = pytest.mark.skipif(
     not flask.signals_available, reason="Signals require the blinker library."
