@@ -1,7 +1,7 @@
 import pytest
 from werkzeug.exceptions import NotFound
 
-from flask_sqlalchemy.extension import Pagination
+from flask_sqlalchemy.pagination import Pagination
 
 
 def test_basic_pagination():
