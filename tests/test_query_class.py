@@ -1,5 +1,5 @@
-from flask_sqlalchemy import BaseQuery
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.extension import BaseQuery
 
 
 def test_default_query_class(db):

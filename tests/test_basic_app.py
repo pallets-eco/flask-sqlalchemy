@@ -1,7 +1,7 @@
 import flask
 
-from flask_sqlalchemy import get_debug_queries
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.extension import get_debug_queries
 
 
 def test_basic_insert(app, db, Todo):

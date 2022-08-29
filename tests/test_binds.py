@@ -1,5 +1,5 @@
-from flask_sqlalchemy import get_state
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.extension import get_state
 
 
 def test_basic_binds(app, db):
