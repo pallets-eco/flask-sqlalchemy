@@ -2,8 +2,10 @@ import re
 
 import sqlalchemy as sa
 from sqlalchemy import inspect
+from sqlalchemy import orm
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.schema import _get_table_key
 
 
@@ -138,3 +140,16 @@ class Model:
             pk = ", ".join(str(value) for value in identity)
 
         return f"<{type(self).__name__} {pk}>"
+
+
+class _QueryProperty:
+    def __init__(self, sa):
+        self.sa = sa
+
+    def __get__(self, obj, type):
+        try:
+            mapper = orm.class_mapper(type)
+            if mapper:
+                return type.query_class(mapper, session=self.sa.session())
+        except UnmappedClassError:
+            return None

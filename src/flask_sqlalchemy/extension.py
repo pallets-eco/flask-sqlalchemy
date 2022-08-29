@@ -8,8 +8,8 @@ from flask import current_app
 from sqlalchemy import event
 from sqlalchemy import orm
 from sqlalchemy.engine.url import make_url
-from sqlalchemy.orm.exc import UnmappedClassError
 
+from .model import _QueryProperty
 from .model import DefaultMeta
 from .model import Model
 from .query import BaseQuery
@@ -94,19 +94,6 @@ def _include_sqlalchemy(obj, cls):
     obj.relation = _wrap_with_default_query_class(obj.relation, cls)
     obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader, cls)
     obj.event = event
-
-
-class _QueryProperty:
-    def __init__(self, sa):
-        self.sa = sa
-
-    def __get__(self, obj, type):
-        try:
-            mapper = orm.class_mapper(type)
-            if mapper:
-                return type.query_class(mapper, session=self.sa.session())
-        except UnmappedClassError:
-            return None
 
 
 def _record_queries(app):
