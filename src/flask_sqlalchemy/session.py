@@ -1,7 +1,5 @@
 from sqlalchemy.orm import Session as SessionBase
 
-from .track_modifications import _SessionSignalEvents
-
 
 class SignallingSession(SessionBase):
     """The signalling session is the default session that Flask-SQLAlchemy
@@ -21,12 +19,16 @@ class SignallingSession(SessionBase):
     def __init__(self, db, autocommit=False, autoflush=True, **options):
         #: The application that this session belongs to.
         self.app = app = db.get_app()
+        self._db = db
+        self._model_changes = {}
         track_modifications = app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
         bind = options.pop("bind", None) or db.engine
         binds = options.pop("binds", db.get_binds(app))
 
         if track_modifications:
-            _SessionSignalEvents.register(self)
+            from . import track_modifications
+
+            track_modifications._listen(self)
 
         SessionBase.__init__(
             self,

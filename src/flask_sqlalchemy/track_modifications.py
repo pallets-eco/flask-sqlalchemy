@@ -1,78 +1,71 @@
+from __future__ import annotations
+
+import typing as t
+
+import sqlalchemy as sa
+import sqlalchemy.event
+from flask import current_app
+from flask import has_app_context
 from flask.signals import Namespace
-from sqlalchemy import event
-from sqlalchemy import inspect
+
+if t.TYPE_CHECKING:
+    from .session import SignallingSession
 
 _signals = Namespace()
 models_committed = _signals.signal("models-committed")
 before_models_committed = _signals.signal("before-models-committed")
 
 
-class _SessionSignalEvents:
-    @classmethod
-    def register(cls, session):
-        if not hasattr(session, "_model_changes"):
-            session._model_changes = {}
+def _listen(session) -> None:
+    sa.event.listen(session, "before_flush", _record_ops, named=True)
+    sa.event.listen(session, "before_commit", _record_ops, named=True)
+    sa.event.listen(session, "before_commit", _before_commit)
+    sa.event.listen(session, "after_commit", _after_commit)
+    sa.event.listen(session, "after_rollback", _after_rollback)
 
-        event.listen(session, "before_flush", cls.record_ops)
-        event.listen(session, "before_commit", cls.record_ops)
-        event.listen(session, "before_commit", cls.before_commit)
-        event.listen(session, "after_commit", cls.after_commit)
-        event.listen(session, "after_rollback", cls.after_rollback)
 
-    @classmethod
-    def unregister(cls, session):
-        if hasattr(session, "_model_changes"):
-            del session._model_changes
+def _record_ops(session: SignallingSession, **kwargs: t.Any) -> None:
+    if not has_app_context():
+        return
 
-        event.remove(session, "before_flush", cls.record_ops)
-        event.remove(session, "before_commit", cls.record_ops)
-        event.remove(session, "before_commit", cls.before_commit)
-        event.remove(session, "after_commit", cls.after_commit)
-        event.remove(session, "after_rollback", cls.after_rollback)
+    if not current_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]:
+        return
 
-    @staticmethod
-    def record_ops(session, flush_context=None, instances=None):
-        try:
-            d = session._model_changes
-        except AttributeError:
-            return
+    for targets, operation in (
+        (session.new, "insert"),
+        (session.dirty, "update"),
+        (session.deleted, "delete"),
+    ):
+        for target in targets:
+            state = sa.inspect(target)
+            key = state.identity_key if state.has_identity else id(target)
+            session._model_changes[key] = (target, operation)
 
-        for targets, operation in (
-            (session.new, "insert"),
-            (session.dirty, "update"),
-            (session.deleted, "delete"),
-        ):
-            for target in targets:
-                state = inspect(target)
-                key = state.identity_key if state.has_identity else id(target)
-                d[key] = (target, operation)
 
-    @staticmethod
-    def before_commit(session):
-        try:
-            d = session._model_changes
-        except AttributeError:
-            return
+def _before_commit(session: SignallingSession) -> None:
+    if not has_app_context():
+        return
 
-        if d:
-            before_models_committed.send(session.app, changes=list(d.values()))
+    if not current_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]:
+        return
 
-    @staticmethod
-    def after_commit(session):
-        try:
-            d = session._model_changes
-        except AttributeError:
-            return
+    if session._model_changes:
+        changes = list(session._model_changes.values())
+        before_models_committed.send(current_app._get_current_object(), changes=changes)
 
-        if d:
-            models_committed.send(session.app, changes=list(d.values()))
-            d.clear()
 
-    @staticmethod
-    def after_rollback(session):
-        try:
-            d = session._model_changes
-        except AttributeError:
-            return
+def _after_commit(session: SignallingSession) -> None:
+    if not has_app_context():
+        return
 
-        d.clear()
+    if not current_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]:
+        return
+
+    if session._model_changes:
+        changes = list(session._model_changes.values())
+        models_committed.send(current_app._get_current_object(), changes=changes)
+        session._model_changes.clear()
+
+
+def _after_rollback(session: SignallingSession) -> None:
+    session._model_changes.clear()
