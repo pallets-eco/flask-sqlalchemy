@@ -84,9 +84,9 @@ It is also possible to customize what is available for use on the
 special ``query`` property of models. For example, providing a
 ``get_or`` method::
 
-    from flask_sqlalchemy import BaseQuery, SQLAlchemy
+    from flask_sqlalchemy import Query, SQLAlchemy
 
-    class GetOrQuery(BaseQuery):
+    class GetOrQuery(Query):
         def get_or(self, ident, default=None):
             return self.get(ident) or default
 

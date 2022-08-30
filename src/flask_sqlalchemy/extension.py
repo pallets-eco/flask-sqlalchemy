@@ -12,7 +12,7 @@ from sqlalchemy.engine.url import make_url
 from .model import _QueryProperty
 from .model import DefaultMeta
 from .model import Model
-from .query import BaseQuery
+from .query import Query
 from .record_queries import _EngineDebuggingSignalEvents
 from .session import SignallingSession
 
@@ -215,7 +215,7 @@ class SQLAlchemy:
     You can still use :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` directly, but
     note that Flask-SQLAlchemy customizations are available only through an
     instance of this :class:`SQLAlchemy` class.  Query classes default to
-    :class:`BaseQuery` for `db.Query`, `db.Model.query_class`, and the default
+    :class:`Query` for `db.Query`, `db.Model.query_class`, and the default
     query_class for `db.relationship` and `db.backref`.  If you use these
     interfaces through :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` directly,
     the default query class will be that of :mod:`sqlalchemy`.
@@ -253,7 +253,7 @@ class SQLAlchemy:
     .. versionchanged:: 2.1
         Added the ``query_class`` parameter, to allow customisation
         of the query class, in place of the default of
-        :class:`BaseQuery`.
+        :class:`Query`.
 
     .. versionchanged:: 2.1
         Added the ``model_class`` parameter, which allows a custom model
@@ -272,17 +272,12 @@ class SQLAlchemy:
         Added the ``session_options`` parameter.
     """
 
-    #: Default query class used by :attr:`Model.query` and other queries.
-    #: Customize this by passing ``query_class`` to :func:`SQLAlchemy`.
-    #: Defaults to :class:`BaseQuery`.
-    Query = None
-
     def __init__(
         self,
         app=None,
         session_options=None,
         metadata=None,
-        query_class=BaseQuery,
+        query_class=Query,
         model_class=Model,
         engine_options=None,
     ):

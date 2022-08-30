@@ -1,36 +1,64 @@
+from __future__ import annotations
+
+import typing as t
+
+import sqlalchemy as sa
+import sqlalchemy.exc
+import sqlalchemy.orm
 from flask import abort
-from sqlalchemy import orm
 
 from .pagination import Pagination
 
 
-class BaseQuery(orm.Query):
-    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with
-    convenience methods for querying in a web application.
+class Query(sa.orm.Query):
+    """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with some extra methods
+    useful for querying in a web application.
 
-    This is the default :attr:`~Model.query` object used for models, and
-    exposed as :attr:`~SQLAlchemy.Query`. Override the query class for
-    an individual model by subclassing this and setting
-    :attr:`~Model.query_class`.
+    This is the default query class for :attr:`.Model.query`.
+
+    .. versionchanged:: 3.0
+        Renamed to ``Query`` from ``BaseQuery``.
     """
 
-    def get_or_404(self, ident, description=None):
-        """Like :meth:`get` but aborts with 404 if not found instead of
+    def get_or_404(self, ident: t.Any, description: str | None = None) -> t.Any:
+        """Like :meth:`get` but aborts with a ``404 Not Found`` error instead of
         returning ``None``.
+
+        :param ident: The primary key to query.
+        :param description: A custom message to show on the error page.
         """
         rv = self.get(ident)
+
         if rv is None:
             abort(404, description=description)
+
         return rv
 
-    def first_or_404(self, description=None):
-        """Like :meth:`first` but aborts with 404 if not found instead
-        of returning ``None``.
+    def first_or_404(self, description: str | None = None) -> t.Any:
+        """Like :meth:`first` but aborts with a ``404 Not Found`` error instead of
+        returning ``None``.
+
+        :param description: A custom message to show on the error page.
         """
         rv = self.first()
+
         if rv is None:
             abort(404, description=description)
+
         return rv
+
+    def one_or_404(self, description: str | None = None) -> t.Any:
+        """Like :meth:`one` but aborts with a ``404 Not Found`` error instead of raising
+        ``NoResultFound`` or ``MultipleResultsFound``.
+
+        :param description: A custom message to show on the error page.
+
+        .. versionadded:: 3.0
+        """
+        try:
+            return self.one()
+        except (sa.exc.NoResultFound, sa.exc.MultipleResultsFound):
+            abort(404, description=description)
 
     def paginate(
         self,
@@ -74,3 +102,18 @@ class BaseQuery(orm.Query):
             error_out=error_out,
             count=count,
         )
+
+
+def __getattr__(name: str) -> t.Any:
+    import warnings
+
+    if name == "BaseQuery":
+        warnings.warn(
+            "'BaseQuery' is renamed to 'Query'. The old name is deprecated and will be"
+            " removed in Flask-SQLAlchemy 3.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return Query
+
+    raise AttributeError(name)

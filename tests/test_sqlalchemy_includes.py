@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 
 from flask_sqlalchemy import SQLAlchemy
-from flask_sqlalchemy.query import BaseQuery
+from flask_sqlalchemy.query import Query
 
 
 def test_sqlalchemy_includes():
@@ -11,4 +11,4 @@ def test_sqlalchemy_includes():
     assert db.Column == sa.Column
 
     # The Query object we expose is actually our own subclass.
-    assert db.Query == BaseQuery
+    assert db.Query == Query

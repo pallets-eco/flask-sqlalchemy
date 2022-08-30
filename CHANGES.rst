@@ -30,6 +30,8 @@ Unreleased
 -   ``Query.paginate`` ``count`` is more efficient.
 -   ``Pagination.iter_pages`` is more efficient.
 -   ``Pagination.iter_pages`` ``right_current`` parameter is inclusive.
+-   ``Query`` is renamed from ``BaseQuery``.
+-   ``Query.one_or_404`` is added.
 
 
 Version 2.5.1

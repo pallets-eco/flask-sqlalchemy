@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from flask_sqlalchemy.query import BaseQuery
+from flask_sqlalchemy.query import Query
 
 
 def test_default_query_class(db):
@@ -15,14 +15,14 @@ def test_default_query_class(db):
     c = Child()
     c.parent = p
 
-    assert type(Parent.query) == BaseQuery
-    assert type(Child.query) == BaseQuery
-    assert isinstance(p.children, BaseQuery)
-    assert isinstance(db.session.query(Parent), BaseQuery)
+    assert type(Parent.query) == Query
+    assert type(Child.query) == Query
+    assert isinstance(p.children, Query)
+    assert isinstance(db.session.query(Parent), Query)
 
 
 def test_custom_query_class(app):
-    class CustomQueryClass(BaseQuery):
+    class CustomQueryClass(Query):
         pass
 
     db = SQLAlchemy(app, query_class=CustomQueryClass)
@@ -48,13 +48,13 @@ def test_custom_query_class(app):
 
 
 def test_dont_override_model_default(app):
-    class CustomQueryClass(BaseQuery):
+    class CustomQueryClass(Query):
         pass
 
     db = SQLAlchemy(app, query_class=CustomQueryClass)
 
     class SomeModel(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        query_class = BaseQuery
+        query_class = Query
 
-    assert type(SomeModel.query) == BaseQuery
+    assert type(SomeModel.query) == Query

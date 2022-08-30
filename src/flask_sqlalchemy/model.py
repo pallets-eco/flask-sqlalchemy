@@ -123,7 +123,7 @@ class Model:
     """
 
     #: Query class used by :attr:`query`. Defaults to
-    # :class:`SQLAlchemy.Query`, which defaults to :class:`BaseQuery`.
+    # :class:`SQLAlchemy.Query`, which defaults to :class:`Query`.
     query_class = None
 
     #: Convenience property to query the database for instances of this model

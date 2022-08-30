@@ -27,7 +27,7 @@ Models
         primary key defined. If the ``__table__`` or ``__tablename__`` is set
         explicitly, that will be used instead.
 
-.. autoclass:: BaseQuery
+.. autoclass:: Query
     :members:
 
 Sessions

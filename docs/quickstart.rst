@@ -181,7 +181,7 @@ The only things you need to know compared to plain SQLAlchemy are:
 
 2.  The :class:`Model` declarative base class behaves like a regular
     Python class but has a ``query`` attribute attached that can be used to
-    query the model.  (:class:`Model` and :class:`BaseQuery`)
+    query the model.  (:class:`Model` and :class:`Query`)
 
 3.  You have to commit the session, but you don't have to remove it at
     the end of the request, Flask-SQLAlchemy does that for you.
