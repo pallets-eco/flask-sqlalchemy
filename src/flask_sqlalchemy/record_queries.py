@@ -7,6 +7,40 @@ from flask import current_app
 from sqlalchemy import event
 
 
+def get_debug_queries():
+    """In debug mode or testing mode, Flask-SQLAlchemy will log all the SQL
+    queries sent to the database. This information is available until the end
+    of request which makes it possible to easily ensure that the SQL generated
+    is the one expected on errors or in unittesting. Alternatively, you can also
+    enable the query recording by setting the ``'SQLALCHEMY_RECORD_QUERIES'``
+    config variable to `True`.
+
+    The value returned will be a list of named tuples with the following
+    attributes:
+
+    `statement`
+        The SQL statement issued
+
+    `parameters`
+        The parameters for the SQL statement
+
+    `start_time` / `end_time`
+        Time the query started / the results arrived.  Please keep in mind
+        that the timer function used depends on your platform. These
+        values are only useful for sorting or comparing.  They do not
+        necessarily represent an absolute timestamp.
+
+    `duration`
+        Time the query took in seconds
+
+    `context`
+        A string giving a rough estimation of where in your application
+        query was issued.  The exact format is undefined so don't try
+        to reconstruct filename or function name.
+    """
+    return getattr(_app_ctx_stack.top, "sqlalchemy_queries", [])
+
+
 class _DebugQueryTuple(tuple):
     statement = property(itemgetter(0))
     parameters = property(itemgetter(1))
@@ -74,37 +108,3 @@ class _EngineDebuggingSignalEvents:
                     )
                 )
             )
-
-
-def get_debug_queries():
-    """In debug mode or testing mode, Flask-SQLAlchemy will log all the SQL
-    queries sent to the database. This information is available until the end
-    of request which makes it possible to easily ensure that the SQL generated
-    is the one expected on errors or in unittesting. Alternatively, you can also
-    enable the query recording by setting the ``'SQLALCHEMY_RECORD_QUERIES'``
-    config variable to `True`.
-
-    The value returned will be a list of named tuples with the following
-    attributes:
-
-    `statement`
-        The SQL statement issued
-
-    `parameters`
-        The parameters for the SQL statement
-
-    `start_time` / `end_time`
-        Time the query started / the results arrived.  Please keep in mind
-        that the timer function used depends on your platform. These
-        values are only useful for sorting or comparing.  They do not
-        necessarily represent an absolute timestamp.
-
-    `duration`
-        Time the query took in seconds
-
-    `context`
-        A string giving a rough estimation of where in your application
-        query was issued.  The exact format is undefined so don't try
-        to reconstruct filename or function name.
-    """
-    return getattr(_app_ctx_stack.top, "sqlalchemy_queries", [])
