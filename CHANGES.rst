@@ -23,6 +23,13 @@ Unreleased
     design issues that are difficult to debug. Call
     ``db.session.commit()`` directly instead. :issue:`216`
 -   Change the default MySQL character set to "utf8mb4". :issue:`875`
+-   ``Pagination``, ``Pagination.iter_pages``, and ``Query.paginate`` parameters are
+    keyword-only.
+-   ``Pagination`` is iterable, iterating over its items.
+-   ``Pagination.apply_to_query`` can be used instead of ``query.paginate``.
+-   ``Query.paginate`` ``count`` is more efficient.
+-   ``Pagination.iter_pages`` is more efficient.
+-   ``Pagination.iter_pages`` ``right_current`` parameter is inclusive.
 
 
 Version 2.5.1

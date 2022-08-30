@@ -5,7 +5,7 @@ from flask_sqlalchemy.pagination import Pagination
 
 
 def test_basic_pagination():
-    p = Pagination(None, 1, 20, 500, [])
+    p = Pagination(query=None, page=1, per_page=20, total=500, items=[])
     assert p.page == 1
     assert not p.has_prev
     assert p.has_next
@@ -18,12 +18,12 @@ def test_basic_pagination():
 
 
 def test_pagination_pages_when_0_items_per_page():
-    p = Pagination(None, 1, 0, 500, [])
+    p = Pagination(query=None, page=1, per_page=0, total=500, items=[])
     assert p.pages == 0
 
 
 def test_pagination_pages_when_total_is_none():
-    p = Pagination(None, 1, 100, None, [])
+    p = Pagination(query=None, page=1, per_page=20, total=None, items=[])
     assert p.pages == 0
 
 
