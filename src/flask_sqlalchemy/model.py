@@ -9,44 +9,55 @@ from sqlalchemy.orm.exc import UnmappedClassError
 from sqlalchemy.schema import _get_table_key
 
 
-def should_set_tablename(cls):
-    """Determine whether ``__tablename__`` should be automatically generated
-    for a model.
+class _QueryProperty:
+    def __init__(self, sa):
+        self.sa = sa
 
-    * If no class in the MRO sets a name, one should be generated.
-    * If a declared attr is found, it should be used instead.
-    * If a name is found, it should be used if the class is a mixin, otherwise
-      one should be generated.
-    * Abstract models should not have one generated.
+    def __get__(self, obj, type):
+        try:
+            mapper = orm.class_mapper(type)
+            if mapper:
+                return type.query_class(mapper, session=self.sa.session())
+        except UnmappedClassError:
+            return None
 
-    Later, :meth:`._BoundDeclarativeMeta.__table_cls__` will determine if the
-    model looks like single or joined-table inheritance. If no primary key is
-    found, the name will be unset.
+
+class Model:
+    """Base class for SQLAlchemy declarative base model.
+
+    To define models, subclass :attr:`db.Model <SQLAlchemy.Model>`, not this
+    class. To customize ``db.Model``, subclass this and pass it as
+    ``model_class`` to :class:`SQLAlchemy`.
     """
-    if cls.__dict__.get("__abstract__", False) or not any(
-        isinstance(b, DeclarativeMeta) for b in cls.__mro__[1:]
-    ):
-        return False
 
-    for base in cls.__mro__:
-        if "__tablename__" not in base.__dict__:
-            continue
+    #: Query class used by :attr:`query`. Defaults to
+    # :class:`SQLAlchemy.Query`, which defaults to :class:`Query`.
+    query_class = None
 
-        if isinstance(base.__dict__["__tablename__"], declared_attr):
-            return False
+    #: Convenience property to query the database for instances of this model
+    # using the current session. Equivalent to ``db.session.query(Model)``
+    # unless :attr:`query_class` has been changed.
+    query = None
 
-        return not (
-            base is cls
-            or base.__dict__.get("__abstract__", False)
-            or not isinstance(base, DeclarativeMeta)
-        )
+    def __repr__(self):
+        identity = inspect(self).identity
 
-    return True
+        if identity is None:
+            pk = f"(transient {id(self)})"
+        else:
+            pk = ", ".join(str(value) for value in identity)
+
+        return f"<{type(self).__name__} {pk}>"
 
 
-def camel_to_snake_case(name):
-    name = re.sub(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))", r"_\1", name)
-    return name.lower().lstrip("_")
+class BindMetaMixin(type):
+    def __init__(cls, name, bases, d):
+        bind_key = d.pop("__bind_key__", None) or getattr(cls, "__bind_key__", None)
+
+        super().__init__(name, bases, d)
+
+        if bind_key is not None and getattr(cls, "__table__", None) is not None:
+            cls.__table__.info["bind_key"] = bind_key
 
 
 class NameMetaMixin(type):
@@ -100,56 +111,45 @@ class NameMetaMixin(type):
             del cls.__tablename__
 
 
-class BindMetaMixin(type):
-    def __init__(cls, name, bases, d):
-        bind_key = d.pop("__bind_key__", None) or getattr(cls, "__bind_key__", None)
+def should_set_tablename(cls):
+    """Determine whether ``__tablename__`` should be automatically generated
+    for a model.
 
-        super().__init__(name, bases, d)
+    * If no class in the MRO sets a name, one should be generated.
+    * If a declared attr is found, it should be used instead.
+    * If a name is found, it should be used if the class is a mixin, otherwise
+      one should be generated.
+    * Abstract models should not have one generated.
 
-        if bind_key is not None and getattr(cls, "__table__", None) is not None:
-            cls.__table__.info["bind_key"] = bind_key
+    Later, :meth:`._BoundDeclarativeMeta.__table_cls__` will determine if the
+    model looks like single or joined-table inheritance. If no primary key is
+    found, the name will be unset.
+    """
+    if cls.__dict__.get("__abstract__", False) or not any(
+        isinstance(b, DeclarativeMeta) for b in cls.__mro__[1:]
+    ):
+        return False
+
+    for base in cls.__mro__:
+        if "__tablename__" not in base.__dict__:
+            continue
+
+        if isinstance(base.__dict__["__tablename__"], declared_attr):
+            return False
+
+        return not (
+            base is cls
+            or base.__dict__.get("__abstract__", False)
+            or not isinstance(base, DeclarativeMeta)
+        )
+
+    return True
+
+
+def camel_to_snake_case(name):
+    name = re.sub(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))", r"_\1", name)
+    return name.lower().lstrip("_")
 
 
 class DefaultMeta(NameMetaMixin, BindMetaMixin, DeclarativeMeta):
     pass
-
-
-class Model:
-    """Base class for SQLAlchemy declarative base model.
-
-    To define models, subclass :attr:`db.Model <SQLAlchemy.Model>`, not this
-    class. To customize ``db.Model``, subclass this and pass it as
-    ``model_class`` to :class:`SQLAlchemy`.
-    """
-
-    #: Query class used by :attr:`query`. Defaults to
-    # :class:`SQLAlchemy.Query`, which defaults to :class:`Query`.
-    query_class = None
-
-    #: Convenience property to query the database for instances of this model
-    # using the current session. Equivalent to ``db.session.query(Model)``
-    # unless :attr:`query_class` has been changed.
-    query = None
-
-    def __repr__(self):
-        identity = inspect(self).identity
-
-        if identity is None:
-            pk = f"(transient {id(self)})"
-        else:
-            pk = ", ".join(str(value) for value in identity)
-
-        return f"<{type(self).__name__} {pk}>"
-
-
-class _QueryProperty:
-    def __init__(self, sa):
-        self.sa = sa
-
-    def __get__(self, obj, type):
-        try:
-            mapper = orm.class_mapper(type)
-            if mapper:
-                return type.query_class(mapper, session=self.sa.session())
-        except UnmappedClassError:
-            return None
