@@ -1,7 +1,7 @@
 import flask
 
 from flask_sqlalchemy import SQLAlchemy
-from flask_sqlalchemy.record_queries import get_debug_queries
+from flask_sqlalchemy.record_queries import get_recorded_queries
 
 
 def test_basic_insert(app, db, Todo):
@@ -32,20 +32,20 @@ def test_query_recording(app, db, Todo):
         todo.done = True
         db.session.commit()
 
-        queries = get_debug_queries()
+        queries = get_recorded_queries()
         assert len(queries) == 2
 
         query = queries[0]
         assert "insert into" in query.statement.lower()
-        assert query.parameters[0] == "Test 1"
-        assert query.parameters[1] == "test"
-        assert "test_basic_app.py" in query.context
-        assert "test_query_recording" in query.context
+        assert query.parameters[0][0] == "Test 1"
+        assert query.parameters[0][1] == "test"
+        assert "test_basic_app.py" in query.location
+        assert "test_query_recording" in query.location
 
         query = queries[1]
         assert "update" in query.statement.lower()
-        assert query.parameters[0] == 1
-        assert query.parameters[1] == 1
+        assert query.parameters[0][0] == 1
+        assert query.parameters[0][1] == 1
 
 
 def test_helper_api(db):

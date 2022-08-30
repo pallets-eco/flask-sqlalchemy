@@ -32,6 +32,10 @@ Unreleased
 -   ``Pagination.iter_pages`` ``right_current`` parameter is inclusive.
 -   ``Query`` is renamed from ``BaseQuery``.
 -   ``Query.one_or_404`` is added.
+-   ``get_debug_queries`` is renamed to ``get_recorded_queries`` to better match the
+    config and functionality.
+-   Recorded query info is a dataclass instead of a tuple. The ``context`` attribute is
+    renamed to ``location``. Finding the location uses a more inclusive check.
 
 
 Version 2.5.1

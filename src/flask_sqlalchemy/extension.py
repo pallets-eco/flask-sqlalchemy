@@ -13,7 +13,6 @@ from .model import _QueryProperty
 from .model import DefaultMeta
 from .model import Model
 from .query import Query
-from .record_queries import _EngineDebuggingSignalEvents
 from .session import SignallingSession
 
 try:
@@ -135,9 +134,9 @@ class _EngineConnector:
             self._engine = rv = self._sa.create_engine(sa_url, options)
 
             if _record_queries(self._app):
-                _EngineDebuggingSignalEvents(
-                    self._engine, self._app.import_name
-                ).register()
+                from . import record_queries
+
+                record_queries._listen(self._engine)
 
             self._connected_for = (uri, echo)
 
