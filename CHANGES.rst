@@ -36,6 +36,9 @@ Unreleased
     config and functionality.
 -   Recorded query info is a dataclass instead of a tuple. The ``context`` attribute is
     renamed to ``location``. Finding the location uses a more inclusive check.
+-   The ``SQLAlchemy`` extension object uses ``__getattr__`` to alias names from the
+    SQLAlchemy package, rather than copying them as attributes.
+-   The query class is applied to ``backref`` in ``relationship``.
 
 
 Version 2.5.1

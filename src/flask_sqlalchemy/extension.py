@@ -1,27 +1,20 @@
-import functools
+from __future__ import annotations
+
 import os
+import typing as t
 import warnings
 from threading import Lock
 
-import sqlalchemy
+import sqlalchemy as sa
+import sqlalchemy.event
+import sqlalchemy.orm
 from flask import current_app
-from sqlalchemy import event
-from sqlalchemy import orm
-from sqlalchemy.engine.url import make_url
 
 from .model import _QueryProperty
 from .model import DefaultMeta
 from .model import Model
 from .query import Query
 from .session import SignallingSession
-
-try:
-    from sqlalchemy.orm import declarative_base
-    from sqlalchemy.orm import DeclarativeMeta
-except ImportError:
-    # SQLAlchemy <= 1.3
-    from sqlalchemy.ext.declarative import declarative_base
-    from sqlalchemy.ext.declarative import DeclarativeMeta
 
 # Scope the session to the current greenlet if greenlet is available,
 # otherwise fall back to the current thread.
@@ -63,38 +56,6 @@ def _make_table(db):
     return _make_table
 
 
-def _set_default_query_class(d, cls):
-    if "query_class" not in d:
-        d["query_class"] = cls
-
-
-def _wrap_with_default_query_class(fn, cls):
-    @functools.wraps(fn)
-    def newfn(*args, **kwargs):
-        _set_default_query_class(kwargs, cls)
-        if "backref" in kwargs:
-            backref = kwargs["backref"]
-            if isinstance(backref, str):
-                backref = (backref, {})
-            _set_default_query_class(backref[1], cls)
-        return fn(*args, **kwargs)
-
-    return newfn
-
-
-def _include_sqlalchemy(obj, cls):
-    for module in sqlalchemy, sqlalchemy.orm:
-        for key in module.__all__:
-            if not hasattr(obj, key):
-                setattr(obj, key, getattr(module, key))
-    # Note: obj.Table does not attempt to be a SQLAlchemy Table class.
-    obj.Table = _make_table(obj)
-    obj.relationship = _wrap_with_default_query_class(obj.relationship, cls)
-    obj.relation = _wrap_with_default_query_class(obj.relation, cls)
-    obj.dynamic_loader = _wrap_with_default_query_class(obj.dynamic_loader, cls)
-    obj.event = event
-
-
 def _record_queries(app):
     if app.debug:
         return True
@@ -129,7 +90,7 @@ class _EngineConnector:
             if (uri, echo) == self._connected_for:
                 return self._engine
 
-            sa_url = make_url(uri)
+            sa_url = sa.engine.make_url(uri)
             sa_url, options = self.get_options(sa_url, echo)
             self._engine = rv = self._sa.create_engine(sa_url, options)
 
@@ -287,7 +248,7 @@ class SQLAlchemy:
         self._engine_lock = Lock()
         self.app = app
         self._engine_options = engine_options or {}
-        _include_sqlalchemy(self, query_class)
+        self.Table = _make_table(self)
 
         if app is not None:
             self.init_app(app)
@@ -317,7 +278,7 @@ class SQLAlchemy:
 
         scopefunc = options.pop("scopefunc", _ident_func)
         options.setdefault("query_cls", self.Query)
-        return orm.scoped_session(self.create_session(options), scopefunc=scopefunc)
+        return sa.orm.scoped_session(self.create_session(options), scopefunc=scopefunc)
 
     def create_session(self, options):
         """Create the session factory used by :meth:`create_scoped_session`.
@@ -334,7 +295,7 @@ class SQLAlchemy:
         :param options: dict of keyword arguments passed to session class
         """
 
-        return orm.sessionmaker(class_=SignallingSession, db=self, **options)
+        return sa.orm.sessionmaker(class_=SignallingSession, db=self, **options)
 
     def make_declarative_base(self, model, metadata=None):
         """Creates the declarative base that all models will inherit from.
@@ -350,8 +311,8 @@ class SQLAlchemy:
             ``model`` can be an existing declarative base in order to support
             complex customization such as changing the metaclass.
         """
-        if not isinstance(model, DeclarativeMeta):
-            model = declarative_base(
+        if not isinstance(model, sa.orm.DeclarativeMeta):
+            model = sa.orm.declarative_base(
                 cls=model, name="Model", metadata=metadata, metaclass=DefaultMeta
             )
 
@@ -610,3 +571,62 @@ class SQLAlchemy:
     def __repr__(self):
         url = self.engine.url if self.app or current_app else None
         return f"<{type(self).__name__} engine={url!r}>"
+
+    def _set_rel_query(self, kwargs: dict[str, t.Any]) -> None:
+        """Apply the extension's :attr:`Query` class as the default for relationships
+        and backrefs.
+
+        :meta private:
+        """
+        kwargs.setdefault("query_class", self.Query)
+
+        if "backref" in kwargs:
+            backref = kwargs["backref"]
+
+            if isinstance(backref, str):
+                backref = (backref, {})
+
+            backref[1].setdefault("query_class", self.Query)
+
+    def relationship(
+        self, *args: t.Any, **kwargs: t.Any
+    ) -> sa.orm.RelationshipProperty:
+        """A SQLAlchemy :func:`~sqlalchemy.orm.relationship` that applies this
+        extension's :attr:`Query` class for dynamic relationships and backrefs.
+        """
+        self._set_rel_query(kwargs)
+        return sa.orm.relationship(*args, **kwargs)
+
+    def dynamic_loader(
+        self, argument: t.Any, **kwargs: t.Any
+    ) -> sa.orm.RelationshipProperty:
+        """A SQLAlchemy :func:`~sqlalchemy.orm.dynamic_loader` that applies this
+        extension's :attr:`Query` class for relationships and backrefs.
+        """
+        self._set_rel_query(kwargs)
+        return sa.orm.dynamic_loader(argument, **kwargs)
+
+    def _relation(self, *args: t.Any, **kwargs: t.Any) -> sa.orm.RelationshipProperty:
+        """A SQLAlchemy :func:`~sqlalchemy.orm.relationship` that applies this
+        extension's :attr:`Query` class for dynamic relationships and backrefs.
+
+        SQLAlchemy 2.0 removes this name, use ``relationship`` instead.
+
+        :meta private:
+        """
+        # Deprecated, removed in SQLAlchemy 2.0. Accessed through ``__getattr__``.
+        self._set_rel_query(kwargs)
+        return sa.orm.relation(*args, **kwargs)
+
+    def __getattr__(self, name: str) -> t.Any:
+        if name == "relation":
+            return self._relation
+
+        if name == "event":
+            return sa.event
+
+        for mod in (sa, sa.orm):
+            if name in mod.__all__:
+                return getattr(sa, name)
+
+        raise AttributeError(name)
