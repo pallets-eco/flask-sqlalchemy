@@ -83,7 +83,9 @@ class BindMetaMixin(type):
     __fsa__: SQLAlchemy
     metadata: sa.MetaData
 
-    def __init__(cls, name: str, bases: tuple[type, ...], d: dict[str, t.Any]) -> None:
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], d: dict[str, t.Any], **kwargs: t.Any
+    ) -> None:
         if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
             bind_key = getattr(cls, "__bind_key__", None)
             parent_metadata = getattr(cls, "metadata", None)
@@ -92,7 +94,7 @@ class BindMetaMixin(type):
             if metadata is not parent_metadata:
                 cls.metadata = metadata
 
-        super().__init__(name, bases, d)
+        super().__init__(name, bases, d, **kwargs)
 
 
 class NameMetaMixin(type):
@@ -106,11 +108,13 @@ class NameMetaMixin(type):
     __tablename__: str
     __table__: sa.Table
 
-    def __init__(cls, name: str, bases: tuple[type, ...], d: dict[str, t.Any]) -> None:
+    def __init__(
+        cls, name: str, bases: tuple[type, ...], d: dict[str, t.Any], **kwargs: t.Any
+    ) -> None:
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
-        super().__init__(name, bases, d)
+        super().__init__(name, bases, d, **kwargs)
 
         # __table_cls__ has run. If no table was created, use the parent table.
         if (

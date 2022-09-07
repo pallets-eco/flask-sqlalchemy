@@ -70,6 +70,8 @@ Unreleased
 -   The session is scoped to the current app context instead of the thread. This
     requires that an app context is active. This ensures that the session is cleaned up
     after every request.
+-   A custom model class can implement ``__init_subclass__`` with class parameters.
+    :issue:`1002`
 
 
 Version 2.5.1
