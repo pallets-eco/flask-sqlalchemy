@@ -21,7 +21,7 @@ py==1.11.0
     # via pytest
 pyparsing==3.0.9
     # via packaging
-pytest==7.1.2
+pytest==7.1.3
     # via -r requirements/tests.in
 tomli==2.0.1
     # via pytest
