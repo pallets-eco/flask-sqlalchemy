@@ -34,6 +34,7 @@ def test_no_table_name():
             pass
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_repr(db):
     class User(db.Model):
         name = db.Column(db.String, primary_key=True)

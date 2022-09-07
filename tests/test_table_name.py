@@ -158,6 +158,7 @@ def test_complex_inheritance(db):
     assert RubberDuck.__tablename__ == "rubber_duck"
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_manual_name(db):
     """Setting a manual name prevents generation for the immediate model. A
     name is generated for joined but not single-table inheritance.

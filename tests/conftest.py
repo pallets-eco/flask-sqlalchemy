@@ -15,6 +15,12 @@ def app(request):
 
 
 @pytest.fixture
+def app_ctx(app):
+    with app.app_context() as ctx:
+        yield ctx
+
+
+@pytest.fixture
 def db(app):
     return SQLAlchemy(app)
 

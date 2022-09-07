@@ -67,6 +67,9 @@ Unreleased
     from various methods.
 -   ``SQLALCHEMY_RECORD_QUERIES`` configuration takes precedence over ``app.debug`` and
     ``app.testing``, allowing it to be disabled in those modes.
+-   The session is scoped to the current app context instead of the thread. This
+    requires that an app context is active. This ensures that the session is cleaned up
+    after every request.
 
 
 Version 2.5.1

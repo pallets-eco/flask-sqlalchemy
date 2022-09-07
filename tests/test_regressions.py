@@ -36,6 +36,7 @@ def test_single_table_inheritance(db):
     db.create_all()
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_joined_inheritance_relation(db):
     class Relation(db.Model):
         id = db.Column(db.Integer, primary_key=True)
@@ -61,9 +62,9 @@ def test_joined_inheritance_relation(db):
     base.relations = [Relation(name="foo")]
     db.session.add(base)
     db.session.commit()
+    base.query.one()
 
-    base = base.query.one()
 
-
+@pytest.mark.usefixtures("app_ctx")
 def test_connection_binds(db):
     assert db.session.connection()

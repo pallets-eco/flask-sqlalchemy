@@ -1,3 +1,4 @@
+import pytest
 import sqlalchemy as sa
 
 from flask_sqlalchemy import SQLAlchemy
@@ -92,6 +93,7 @@ def test_polymorphic_bind(app):
     assert Child1.metadata.info["bind_key"] == bind_key
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_execute_with_binds_arguments(app):
     app.config["SQLALCHEMY_BINDS"] = {"foo": "sqlite://", "bar": "sqlite://"}
     db = SQLAlchemy(app)

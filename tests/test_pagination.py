@@ -51,18 +51,18 @@ def test_query_paginate(app, db, Todo):
         assert p.total == 100
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_query_paginate_more_than_20(app, db, Todo):
-    with app.app_context():
-        db.session.add_all(Todo("", "") for _ in range(20))
-        db.session.commit()
+    db.session.add_all(Todo("", "") for _ in range(20))
+    db.session.commit()
 
     assert len(Todo.query.paginate(max_per_page=10).items) == 10
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_paginate_min(app, db, Todo):
-    with app.app_context():
-        db.session.add_all(Todo(str(x), "") for x in range(20))
-        db.session.commit()
+    db.session.add_all(Todo(str(x), "") for x in range(20))
+    db.session.commit()
 
     assert Todo.query.paginate(error_out=False, page=-1).items[0].title == "0"
     assert len(Todo.query.paginate(error_out=False, per_page=0).items) == 0
@@ -75,6 +75,7 @@ def test_paginate_min(app, db, Todo):
         Todo.query.paginate(per_page=-1)
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_paginate_without_count(app, db, Todo):
     with app.app_context():
         db.session.add_all(Todo("", "") for _ in range(20))

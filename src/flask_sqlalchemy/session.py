@@ -5,6 +5,7 @@ import typing as t
 import sqlalchemy as sa
 import sqlalchemy.exc
 import sqlalchemy.orm
+from flask.globals import app_ctx
 
 if t.TYPE_CHECKING:
     from .extension import SQLAlchemy
@@ -69,6 +70,11 @@ class Session(sa.orm.Session):
             return engines[None]
 
         return super().get_bind(mapper=mapper, clause=clause, bind=bind, **kwargs)
+
+
+def _app_ctx_id() -> int:
+    """Get the id of the current Flask application context for the session scope."""
+    return id(app_ctx._get_current_object())
 
 
 def __getattr__(name: str) -> t.Any:

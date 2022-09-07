@@ -4,16 +4,15 @@ from werkzeug.exceptions import NotFound
 from flask_sqlalchemy import SQLAlchemy
 
 
-def test_no_app_bound(app):
+def test_app_ctx_required(app):
     db = SQLAlchemy()
     db.init_app(app)
 
     class Foo(db.Model):
         id = db.Column(db.Integer, primary_key=True)
 
-    # If no app is bound to the SQLAlchemy instance, a
-    # request context is required to access Model.query.
-    assert Foo.query
+    with pytest.raises(RuntimeError):
+        assert Foo.query
 
     with app.test_request_context():
         db.create_all()
@@ -23,15 +22,7 @@ def test_no_app_bound(app):
         assert len(Foo.query.all()) == 1
 
 
-def test_app_bound(db, Todo):
-    # If an app was passed to the SQLAlchemy constructor,
-    # the query property is always available.
-    todo = Todo("Test", "test")
-    db.session.add(todo)
-    db.session.commit()
-    assert len(Todo.query.all()) == 1
-
-
+@pytest.mark.usefixtures("app_ctx")
 def test_get_or_404(Todo):
     with pytest.raises(NotFound):
         Todo.query.get_or_404(1)
@@ -44,6 +35,7 @@ def test_get_or_404(Todo):
     assert e_info.value.description == expected
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_first_or_404(Todo):
     with pytest.raises(NotFound):
         Todo.query.first_or_404()

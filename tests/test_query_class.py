@@ -1,7 +1,10 @@
+import pytest
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.query import Query
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_default_query_class(db):
     class Parent(db.Model):
         id = db.Column(db.Integer, primary_key=True)
@@ -21,6 +24,7 @@ def test_default_query_class(db):
     assert isinstance(db.session.query(Parent), Query)
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_custom_query_class(app):
     class CustomQueryClass(Query):
         pass
@@ -47,6 +51,7 @@ def test_custom_query_class(app):
     assert isinstance(db.session.query(Parent), CustomQueryClass)
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_dont_override_model_default(app):
     class CustomQueryClass(Query):
         pass

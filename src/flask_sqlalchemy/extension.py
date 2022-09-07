@@ -16,14 +16,8 @@ from flask import has_app_context
 from .model import DefaultMeta
 from .model import Model
 from .query import Query
+from .session import _app_ctx_id
 from .session import Session
-
-# Scope the session to the current greenlet if greenlet is available,
-# otherwise fall back to the current thread.
-try:
-    from greenlet import getcurrent as _ident_func
-except ImportError:
-    from threading import get_ident as _ident_func
 
 
 class SQLAlchemy:
@@ -143,6 +137,11 @@ class SQLAlchemy:
         application context exits.
 
         Customize this by passing ``session_options`` to the extension.
+
+        This requires that a Flask application context is active.
+
+        .. versionchanged:: 3.0
+            The session is scoped to the current app context.
         """
 
         self.metadatas: dict[str | None, sa.MetaData] = {}
@@ -333,9 +332,12 @@ class SQLAlchemy:
             arguments passed to the session factory. A ``scopefunc`` key is popped.
 
         .. versionchanged:: 3.0
+            The session is scoped to the current app context.
+
+        .. versionchanged:: 3.0
             Renamed from ``create_scoped_session``, this method is internal.
         """
-        scope = options.pop("scopefunc", _ident_func)
+        scope = options.pop("scopefunc", _app_ctx_id)
         factory = self._make_session_factory(options)
         return sa.orm.scoped_session(factory, scope)
 
