@@ -39,6 +39,34 @@ Unreleased
 -   The ``SQLAlchemy`` extension object uses ``__getattr__`` to alias names from the
     SQLAlchemy package, rather than copying them as attributes.
 -   The query class is applied to ``backref`` in ``relationship``.
+-   ``SignallingSession`` is renamed to ``Session``.
+-   ``Session.get_bind`` more closely matches the base implementation.
+-   ``Model`` ``repr`` distinguishes between transient and pending instances.
+-   Different bind keys use different SQLAlchemy ``MetaData`` registries, allowing
+    tables in different databases to have the same name. Bind keys are stored and looked
+    up on the resulting metadata rather than the model or table.
+-   The ``engine_options`` parameter is applied as defaults before per-engine
+    configuration.
+-   ``SQLALCHEMY_BINDS`` values can either be an engine URL, or a dict of engine options
+    including URL, for each bind. ``SQLALCHEMY_DATABASE_URI`` and
+    ``SQLALCHEMY_ENGINE_OPTIONS`` correspond to the ``None`` key and take precedence.
+-   Engines are created when calling ``init_app`` rather than the first time they are
+    accessed.
+-   The extension instance is stored directly as ``app.extensions["sqlalchemy"]``.
+-   All parameters except ``app`` are keyword-only.
+-   Setup methods that create the engines and session are renamed with a leading
+    underscore. They are considered internal interfaces which may change at any time.
+-   ``db.Table`` is a subclass instead of a function.
+-   The session class can be customized by passing the ``class_`` key in the
+    ``session_options`` parameter.
+-   SQLite engines do not use ``NullPool`` if ``pool_size`` is 0.
+-   MySQL engines do not set ``pool_size`` to 10.
+-   ``db.engines`` exposes the map of bind keys to engines for the current app.
+-   ``get_engine``, ``get_tables_for_bind``, and ``get_binds`` are deprecated.
+-   Renamed the ``bind`` parameter to ``bind_key`` and removed the ``app`` parameter
+    from various methods.
+-   ``SQLALCHEMY_RECORD_QUERIES`` configuration takes precedence over ``app.debug`` and
+    ``app.testing``, allowing it to be disabled in those modes.
 
 
 Version 2.5.1

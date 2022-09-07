@@ -13,7 +13,8 @@ def test_no_app_bound(app):
 
     # If no app is bound to the SQLAlchemy instance, a
     # request context is required to access Model.query.
-    pytest.raises(RuntimeError, getattr, Foo, "query")
+    assert Foo.query
+
     with app.test_request_context():
         db.create_all()
         foo = Foo()

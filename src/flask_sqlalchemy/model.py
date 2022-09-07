@@ -1,74 +1,118 @@
+from __future__ import annotations
+
 import re
+import typing as t
 
 import sqlalchemy as sa
-from sqlalchemy import inspect
-from sqlalchemy import orm
-from sqlalchemy.ext.declarative import DeclarativeMeta
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm.exc import UnmappedClassError
-from sqlalchemy.schema import _get_table_key
+import sqlalchemy.orm
+
+from .query import Query
+
+if t.TYPE_CHECKING:
+    from .extension import SQLAlchemy
 
 
 class _QueryProperty:
-    def __init__(self, sa):
-        self.sa = sa
+    """A class property that creates a query object for a model.
 
-    def __get__(self, obj, type):
-        try:
-            mapper = orm.class_mapper(type)
-            if mapper:
-                return type.query_class(mapper, session=self.sa.session())
-        except UnmappedClassError:
-            return None
+    :meta private:
+    """
+
+    @t.overload
+    def __get__(self, obj: None, cls: t.Type[Model]) -> Query:
+        ...
+
+    @t.overload
+    def __get__(self, obj: Model, cls: t.Type[Model]) -> Query:
+        ...
+
+    def __get__(self, obj: Model | None, cls: t.Type[Model]) -> Query:
+        return cls.query_class(cls, session=cls.__fsa__.session())
 
 
 class Model:
-    """Base class for SQLAlchemy declarative base model.
+    """The base class of the :class:`.SQLAlchemy.Model` declarative model class.
 
-    To define models, subclass :attr:`db.Model <SQLAlchemy.Model>`, not this
-    class. To customize ``db.Model``, subclass this and pass it as
-    ``model_class`` to :class:`SQLAlchemy`.
+    To define models, subclass :attr:`db.Model <.SQLAlchemy.Model>`, not this. To
+    customize ``db.Model``, subclass this and pass it as ``model_class`` to
+    :class:`.SQLAlchemy`. To customize ``db.Model`` at the metaclass level, pass an
+    already created declarative model class as ``model_class``.
     """
 
-    #: Query class used by :attr:`query`. Defaults to
-    # :class:`SQLAlchemy.Query`, which defaults to :class:`Query`.
-    query_class = None
+    __fsa__: t.ClassVar[SQLAlchemy]
+    """Internal reference to the extension object.
 
-    #: Convenience property to query the database for instances of this model
-    # using the current session. Equivalent to ``db.session.query(Model)``
-    # unless :attr:`query_class` has been changed.
-    query = None
+    :meta private:
+    """
 
-    def __repr__(self):
-        identity = inspect(self).identity
+    query_class: t.ClassVar[t.Type[Query]] = Query
+    """Query class used by :attr:`query`. Defaults to :attr:`.SQLAlchemy.Query`, which
+    defaults to :class:`.Query`.
+    """
 
-        if identity is None:
+    query: t.ClassVar[Query] = _QueryProperty()
+    """A SQLAlchemy query for a model. Equivalent to ``db.session.query(Model)``. Can be
+    customized per-model by overriding :attr:`query_class`.
+
+    .. warning::
+        The ``Query`` interface is considered legacy in SQLAlchemy 2.0. Prefer using the
+        ``execute(select())`` pattern instead.
+    """
+
+    def __repr__(self) -> str:
+        state: sa.orm.InstanceState = sa.inspect(self)
+
+        if state.transient:
             pk = f"(transient {id(self)})"
+        elif state.pending:
+            pk = f"(pending {id(self)})"
         else:
-            pk = ", ".join(str(value) for value in identity)
+            pk = ", ".join(str(value) for value in state.identity)
 
         return f"<{type(self).__name__} {pk}>"
 
 
 class BindMetaMixin(type):
-    def __init__(cls, name, bases, d):
-        bind_key = d.pop("__bind_key__", None) or getattr(cls, "__bind_key__", None)
+    """Metaclass mixin that sets a model's ``metadata`` based on its ``__bind_key__``.
+
+    If the model sets ``metadata`` or ``__table__`` directly, ``__bind_key__`` is
+    ignored. If the ``metadata`` is the same as the parent model, it will not be set
+    directly on the child model.
+    """
+
+    __fsa__: SQLAlchemy
+    metadata: sa.MetaData
+
+    def __init__(cls, name: str, bases: tuple[type, ...], d: dict[str, t.Any]) -> None:
+        if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
+            bind_key = getattr(cls, "__bind_key__", None)
+            parent_metadata = getattr(cls, "metadata", None)
+            metadata = cls.__fsa__._make_metadata(bind_key)
+
+            if metadata is not parent_metadata:
+                cls.metadata = metadata
 
         super().__init__(name, bases, d)
 
-        if bind_key is not None and getattr(cls, "__table__", None) is not None:
-            cls.__table__.info["bind_key"] = bind_key
-
 
 class NameMetaMixin(type):
-    def __init__(cls, name, bases, d):
+    """Metaclass mixin that sets a model's ``__tablename__`` by converting the
+    ``CamelCase`` class name to ``snake_case``. A name is set for non-abstract models
+    that do not otherwise define ``__tablename__``. If a model does not define a primary
+    key, it will not generate a name or ``__table__``, for single-table inheritance.
+    """
+
+    metadata: sa.MetaData
+    __tablename__: str
+    __table__: sa.Table
+
+    def __init__(cls, name: str, bases: tuple[type, ...], d: dict[str, t.Any]) -> None:
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
         super().__init__(name, bases, d)
 
-        # __table_cls__ has run at this point
-        # if no table was created, use the parent table
+        # __table_cls__ has run. If no table was created, use the parent table.
         if (
             "__tablename__" not in cls.__dict__
             and "__table__" in cls.__dict__
@@ -76,57 +120,62 @@ class NameMetaMixin(type):
         ):
             del cls.__table__
 
-    def __table_cls__(cls, *args, **kwargs):
-        """This is called by SQLAlchemy during mapper setup. It determines the
-        final table object that the model will use.
+    def __table_cls__(cls, *args, **kwargs) -> sa.Table | None:
+        """This is called by SQLAlchemy during mapper setup. It determines the final
+        table object that the model will use.
 
-        If no primary key is found, that indicates single-table inheritance,
-        so no table will be created and ``__tablename__`` will be unset.
+        If no primary key is found, that indicates single-table inheritance, so no table
+        will be created and ``__tablename__`` will be unset.
         """
-        # check if a table with this name already exists
-        # allows reflected tables to be applied to model by name
-        key = _get_table_key(args[0], kwargs.get("schema"))
+        schema = kwargs.get("schema")
 
+        if schema is None:
+            key = args[0]
+        else:
+            key = f"{schema}.{args[0]}"
+
+        # Check if a table with this name already exists. Allows reflected tables to be
+        # applied to models by name.
         if key in cls.metadata.tables:
             return sa.Table(*args, **kwargs)
 
-        # if a primary key or constraint is found, create a table for
-        # joined-table inheritance
+        # If a primary key is found, create a table for joined-table inheritance.
         for arg in args:
             if (isinstance(arg, sa.Column) and arg.primary_key) or isinstance(
                 arg, sa.PrimaryKeyConstraint
             ):
                 return sa.Table(*args, **kwargs)
 
-        # if no base classes define a table, return one
-        # ensures the correct error shows up when missing a primary key
+        # If no base classes define a table, return one that's missing a primary key
+        # so SQLAlchemy shows the correct error.
         for base in cls.__mro__[1:-1]:
             if "__table__" in base.__dict__:
                 break
         else:
             return sa.Table(*args, **kwargs)
 
-        # single-table inheritance, use the parent tablename
+        # Single-table inheritance, use the parent table name. __init__ will unset
+        # __table__ based on this.
         if "__tablename__" in cls.__dict__:
             del cls.__tablename__
 
+        return None
 
-def should_set_tablename(cls):
-    """Determine whether ``__tablename__`` should be automatically generated
-    for a model.
 
-    * If no class in the MRO sets a name, one should be generated.
-    * If a declared attr is found, it should be used instead.
-    * If a name is found, it should be used if the class is a mixin, otherwise
-      one should be generated.
-    * Abstract models should not have one generated.
+def should_set_tablename(cls: type) -> bool:
+    """Determine whether ``__tablename__`` should be generated for a model.
 
-    Later, :meth:`._BoundDeclarativeMeta.__table_cls__` will determine if the
-    model looks like single or joined-table inheritance. If no primary key is
-    found, the name will be unset.
+    -   If no class in the MRO sets a name, one should be generated.
+    -   If a declared attr is found, it should be used instead.
+    -   If a name is found, it should be used if the class is a mixin, otherwise one
+        should be generated.
+    -   Abstract models should not have one generated.
+
+    Later, ``__table_cls__`` will determine if the model looks like single or
+    joined-table inheritance. If no primary key is found, the name will be unset.
     """
     if cls.__dict__.get("__abstract__", False) or not any(
-        isinstance(b, DeclarativeMeta) for b in cls.__mro__[1:]
+        isinstance(b, sa.orm.DeclarativeMeta) for b in cls.__mro__[1:]
     ):
         return False
 
@@ -134,22 +183,25 @@ def should_set_tablename(cls):
         if "__tablename__" not in base.__dict__:
             continue
 
-        if isinstance(base.__dict__["__tablename__"], declared_attr):
+        if isinstance(base.__dict__["__tablename__"], sa.orm.declared_attr):
             return False
 
         return not (
             base is cls
             or base.__dict__.get("__abstract__", False)
-            or not isinstance(base, DeclarativeMeta)
+            or not isinstance(base, sa.orm.DeclarativeMeta)
         )
 
     return True
 
 
-def camel_to_snake_case(name):
+def camel_to_snake_case(name: str) -> str:
+    """Convert a ``CamelCase`` name to ``snake_case``."""
     name = re.sub(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))", r"_\1", name)
     return name.lower().lstrip("_")
 
 
-class DefaultMeta(NameMetaMixin, BindMetaMixin, DeclarativeMeta):
-    pass
+class DefaultMeta(BindMetaMixin, NameMetaMixin, sa.orm.DeclarativeMeta):
+    """SQLAlchemy declarative metaclass that provides ``__bind_key__`` and
+    ``__tablename__`` support.
+    """

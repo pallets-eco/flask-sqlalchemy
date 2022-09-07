@@ -1,9 +1,8 @@
 import os
-from unittest import mock
 
 import pytest
-import sqlalchemy
-from sqlalchemy.pool import NullPool
+import sqlalchemy as sa
+import sqlalchemy.pool
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -34,7 +33,7 @@ class TestConfigKeys:
         with pytest.raises(RuntimeError) as exc_info:
             SQLAlchemy(app)
 
-        expected = "Either SQLALCHEMY_DATABASE_URI or SQLALCHEMY_BINDS needs to be set."
+        expected = "Either 'SQLALCHEMY_DATABASE_URI' or 'SQLALCHEMY_BINDS' must be set."
         assert exc_info.value.args[0] == expected
 
     def test_defaults_with_uri(self, app, recwarn):
@@ -50,7 +49,7 @@ class TestConfigKeys:
         # Expecting no warnings for default config with URI
         assert len(recwarn) == 0
 
-        assert app.config["SQLALCHEMY_BINDS"] is None
+        assert app.config["SQLALCHEMY_BINDS"] == {}
         assert app.config["SQLALCHEMY_ECHO"] is False
         assert app.config["SQLALCHEMY_RECORD_QUERIES"] is None
         assert app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] is False
@@ -60,57 +59,39 @@ class TestConfigKeys:
         """create_engine() isn't called until needed. Make sure we can
         do that without errors or warnings.
         """
-        assert SQLAlchemy(app).get_engine()
+        assert SQLAlchemy(app).engine
 
 
-@mock.patch.object(sqlalchemy, "create_engine", autospec=True, spec_set=True)
 class TestCreateEngine:
     """Tests for _EngineConnector and SQLAlchemy methods involved in
     setting up the SQLAlchemy engine.
     """
 
-    def test_engine_echo_default(self, m_create_engine, app_nr):
-        SQLAlchemy(app_nr).get_engine()
+    def test_engine_echo_default(self, app_nr):
+        db = SQLAlchemy(app_nr)
+        assert not db.engine.echo
+        assert not db.engine.pool.echo
 
-        args, options = m_create_engine.call_args
-        assert "echo" not in options
-
-    def test_engine_echo_true(self, m_create_engine, app_nr):
+    def test_engine_echo_true(self, app_nr):
         app_nr.config["SQLALCHEMY_ECHO"] = True
-        SQLAlchemy(app_nr).get_engine()
+        db = SQLAlchemy(app_nr)
+        assert db.engine.echo
+        assert db.engine.pool.echo
 
-        args, options = m_create_engine.call_args
-        assert options["echo"] is True
+    def test_config_from_engine_options(self, app_nr):
+        app_nr.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"echo": True}
+        assert SQLAlchemy(app_nr).engine.echo
 
-    def test_config_from_engine_options(self, m_create_engine, app_nr):
-        app_nr.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"foo": "bar"}
-        SQLAlchemy(app_nr).get_engine()
+    def test_config_from_init(self, app_nr):
+        db = SQLAlchemy(app_nr, engine_options={"echo": True})
+        assert db.engine.echo
 
-        args, options = m_create_engine.call_args
-        assert options["foo"] == "bar"
-
-    def test_config_from_init(self, m_create_engine, app_nr):
-        SQLAlchemy(app_nr, engine_options={"bar": "baz"}).get_engine()
-
-        args, options = m_create_engine.call_args
-        assert options["bar"] == "baz"
-
-    def test_pool_class_default(self, m_create_engine, app_nr):
-        SQLAlchemy(app_nr).get_engine()
-
-        args, options = m_create_engine.call_args
-        assert options["poolclass"].__name__ == "StaticPool"
-
-    def test_pool_class_nullpool(self, m_create_engine, app_nr):
-        engine_options = {"poolclass": NullPool}
-        SQLAlchemy(app_nr, engine_options=engine_options).get_engine()
-
-        args, options = m_create_engine.call_args
-        assert options["poolclass"].__name__ == "NullPool"
-        assert "pool_size" not in options
+    def test_pool_class_default(self, app_nr):
+        db = SQLAlchemy(app_nr)
+        assert isinstance(db.engine.pool, sa.pool.StaticPool)
 
 
-def test_sqlite_relative_to_app_root(app):
+def test_sqlite_relative_to_instance_path(app):
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
     db = SQLAlchemy(app)
-    assert db.engine.url.database == os.path.join(app.root_path, "test.db")
+    assert db.engine.url.database == os.path.join(app.instance_path, "test.db")

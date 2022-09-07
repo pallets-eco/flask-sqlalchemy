@@ -2,19 +2,21 @@ from __future__ import annotations
 
 import os
 import typing as t
-import warnings
-from threading import Lock
+from weakref import WeakKeyDictionary
 
 import sqlalchemy as sa
 import sqlalchemy.event
+import sqlalchemy.exc
 import sqlalchemy.orm
+import sqlalchemy.pool
 from flask import current_app
+from flask import Flask
+from flask import has_app_context
 
-from .model import _QueryProperty
 from .model import DefaultMeta
 from .model import Model
 from .query import Query
-from .session import SignallingSession
+from .session import Session
 
 # Scope the session to the current greenlet if greenlet is available,
 # otherwise fall back to the current thread.
@@ -24,209 +26,88 @@ except ImportError:
     from threading import get_ident as _ident_func
 
 
-def _sa_url_set(url, **kwargs):
-    try:
-        url = url.set(**kwargs)
-    except AttributeError:
-        # SQLAlchemy <= 1.3
-        for key, value in kwargs.items():
-            setattr(url, key, value)
-
-    return url
-
-
-def _sa_url_query_setdefault(url, **kwargs):
-    query = dict(url.query)
-
-    for key, value in kwargs.items():
-        query.setdefault(key, value)
-
-    return _sa_url_set(url, query=query)
-
-
-def _make_table(db):
-    def _make_table(*args, **kwargs):
-        if len(args) > 1 and isinstance(args[1], db.Column):
-            args = (args[0], db.metadata) + args[1:]
-        info = kwargs.pop("info", None) or {}
-        info.setdefault("bind_key", None)
-        kwargs["info"] = info
-        return sqlalchemy.Table(*args, **kwargs)
-
-    return _make_table
-
-
-def _record_queries(app):
-    if app.debug:
-        return True
-    rq = app.config["SQLALCHEMY_RECORD_QUERIES"]
-    if rq is not None:
-        return rq
-    return bool(app.config.get("TESTING"))
-
-
-class _EngineConnector:
-    def __init__(self, sa, app, bind=None):
-        self._sa = sa
-        self._app = app
-        self._engine = None
-        self._connected_for = None
-        self._bind = bind
-        self._lock = Lock()
-
-    def get_uri(self):
-        if self._bind is None:
-            return self._app.config["SQLALCHEMY_DATABASE_URI"]
-        binds = self._app.config.get("SQLALCHEMY_BINDS") or ()
-        assert (
-            self._bind in binds
-        ), f"Bind {self._bind!r} is not configured in 'SQLALCHEMY_BINDS'."
-        return binds[self._bind]
-
-    def get_engine(self):
-        with self._lock:
-            uri = self.get_uri()
-            echo = self._app.config["SQLALCHEMY_ECHO"]
-            if (uri, echo) == self._connected_for:
-                return self._engine
-
-            sa_url = sa.engine.make_url(uri)
-            sa_url, options = self.get_options(sa_url, echo)
-            self._engine = rv = self._sa.create_engine(sa_url, options)
-
-            if _record_queries(self._app):
-                from . import record_queries
-
-                record_queries._listen(self._engine)
-
-            self._connected_for = (uri, echo)
-
-            return rv
-
-    def get_options(self, sa_url, echo):
-        options = {}
-        sa_url, options = self._sa.apply_driver_hacks(self._app, sa_url, options)
-
-        if echo:
-            options["echo"] = echo
-
-        # Give the config options set by a developer explicitly priority
-        # over decisions FSA makes.
-        options.update(self._app.config["SQLALCHEMY_ENGINE_OPTIONS"])
-        # Give options set in SQLAlchemy.__init__() ultimate priority
-        options.update(self._sa._engine_options)
-        return sa_url, options
-
-
-def get_state(app):
-    """Gets the state for the application"""
-    assert "sqlalchemy" in app.extensions, (
-        "The sqlalchemy extension was not registered to the current "
-        "application.  Please make sure to call init_app() first."
-    )
-    return app.extensions["sqlalchemy"]
-
-
-class _SQLAlchemyState:
-    """Remembers configuration for the (db, app) tuple."""
-
-    def __init__(self, db):
-        self.db = db
-        self.connectors = {}
-
-
 class SQLAlchemy:
-    """This class is used to control the SQLAlchemy integration to one
-    or more Flask applications.  Depending on how you initialize the
-    object it is usable right away or will attach as needed to a
-    Flask application.
+    """Integrates SQLAlchemy with Flask. This handles setting up one or more engines,
+    associating tables and models with specific engines, and cleaning up connections and
+    sessions after each request.
 
-    There are two usage modes which work very similarly.  One is binding
-    the instance to a very specific Flask application::
+    Only the engine configuration is specific to each application, other things like
+    the model, table, metadata, and session are shared for all applications using that
+    extension instance. Call :meth:`init_app` to configure the extension on an
+    application.
 
-        app = Flask(__name__)
-        db = SQLAlchemy(app)
+    After creating the extension, create model classes by subclassing :attr:`Model`, and
+    table classes with :attr:`Table`. These can be accessed before :meth:`init_app` is
+    called, making it possible to define the models separately from the application.
 
-    The second possibility is to create the object once and configure the
-    application later to support it::
+    Accessing :attr:`session` and :attr:`engine` requires an active Flask application
+    context. This includes methods like :meth:`create_all` which use the engine.
 
-        db = SQLAlchemy()
+    This class also provides access to names in SQLAlchemy's :mod:`sqlalchemy` and
+    :mod:`sqlalchemy.orm` modules. For example, you can use ``db.Column`` and
+    ``db.relationship`` instead of importing ``sqlalchemy.Column`` and
+    ``sqlalchemy.orm.relationship``. This can be convenient when defining models.
 
-        def create_app():
-            app = Flask(__name__)
-            db.init_app(app)
-            return app
+    :param app: Call :meth:`init_app` on this Flask application now.
+    :param metadata: Use this as the default :class:sqlalchemy.MetaData`. Useful for
+        setting a naming convention.
+    :param session_options: Arguments used by :attr:`db.session` to create each session
+        instance. A ``scopefunc`` key will be passed to :attr:`db.session`, not the
+        session instance. See :class:`sqlalchemy.orm.sessionmaker` for a list of
+        arguments.
+    :param query_class: Use this as the default query class for models and dynamic
+        relationships. The query interface is considered legacy in SQLAlchemy 2.0.
+    :param model_class: Use this as the model base class when creating the declarative
+        model class :attr:`db.Model`. Can also be a fully created declarative model
+        class for further customization.
+    :param engine_options: Default arguments used when creating every engine. These are
+        lower precedence than application config. See :func:`sqlalchemy.create_engine`
+        for a list of arguments.
 
-    The difference between the two is that in the first case methods like
-    :meth:`create_all` and :meth:`drop_all` will work all the time but in
-    the second case a :meth:`flask.Flask.app_context` has to exist.
+    .. versionchanged:: 3.0
+        Separate ``metadata`` are used for each bind key.
 
-    By default Flask-SQLAlchemy will apply some backend-specific settings
-    to improve your experience with them.
+    .. versionchanged:: 3.0
+        The ``engine_options`` parameter is applied as defaults before per-engine
+        configuration.
 
-    This class also provides access to all the SQLAlchemy functions and classes
-    from the :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` modules.  So you can
-    declare models like this::
+    .. versionchanged:: 3.0
+        The session class can be customized in ``session_options``.
 
-        class User(db.Model):
-            username = db.Column(db.String(80), unique=True)
-            pw_hash = db.Column(db.String(80))
+    .. versionchanged:: 3.0
+        Engines are created when calling ``init_app`` rather than the first time they
+        are accessed.
 
-    You can still use :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` directly, but
-    note that Flask-SQLAlchemy customizations are available only through an
-    instance of this :class:`SQLAlchemy` class.  Query classes default to
-    :class:`Query` for `db.Query`, `db.Model.query_class`, and the default
-    query_class for `db.relationship` and `db.backref`.  If you use these
-    interfaces through :mod:`sqlalchemy` and :mod:`sqlalchemy.orm` directly,
-    the default query class will be that of :mod:`sqlalchemy`.
+    .. versionchanged:: 3.0
+        All parameters except ``app`` are keyword-only.
 
-    .. admonition:: Check types carefully
+    .. versionchanged:: 3.0
+        The extension instance is stored directly as ``app.extensions["sqlalchemy"]``.
 
-       Don't perform type or `isinstance` checks against `db.Table`, which
-       emulates `Table` behavior but is not a class. `db.Table` exposes the
-       `Table` interface, but is a function which allows omission of metadata.
-
-    The ``session_options`` parameter, if provided, is a dict of parameters
-    to be passed to the session constructor. See
-    :class:`~sqlalchemy.orm.session.Session` for the standard options.
-
-    The ``engine_options`` parameter, if provided, is a dict of parameters
-    to be passed to create engine.  See :func:`~sqlalchemy.create_engine`
-    for the standard options.  The values given here will be merged with and
-    override anything set in the ``'SQLALCHEMY_ENGINE_OPTIONS'`` config
-    variable or othewise set by this library.
+    .. versionchanged:: 3.0
+        Setup methods are renamed with a leading underscore. They are considered
+        internal interfaces which may change at any time.
 
     .. versionchanged:: 3.0
         Removed the ``use_native_unicode`` parameter and config.
 
     .. versionchanged:: 3.0
-        ``COMMIT_ON_TEARDOWN`` is deprecated and will be removed in
-        version 3.1. Call ``db.session.commit()`` directly instead.
+        The ``COMMIT_ON_TEARDOWN`` configuration is deprecated and will
+        be removed in Flask-SQLAlchemy 3.1. Call ``db.session.commit()``
+        directly instead.
 
     .. versionchanged:: 2.4
         Added the ``engine_options`` parameter.
 
     .. versionchanged:: 2.1
-        Added the ``metadata`` parameter. This allows for setting custom
-        naming conventions among other, non-trivial things.
-
-    .. versionchanged:: 2.1
-        Added the ``query_class`` parameter, to allow customisation
-        of the query class, in place of the default of
-        :class:`Query`.
-
-    .. versionchanged:: 2.1
-        Added the ``model_class`` parameter, which allows a custom model
-        class to be used in place of :class:`Model`.
+        Added the ``metadata``, ``query_class``, and ``model_class`` parameters.
 
     .. versionchanged:: 2.1
         Use the same query class across ``session``, ``Model.query`` and
         ``Query``.
 
     .. versionchanged:: 0.16
-        ``scopefunc`` is now accepted on ``session_options``. It allows
-        specifying a custom function which will define the SQLAlchemy
-        session's scoping.
+        ``scopefunc`` is accepted in ``session_options``.
 
     .. versionchanged:: 0.10
         Added the ``session_options`` parameter.
@@ -234,343 +115,653 @@ class SQLAlchemy:
 
     def __init__(
         self,
-        app=None,
-        session_options=None,
-        metadata=None,
-        query_class=Query,
-        model_class=Model,
-        engine_options=None,
+        app: Flask | None = None,
+        *,
+        metadata: sa.MetaData | None = None,
+        session_options: dict[str, t.Any] | None = None,
+        query_class: t.Type[Query] = Query,
+        model_class: t.Type[Model] | sa.orm.DeclarativeMeta = Model,
+        engine_options: dict[str, t.Any] | None = None,
     ):
+        if session_options is None:
+            session_options = {}
 
         self.Query = query_class
-        self.session = self.create_scoped_session(session_options)
-        self.Model = self.make_declarative_base(model_class, metadata)
-        self._engine_lock = Lock()
-        self.app = app
-        self._engine_options = engine_options or {}
-        self.Table = _make_table(self)
+        """The default query class used by ``Model.query`` and ``lazy="dynamic"``
+        relationships.
+
+        .. warning::
+            The query interface is considered legacy in SQLAlchemy 2.0.
+
+        Customize this by passing the ``query_class`` parameter to the extension.
+        """
+
+        self.session = self._make_scoped_session(session_options)
+        """A :class:`sqlalchemy.orm.scoped_session` that creates instances of
+        :class:`.Session` scoped to the current Flask application context. The session
+        will be removed, returning the engine connection to the pool, when the
+        application context exits.
+
+        Customize this by passing ``session_options`` to the extension.
+        """
+
+        self.metadatas: dict[str | None, sa.MetaData] = {}
+        """Map of bind keys to :class:`sqlalchemy.MetaData` instances. The ``None`` key
+        refers to the default metadata, and is available as :attr:`metadata`.
+
+        Customize the default metadata by passing the ``metadata`` parameter to the
+        extension. This can be used to set a naming convention. When metadata for
+        another bind key is created, it copies the default's naming convention.
+
+        .. versionadded:: 3.0
+        """
+
+        if metadata is not None:
+            metadata.info["bind_key"] = None
+            self.metadatas[None] = metadata
+
+        self.Table = self._make_table_class()
+        """A :class:`sqlalchemy.Table` class that chooses a metadata automatically.
+
+        Unlike the base ``Table``, the ``metadata`` argument is not required. If it is
+        not given, it is selected based on the ``bind_key`` argument.
+
+        :param bind_key: Used to select a different metadata.
+        :param args: Arguments passed to the base class. These are typically the table's
+            name, columns, and constraints.
+        :param kwargs: Arguments passed to the base class.
+
+        .. versionchanged:: 3.0
+            This is a subclass of SQLAlchemy's ``Table`` rather than a function.
+        """
+
+        self.Model = self._make_declarative_base(model_class)
+        """A SQLAlchemy declarative model class. Subclass this to define database
+        models.
+
+        If a model does not set ``__tablename__``, it will be generated by converting
+        the class name from ``CamelCase`` to ``snake_case``. It will not be generated
+        if the model looks like it uses single-table inheritance.
+
+        If a model or parent class sets ``__bind_key__``, it will use that metadata and
+        database engine. Otherwise, it will use the default :attr:`metadata` and
+        :attr:`engine`. This is ignored if the model sets ``metadata`` or ``__table__``.
+
+        Customize this by subclassing :class:`.Model` and passing the ``model_class``
+        parameter to the extension. A fully created declarative model class can be
+        passed as well, to use a custom metaclass.
+        """
+
+        if engine_options is None:
+            engine_options = {}
+
+        self._engine_options = engine_options
+        self._app_engines: WeakKeyDictionary[Flask, dict[str | None, sa.engine.Engine]]
+        self._app_engines = WeakKeyDictionary()
+
+        self._app: Flask | None = app
 
         if app is not None:
             self.init_app(app)
 
-    @property
-    def metadata(self):
-        """The metadata associated with ``db.Model``."""
+    def __repr__(self):
+        if not has_app_context() and self._app is None:
+            return f"<{type(self).__name__}>"
 
-        return self.Model.metadata
+        message = f"{type(self).__name__} {self.engine.url}"
 
-    def create_scoped_session(self, options=None):
-        """Create a :class:`~sqlalchemy.orm.scoping.scoped_session`
-        on the factory from :meth:`create_session`.
+        if len(self.engines) > 1:
+            message = f"{message} +{len(self.engines) - 1}"
 
-        An extra key ``'scopefunc'`` can be set on the ``options`` dict to
-        specify a custom scope function.  If it's not provided, Flask's app
-        context stack identity is used. This will ensure that sessions are
-        created and removed with the request/response cycle, and should be fine
-        in most cases.
+        return f"<{message}>"
 
-        :param options: dict of keyword arguments passed to session class  in
-            ``create_session``
+    def init_app(self, app: Flask) -> None:
+        """Initialize a Flask application for use with this extension instance. This
+        must be called before accessing the database engine or session with the app.
+
+        This sets default configuration values, then configures the extension on the
+        application and creates the engines for each bind key. Therefore, this must be
+        called after the application has been configured. Changes to application config
+        after this call will not be reflected.
+
+        The following keys from ``app.config`` are used:
+
+        - :data:`.SQLALCHEMY_DATABASE_URI`
+        - :data:`.SQLALCHEMY_ENGINE_OPTIONS`
+        - :data:`.SQLALCHEMY_ECHO`
+        - :data:`.SQLALCHEMY_BINDS`
+        - :data:`.SQLALCHEMY_RECORD_QUERIES`
+        - :data:`.SQLALCHEMY_TRACK_MODIFICATIONS`
+
+        :param app: The Flask application to initialize.
         """
+        # We intentionally don't set self._app, to support initializing multiple apps.
+        app.extensions["sqlalchemy"] = self
 
-        if options is None:
-            options = {}
+        if app.config.get("SQLALCHEMY_COMMIT_ON_TEARDOWN", False):
+            import warnings
 
-        scopefunc = options.pop("scopefunc", _ident_func)
-        options.setdefault("query_cls", self.Query)
-        return sa.orm.scoped_session(self.create_session(options), scopefunc=scopefunc)
-
-    def create_session(self, options):
-        """Create the session factory used by :meth:`create_scoped_session`.
-
-        The factory **must** return an object that SQLAlchemy recognizes as a session,
-        or registering session events may raise an exception.
-
-        Valid factories include a :class:`~sqlalchemy.orm.session.Session`
-        class or a :class:`~sqlalchemy.orm.session.sessionmaker`.
-
-        The default implementation creates a ``sessionmaker`` for
-        :class:`SignallingSession`.
-
-        :param options: dict of keyword arguments passed to session class
-        """
-
-        return sa.orm.sessionmaker(class_=SignallingSession, db=self, **options)
-
-    def make_declarative_base(self, model, metadata=None):
-        """Creates the declarative base that all models will inherit from.
-
-        :param model: base model class (or a tuple of base classes) to pass
-            to :func:`~sqlalchemy.ext.declarative.declarative_base`. Or a class
-            returned from ``declarative_base``, in which case a new base class
-            is not created.
-        :param metadata: :class:`~sqlalchemy.MetaData` instance to use, or
-            none to use SQLAlchemy's default.
-
-        .. versionchanged 2.3.0::
-            ``model`` can be an existing declarative base in order to support
-            complex customization such as changing the metaclass.
-        """
-        if not isinstance(model, sa.orm.DeclarativeMeta):
-            model = sa.orm.declarative_base(
-                cls=model, name="Model", metadata=metadata, metaclass=DefaultMeta
+            warnings.warn(
+                "'SQLALCHEMY_COMMIT_ON_TEARDOWN' is deprecated and will be removed in"
+                " Flask-SQAlchemy 3.1. Call 'db.session.commit()'` directly instead.",
+                DeprecationWarning,
             )
+            app.teardown_appcontext(self._teardown_commit)
+        else:
+            app.teardown_appcontext(self._teardown_session)
 
-        # if user passed in a declarative base and a metaclass for some reason,
-        # make sure the base uses the metaclass
-        if metadata is not None and model.metadata is not metadata:
-            model.metadata = metadata
+        basic_uri: str | sa.engine.URL | None = app.config.setdefault(
+            "SQLALCHEMY_DATABASE_URI", None
+        )
+        basic_engine_options = self._engine_options.copy()
+        basic_engine_options.update(
+            app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
+        )
+        echo: bool = app.config.setdefault("SQLALCHEMY_ECHO", False)
+        config_binds: dict[
+            str | None, str | sa.engine.URL | dict[str, t.Any]
+        ] = app.config.setdefault("SQLALCHEMY_BINDS", {})
+        engine_options: dict[str | None, dict[str, t.Any]] = {}
 
-        if not getattr(model, "query_class", None):
-            model.query_class = self.Query
+        # Build the engine config for each bind key.
+        for key, value in config_binds.items():
+            engine_options[key] = self._engine_options.copy()
 
-        model.query = _QueryProperty(self)
-        return model
+            if isinstance(value, (str, sa.engine.URL)):
+                engine_options[key]["url"] = value
+            else:
+                engine_options[key].update(value)
 
-    def init_app(self, app):
-        """This callback can be used to initialize an application for the
-        use with this database setup.  Never use a database in the context
-        of an application not initialized that way or connections will
-        leak.
-        """
+        # Build the engine config for the default bind key.
+        if basic_uri is not None:
+            basic_engine_options["url"] = basic_uri
 
-        # We intentionally don't set self.app = app, to support multiple
-        # applications. If the app is passed in the constructor,
-        # we set it and don't support multiple applications.
-        if not (
-            app.config.get("SQLALCHEMY_DATABASE_URI")
-            or app.config.get("SQLALCHEMY_BINDS")
-        ):
+        if basic_engine_options:
+            engine_options.setdefault(None, {}).update(basic_engine_options)
+
+        if not engine_options:
             raise RuntimeError(
-                "Either SQLALCHEMY_DATABASE_URI or SQLALCHEMY_BINDS needs to be set."
+                "Either 'SQLALCHEMY_DATABASE_URI' or 'SQLALCHEMY_BINDS' must be set."
             )
 
-        app.config.setdefault("SQLALCHEMY_DATABASE_URI", None)
-        app.config.setdefault("SQLALCHEMY_BINDS", None)
-        app.config.setdefault("SQLALCHEMY_ECHO", False)
-        app.config.setdefault("SQLALCHEMY_RECORD_QUERIES", None)
-        app.config.setdefault("SQLALCHEMY_COMMIT_ON_TEARDOWN", False)
-        app.config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)
-        app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
+        engines = self._app_engines.setdefault(app, {})
 
-        app.extensions["sqlalchemy"] = _SQLAlchemyState(self)
+        # Dispose existing engines in case init_app is called again.
+        if engines:
+            for engine in engines.values():
+                engine.dispose()
 
-        @app.teardown_appcontext
-        def shutdown_session(response_or_exc):
-            if app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"]:
-                warnings.warn(
-                    "'COMMIT_ON_TEARDOWN' is deprecated and will be"
-                    " removed in version 3.1. Call"
-                    " 'db.session.commit()'` directly instead.",
-                    DeprecationWarning,
-                )
+            engines.clear()
 
-                if response_or_exc is None:
-                    self.session.commit()
+        # Create the metadata and engine for each bind key.
+        for key, options in engine_options.items():
+            self._make_metadata(key)
+            options.setdefault("echo", echo)
+            options.setdefault("echo_pool", echo)
+            self._apply_driver_defaults(options, app)
+            engines[key] = self._make_engine(key, options, app)
 
-            self.session.remove()
-            return response_or_exc
+        record: bool | None = app.config.setdefault("SQLALCHEMY_RECORD_QUERIES", None)
 
-    def apply_driver_hacks(self, app, sa_url, options):
-        """This method is called before engine creation and used to inject
-        driver specific hacks into the options.  The `options` parameter is
-        a dictionary of keyword arguments that will then be used to call
-        the :func:`sqlalchemy.create_engine` function.
+        if record is None:
+            record = app.debug or app.testing
 
-        The default implementation provides some defaults for things
-        like pool sizes for MySQL and SQLite.
+        if record:
+            from . import record_queries
+
+            for engine in engines.values():
+                record_queries._listen(engine)
+
+        if app.config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False):
+            from . import track_modifications
+
+            track_modifications._listen(self.session)
+
+    def _make_scoped_session(self, options: dict[str, t.Any]) -> sa.orm.scoped_session:
+        """Create a :class:`sqlalchemy.orm.scoped_session` around the factory from
+        :meth:`_make_session_factory`. The result is available as :attr:`session`.
+
+        The scope function can be customized using the ``scopefunc`` key in the
+        ``session_options`` parameter to the extension. By default it uses the current
+        thread or greenlet id.
+
+        This method is used for internal setup. Its signature may change at any time.
+
+        :meta private:
+
+        :param options: The ``session_options`` parameter from ``__init__``. Keyword
+            arguments passed to the session factory. A ``scopefunc`` key is popped.
 
         .. versionchanged:: 3.0
-            Change the default MySQL character set to "utf8mb4".
+            Renamed from ``create_scoped_session``, this method is internal.
+        """
+        scope = options.pop("scopefunc", _ident_func)
+        factory = self._make_session_factory(options)
+        return sa.orm.scoped_session(factory, scope)
+
+    def _make_session_factory(self, options: dict[str, t.Any]) -> sa.orm.sessionmaker:
+        """Create the SQLAlchemy :class:`sqlalchemy.orm.sessionmaker` used by
+        :meth:`_make_scoped_session`.
+
+        To customize, pass the ``session_options`` parameter to :class:`SQLAlchemy`. To
+        customize the session class, subclass :class:`.Session` and pass it as the
+        ``class_`` key.
+
+        This method is used for internal setup. Its signature may change at any time.
+
+        :meta private:
+
+        :param options: The ``session_options`` parameter from ``__init__``. Keyword
+            arguments passed to the session factory.
+
+        .. versionchanged:: 3.0
+            The session class can be customized.
+
+        .. versionchanged:: 3.0
+            Renamed from ``create_session``, this method is internal.
+        """
+        options.setdefault("class_", Session)
+        options.setdefault("query_cls", self.Query)
+        return sa.orm.sessionmaker(db=self, **options)
+
+    def _teardown_commit(self, exc: BaseException | None) -> None:
+        """Commit the session at the end of the request if there was not an unhandled
+        exception during the request.
+
+        :meta private:
+
+        .. deprecated:: 3.0
+            Will be removed in 3.1. Use ``db.session.commit()`` directly instead.
+        """
+        if exc is None:
+            self.session.commit()
+
+        self.session.remove()
+
+    def _teardown_session(self, exc: BaseException | None) -> None:
+        """Remove the current session at the end of the request.
+
+        :meta private:
+
+        .. versionadded:: 3.0
+        """
+        self.session.remove()
+
+    def _make_metadata(self, bind_key: str | None) -> sa.MetaData:
+        """Get or create a :class:`sqlalchemy.MetaData` for the given bind key.
+
+        This method is used for internal setup. Its signature may change at any time.
+
+        :meta private:
+
+        :param bind_key: The name of the metadata being created.
+
+        .. versionadded:: 3.0
+        """
+        if bind_key in self.metadatas:
+            return self.metadatas[bind_key]
+
+        if bind_key is not None:
+            # Copy the naming convention from the default metadata.
+            naming_convention = self._make_metadata(None).naming_convention
+        else:
+            naming_convention = None
+
+        # Set the bind key in info to be used by session.get_bind.
+        metadata = sa.MetaData(
+            naming_convention=naming_convention, info={"bind_key": bind_key}
+        )
+        self.metadatas[bind_key] = metadata
+        return metadata
+
+    def _make_table_class(self) -> t.Type[sa.Table]:
+        """Create a SQLAlchemy :class:`sqlalchemy.Table` class that chooses a metadata
+        automatically based on the ``bind_key``. The result is available as
+        :attr:`Table`.
+
+        This method is used for internal setup. Its signature may change at any time.
+
+        :meta private:
+
+        .. versionadded:: 3.0
+        """
+
+        class Table(sa.Table):
+            def __new__(
+                cls, *args: t.Any, bind_key: str | None = None, **kwargs: t.Any
+            ) -> Table:
+                # If a metadata arg is passed, go directly to the base Table. Also do
+                # this for no args so the correct error is shown.
+                if not args or (len(args) >= 2 and isinstance(args[1], sa.MetaData)):
+                    return super().__new__(cls, *args, **kwargs)
+
+                if (
+                    bind_key is None
+                    and "info" in kwargs
+                    and "bind_key" in kwargs["info"]
+                ):
+                    import warnings
+
+                    warnings.warn(
+                        "'table.info['bind_key'] is deprecated and will not be used in"
+                        " Flask-SQLAlchemy 3.1. Pass the 'bind_key' parameter instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+                    bind_key = kwargs["info"].get("bind_key")
+
+                metadata = self._make_metadata(bind_key)
+                return super().__new__(cls, args[0], metadata, *args[1:], **kwargs)
+
+        return Table
+
+    def _make_declarative_base(
+        self, model: t.Type[Model] | sa.orm.DeclarativeMeta
+    ) -> t.Type[t.Any]:
+        """Create a SQLAlchemy declarative model class. The result is available as
+        :attr:`Model`.
+
+        To customize, subclass :class:`.Model` and pass it as ``model_class`` to
+        :class:`SQLAlchemy`. To customize at the metaclass level, pass an already
+        created declarative model class as ``model_class``.
+
+        This method is used for internal setup. Its signature may change at any time.
+
+        :meta private:
+
+        :param model: A model base class, or an already created declarative model class.
+
+        .. versionchanged:: 3.0
+            Renamed with a leading underscore, this method is internal.
+
+        .. versionchanged:: 2.3
+            ``model`` can be an already created declarative model class.
+        """
+        metadata = self._make_metadata(None)
+
+        if not isinstance(model, sa.orm.DeclarativeMeta):
+            model = sa.orm.declarative_base(
+                metadata=metadata, cls=model, name="Model", metaclass=DefaultMeta
+            )
+
+        model.metadata = metadata  # type: ignore[union-attr]
+        model.query_class = self.Query
+        model.__fsa__ = self
+        return model
+
+    def _apply_driver_defaults(self, options: dict[str, t.Any], app: Flask) -> None:
+        """Apply driver-specific configuration to an engine.
+
+        SQLite in-memory databases use ``StaticPool`` and disable ``check_same_thread``.
+        File paths are relative to the app's :func:`~flask.Flask.instance_path`, which
+        is created if it doesn't exist.
+
+        MySQL sets ``charset="utf8mb4"``, and ``pool_timeout`` defaults to 2 hours.
+
+        This method is used for internal setup. Its signature may change at any time.
+
+        :meta private:
+
+        :param options: Arguments passed to the engine.
+        :param app: The application that the engine configuration belongs to.
+
+        .. versionchanged:: 3.0
+            SQLite paths are relative to ``app.instance_path``. It does not use
+            ``NullPool`` if ``pool_size`` is 0.
+
+        .. versionchanged:: 3.0
+            MySQL sets ``charset="utf8mb4". It does not set ``pool_size`` to 10.
+
+        .. versionchanged:: 3.0
+            Renamed from ``apply_driver_hacks``, this method is internal. It does not
+            return anything.
 
         .. versionchanged:: 2.5
-            Returns ``(sa_url, options)``. SQLAlchemy 1.4 made the URL
-            immutable, so any changes to it must now be passed back up
-            to the original caller.
+            Returns ``(sa_url, options)``.
         """
-        if sa_url.drivername.startswith("mysql"):
-            sa_url = _sa_url_query_setdefault(sa_url, charset="utf8mb4")
+        url = sa.engine.make_url(options["url"])
 
-            if sa_url.drivername != "mysql+gaerdbms":
-                options.setdefault("pool_size", 10)
-                options.setdefault("pool_recycle", 7200)
-        elif sa_url.drivername == "sqlite":
-            pool_size = options.get("pool_size")
-            detected_in_memory = False
-            if sa_url.database in (None, "", ":memory:"):
-                detected_in_memory = True
-                from sqlalchemy.pool import StaticPool
+        if url.drivername in {"sqlite", "sqlite+pysqlite"}:
+            if url.database in {None, "", ":memory:"}:
+                options["poolclass"] = sa.pool.StaticPool
 
-                options["poolclass"] = StaticPool
                 if "connect_args" not in options:
                     options["connect_args"] = {}
+
                 options["connect_args"]["check_same_thread"] = False
-
-                # we go to memory and the pool size was explicitly set
-                # to 0 which is fail.  Let the user know that
-                if pool_size == 0:
-                    raise RuntimeError(
-                        "SQLite in memory database with an "
-                        "empty queue not possible due to data "
-                        "loss."
+            else:
+                if not os.path.isabs(url.database):
+                    os.makedirs(app.instance_path, exist_ok=True)
+                    options["url"] = url.set(
+                        database=os.path.join(app.instance_path, url.database)
                     )
-            # if pool size is None or explicitly set to 0 we assume the
-            # user did not want a queue for this sqlite connection and
-            # hook in the null pool.
-            elif not pool_size:
-                from sqlalchemy.pool import NullPool
+        elif url.drivername.startswith("mysql"):
+            options.setdefault("pool_recycle", 7200)
 
-                options["poolclass"] = NullPool
+            if "charset" not in url.query:
+                options["url"] = url.update_query_dict({"charset": "utf8mb4"})
 
-            # If the database path is not absolute, it's relative to the
-            # app instance path, which might need to be created.
-            if not detected_in_memory and not os.path.isabs(sa_url.database):
-                os.makedirs(app.instance_path, exist_ok=True)
-                sa_url = _sa_url_set(
-                    sa_url, database=os.path.join(app.root_path, sa_url.database)
-                )
+    def _make_engine(
+        self, bind_key: str | None, options: dict[str, t.Any], app: Flask
+    ) -> sa.engine.Engine:
+        """Create the :class:`sqlalchemy.engine.Engine` for the given bind key and app.
 
-        return sa_url, options
+        To customize, use :data:`.SQLALCHEMY_ENGINE_OPTIONS` or
+        :data:`.SQLALCHEMY_BINDS` config. Pass ``engine_options`` to :class:`SQLAlchemy`
+        to set defaults for all engines.
+
+        This method is used for internal setup. Its signature may change at any time.
+
+        :meta private:
+
+        :param bind_key: The name of the engine being created.
+        :param options: Arguments passed to the engine.
+        :param app: The application that the engine configuration belongs to.
+
+        .. versionchanged:: 3.0
+            Renamed from ``create_engine``, this method is internal.
+        """
+        return sa.engine_from_config(options, prefix="")
 
     @property
-    def engine(self):
-        """Gives access to the engine.  If the database configuration is bound
-        to a specific application (initialized with an application) this will
-        always return a database connection.  If however the current application
-        is used this might raise a :exc:`RuntimeError` if no application is
-        active at the moment.
+    def metadata(self) -> sa.MetaData:
+        """The default metadata used by :attr:`Model` and :attr:`Table` if no bind key
+        is set.
         """
-        return self.get_engine()
+        return self.metadatas[None]
 
-    def make_connector(self, app=None, bind=None):
-        """Creates the connector for a given state and bind."""
-        return _EngineConnector(self, self.get_app(app), bind)
+    @property
+    def engines(self) -> t.Mapping[str | None, sa.engine.Engine]:
+        """Map of bind keys to :class:`sqlalchemy.engine.Engine` instances for current
+        application. The ``None`` key refers to the default engine, and is available as
+        :attr:`engine`.
 
-    def get_engine(self, app=None, bind=None):
-        """Returns a specific engine."""
+        To customize, set the :data:`.SQLALCHEMY_BINDS` config, and set defaults by
+        passing the ``engine_options`` parameter to the extension.
 
-        app = self.get_app(app)
-        state = get_state(app)
+        This requires that a Flask application context is active.
 
-        with self._engine_lock:
-            connector = state.connectors.get(bind)
-
-            if connector is None:
-                connector = self.make_connector(app, bind)
-                state.connectors[bind] = connector
-
-            return connector.get_engine()
-
-    def create_engine(self, sa_url, engine_opts):
-        """Override this method to have final say over how the
-        SQLAlchemy engine is created.
-
-        In most cases, you will want to use
-        ``'SQLALCHEMY_ENGINE_OPTIONS'`` config variable or set
-        ``engine_options`` for :func:`SQLAlchemy`.
+        .. versionadded:: 3.0
         """
-        return sqlalchemy.create_engine(sa_url, **engine_opts)
-
-    def get_app(self, reference_app=None):
-        """Helper method that implements the logic to look up an
-        application."""
-
-        if reference_app is not None:
-            return reference_app
-
-        if current_app:
-            return current_app._get_current_object()
-
-        if self.app is not None:
-            return self.app
-
-        raise RuntimeError(
-            "No application found. Either work inside a view function or push"
-            " an application context. See"
-            " https://flask-sqlalchemy.palletsprojects.com/contexts/."
-        )
-
-    def get_tables_for_bind(self, bind=None):
-        """Returns a list of all tables relevant for a bind."""
-        result = []
-        for table in self.Model.metadata.tables.values():
-            if table.info.get("bind_key") == bind:
-                result.append(table)
-        return result
-
-    def get_binds(self, app=None):
-        """Returns a dictionary with a table->engine mapping.
-
-        This is suitable for use of sessionmaker(binds=db.get_binds(app)).
-        """
-        app = self.get_app(app)
-        binds = [None] + list(app.config.get("SQLALCHEMY_BINDS") or ())
-        retval = {}
-        for bind in binds:
-            engine = self.get_engine(app, bind)
-            tables = self.get_tables_for_bind(bind)
-            retval.update({table: engine for table in tables})
-        return retval
-
-    def _execute_for_all_tables(self, app, bind, operation, skip_tables=False):
-        app = self.get_app(app)
-
-        if bind == "__all__":
-            binds = [None] + list(app.config.get("SQLALCHEMY_BINDS") or ())
-        elif isinstance(bind, str) or bind is None:
-            binds = [bind]
+        if not has_app_context() and self._app is not None:
+            app = self._app
         else:
-            binds = bind
+            app = current_app._get_current_object()
 
-        for bind in binds:
-            extra = {}
-            if not skip_tables:
-                tables = self.get_tables_for_bind(bind)
-                extra["tables"] = tables
-            op = getattr(self.Model.metadata, operation)
-            op(bind=self.get_engine(app, bind), **extra)
+        return self._app_engines[app]
 
-    def create_all(self, bind="__all__", app=None):
-        """Create all tables that do not already exist in the database.
-        This does not update existing tables, use a migration library
-        for that.
+    @property
+    def engine(self) -> sa.engine.Engine:
+        """The default :class:`~sqlalchemy.engine.Engine` for the current application,
+        used by :attr:`session` if the :attr:`Model` or :attr:`Table` being queried does
+        not set a bind key.
 
-        :param bind: A bind key or list of keys to create the tables
-            for. Defaults to all binds.
-        :param app: Use this app instead of requiring an app context.
+        To customize, set the :data:`.SQLALCHEMY_ENGINE_OPTIONS` config, and set
+        defaults by passing the ``engine_options`` parameter to the extension.
+
+        This requires that a Flask application context is active.
+        """
+        return self.engines[None]
+
+    def get_engine(self, bind_key: str | None = None) -> sa.engine.Engine:
+        """Get the engine for the given bind key for the current application.
+
+        This requires that a Flask application context is active.
+
+        :param bind_key: The name of the engine.
+
+        .. deprecated:: 3.0
+            Will be removed in Flask-SQLAlchemy 3.1. Use ``engines[key]`` instead.
+
+        .. versionchanged:: 3.0
+            Renamed the ``bind`` parameter to ``bind_key``. Removed the ``app``
+            parameter.
+        """
+        import warnings
+
+        warnings.warn(
+            "'get_engine' is deprecated and will be removed in Flask-SQLAlchemy 3.1."
+            " Use 'engine' or 'engines[key]' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.engines[bind_key]
+
+    def get_tables_for_bind(self, bind_key: str | None = None) -> list[sa.Table]:
+        """Get all tables in the metadata for the given bind key.
+
+        :param bind_key: The bind key to get.
+
+        .. deprecated:: 3.0
+            Will be removed in Flask-SQLAlchemy 3.1. Use ``metadata.tables`` instead.
+
+        .. versionchanged:: 3.0
+            Renamed the ``bind`` parameter to ``bind_key``.
+        """
+        import warnings
+
+        warnings.warn(
+            "'get_tables_for_bind' is deprecated and will be removed in"
+            " Flask-SQLAlchemy 3.1. Use 'metadata.tables' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return list(self.metadatas[bind_key].tables.values())
+
+    def get_binds(self) -> dict[sa.Table, sa.engine.Engine]:
+        """Map all tables to their engine based on their bind key, which can be used to
+        create a session with ``Session(binds=db.get_binds(app))``.
+
+        This requires that a Flask application context is active.
+
+        .. deprecated:: 3.0
+            Will be removed in Flask-SQLAlchemy 3.1. ``db.session`` supports multiple
+            binds directly.
+
+        .. versionchanged:: 3.0
+            Removed the ``app`` parameter.
+        """
+        import warnings
+
+        warnings.warn(
+            "'get_binds' is deprecated and will be removed in Flask-SQLAlchemy 3.1."
+            " 'db.session' supports multiple binds directly.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return {
+            table: engine
+            for bind_key, engine in self.engines.items()
+            for table in self.metadatas[bind_key].tables.values()
+        }
+
+    def _call_for_binds(
+        self, bind_key: str | None | list[str | None], op_name: str
+    ) -> None:
+        """Call a method on each metadata.
+
+        :meta private:
+
+        :param bind_key: A bind key or list of keys. Defaults to all binds.
+        :param op_name: The name of the method to call.
+
+        .. versionchanged:: 3.0
+            Renamed from ``_execute_for_all_tables``.
+        """
+        if bind_key == "__all__":
+            keys: list[str | None] = list(self.metadatas)
+        elif bind_key is None or isinstance(bind_key, str):
+            keys = [bind_key]
+        else:
+            keys = bind_key
+
+        for key in keys:
+            try:
+                engine = self.engines[key]
+            except KeyError:
+                message = f"Bind key '{key}' is not in 'SQLALCHEMY_BINDS' config."
+
+                if key is None:
+                    message = f"'SQLALCHEMY_DATABASE_URI' config is not set. {message}"
+
+                raise sa.exc.UnboundExecutionError(message) from None
+
+            metadata = self.metadatas[key]
+            getattr(metadata, op_name)(bind=engine)
+
+    def create_all(self, bind_key: str | None | list[str | None] = "__all__") -> None:
+        """Create tables that do not exist in the database by calling
+        ``metadata.create_all()`` for all or some bind keys. This does not
+        update existing tables, use a migration library for that.
+
+        This requires that a Flask application context is active.
+
+        :param bind_key: A bind key or list of keys to create the tables for. Defaults
+            to all binds.
+
+        .. versionchanged:: 3.0
+            Renamed the ``bind`` parameter to ``bind_key``. Removed the ``app``
+            parameter.
 
         .. versionchanged:: 0.12
             Added the ``bind`` and ``app`` parameters.
         """
-        self._execute_for_all_tables(app, bind, "create_all")
+        self._call_for_binds(bind_key, "create_all")
 
-    def drop_all(self, bind="__all__", app=None):
-        """Drop all tables.
+    def drop_all(self, bind_key: str | None | list[str | None] = "__all__") -> None:
+        """Drop tables by calling ``metadata.drop_all()`` for all or some bind keys.
 
-        :param bind: A bind key or list of keys to drop the tables for.
-            Defaults to all binds.
-        :param app: Use this app instead of requiring an app context.
+        This requires that a Flask application context is active.
 
-        .. versionchanged:: 0.12
-            Added the ``bind`` and ``app`` parameters.
-        """
-        self._execute_for_all_tables(app, bind, "drop_all")
+        :param bind_key: A bind key or list of keys to drop the tables from. Defaults to
+            all binds.
 
-    def reflect(self, bind="__all__", app=None):
-        """Reflects tables from the database.
-
-        :param bind: A bind key or list of keys to reflect the tables
-            from. Defaults to all binds.
-        :param app: Use this app instead of requiring an app context.
+        .. versionchanged:: 3.0
+            Renamed the ``bind`` parameter to ``bind_key``. Removed the ``app``
+            parameter.
 
         .. versionchanged:: 0.12
             Added the ``bind`` and ``app`` parameters.
         """
-        self._execute_for_all_tables(app, bind, "reflect", skip_tables=True)
+        self._call_for_binds(bind_key, "drop_all")
 
-    def __repr__(self):
-        url = self.engine.url if self.app or current_app else None
-        return f"<{type(self).__name__} engine={url!r}>"
+    def reflect(self, bind_key: str | None | list[str | None] = "__all__") -> None:
+        """Load table definitions from the database by calling ``metadata.reflect()``
+        for all or some bind keys.
+
+        This requires that a Flask application context is active.
+
+        :param bind_key: A bind key or list of keys to reflect the tables from. Defaults
+            to all binds.
+
+        .. versionchanged:: 3.0
+            Renamed the ``bind`` parameter to ``bind_key``. Removed the ``app``
+            parameter.
+
+        .. versionchanged:: 0.12
+            Added the ``bind`` and ``app`` parameters.
+        """
+        self._call_for_binds(bind_key, "reflect")
 
     def _set_rel_query(self, kwargs: dict[str, t.Any]) -> None:
         """Apply the extension's :attr:`Query` class as the default for relationships
@@ -591,8 +782,11 @@ class SQLAlchemy:
     def relationship(
         self, *args: t.Any, **kwargs: t.Any
     ) -> sa.orm.RelationshipProperty:
-        """A SQLAlchemy :func:`~sqlalchemy.orm.relationship` that applies this
-        extension's :attr:`Query` class for dynamic relationships and backrefs.
+        """A :func:`sqlalchemy.orm.relationship` that applies this extension's
+        :attr:`Query` class for dynamic relationships and backrefs.
+
+        .. versionchanged:: 3.0
+            The :attr:`Query` class is set on ``backref``.
         """
         self._set_rel_query(kwargs)
         return sa.orm.relationship(*args, **kwargs)
@@ -600,25 +794,43 @@ class SQLAlchemy:
     def dynamic_loader(
         self, argument: t.Any, **kwargs: t.Any
     ) -> sa.orm.RelationshipProperty:
-        """A SQLAlchemy :func:`~sqlalchemy.orm.dynamic_loader` that applies this
-        extension's :attr:`Query` class for relationships and backrefs.
+        """A :func:`sqlalchemy.orm.dynamic_loader` that applies this extension's
+        :attr:`Query` class for relationships and backrefs.
+
+        .. versionchanged:: 3.0
+            The :attr:`Query` class is set on ``backref``.
         """
         self._set_rel_query(kwargs)
         return sa.orm.dynamic_loader(argument, **kwargs)
 
     def _relation(self, *args: t.Any, **kwargs: t.Any) -> sa.orm.RelationshipProperty:
-        """A SQLAlchemy :func:`~sqlalchemy.orm.relationship` that applies this
-        extension's :attr:`Query` class for dynamic relationships and backrefs.
+        """A :func:`sqlalchemy.orm.relationship` that applies this extension's
+        :attr:`Query` class for dynamic relationships and backrefs.
 
         SQLAlchemy 2.0 removes this name, use ``relationship`` instead.
 
         :meta private:
+
+        .. versionchanged:: 3.0
+            The :attr:`Query` class is set on ``backref``.
         """
         # Deprecated, removed in SQLAlchemy 2.0. Accessed through ``__getattr__``.
         self._set_rel_query(kwargs)
         return sa.orm.relation(*args, **kwargs)
 
     def __getattr__(self, name: str) -> t.Any:
+        if name == "db":
+            import warnings
+
+            warnings.warn(
+                "The 'db' attribute is deprecated and will be removed in"
+                " Flask-SQLAlchemy 3.1. The extension is registered directly as"
+                " 'app.extensions[\"sqlalchemy\"]'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self
+
         if name == "relation":
             return self._relation
 
@@ -627,6 +839,6 @@ class SQLAlchemy:
 
         for mod in (sa, sa.orm):
             if name in mod.__all__:
-                return getattr(sa, name)
+                return getattr(mod, name)
 
         raise AttributeError(name)

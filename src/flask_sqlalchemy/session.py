@@ -1,63 +1,86 @@
-from sqlalchemy.orm import Session as SessionBase
+from __future__ import annotations
+
+import typing as t
+
+import sqlalchemy as sa
+import sqlalchemy.exc
+import sqlalchemy.orm
+
+if t.TYPE_CHECKING:
+    from .extension import SQLAlchemy
 
 
-class SignallingSession(SessionBase):
-    """The signalling session is the default session that Flask-SQLAlchemy
-    uses.  It extends the default session system with bind selection and
-    modification tracking.
+class Session(sa.orm.Session):
+    """A SQLAlchemy :class:`~sqlalchemy.orm.Session` class that chooses what engine to
+    use based on the bind key associated with the metadata associated with the thing
+    being queried.
 
-    If you want to use a different session you can override the
-    :meth:`SQLAlchemy.create_session` function.
+    To customize ``db.session``, subclass this and pass it as the ``class_`` key in the
+    ``session_options`` to :class:`.SQLAlchemy`.
 
-    .. versionadded:: 2.0
-
-    .. versionadded:: 2.1
-        The `binds` option was added, which allows a session to be joined
-        to an external transaction.
+    .. versionchanged:: 3.0
+        Renamed from ``SignallingSession``.
     """
 
-    def __init__(self, db, autocommit=False, autoflush=True, **options):
-        #: The application that this session belongs to.
-        self.app = app = db.get_app()
+    def __init__(self, db: SQLAlchemy, **kwargs: t.Any) -> None:
+        super().__init__(**kwargs)
         self._db = db
-        self._model_changes = {}
-        track_modifications = app.config["SQLALCHEMY_TRACK_MODIFICATIONS"]
-        bind = options.pop("bind", None) or db.engine
-        binds = options.pop("binds", db.get_binds(app))
+        self._model_changes: dict[object, tuple[t.Any, str]] = {}
 
-        if track_modifications:
-            from . import track_modifications
+    def get_bind(
+        self, mapper=None, clause=None, bind=None, **kwargs: t.Any
+    ) -> sa.engine.Engine:
+        """Select an engine based on the ``bind_key`` of the metadata associated with
+        the model or table being queried. If no bind key is set, uses the default bind.
 
-            track_modifications._listen(self)
+        .. versionchanged:: 3.0
+            The implementation more closely matches the base SQLAlchemy implementation.
 
-        SessionBase.__init__(
-            self,
-            autocommit=autocommit,
-            autoflush=autoflush,
-            bind=bind,
-            binds=binds,
-            **options,
-        )
-
-    def get_bind(self, mapper=None, **kwargs):
-        """Return the engine or connection for a given model or
-        table, using the ``__bind_key__`` if it is set.
+        .. versionchanged:: 2.1
+            Support joining an external transaction.
         """
-        # mapper is None if someone tries to just get a connection
+        if bind is not None:
+            return bind
+
         if mapper is not None:
             try:
-                # SA >= 1.3
-                persist_selectable = mapper.persist_selectable
-            except AttributeError:
-                # SA < 1.3
-                persist_selectable = mapper.mapped_table
+                mapper = sa.inspect(mapper)
+            except sa.exc.NoInspectionAvailable as e:
+                if isinstance(mapper, type):
+                    raise sa.orm.exc.UnmappedClassError(mapper) from e
 
-            info = getattr(persist_selectable, "info", {})
-            bind_key = info.get("bind_key")
-            if bind_key is not None:
-                from .extension import get_state
+                raise
 
-                state = get_state(self.app)
-                return state.db.get_engine(self.app, bind=bind_key)
+            clause = mapper.persist_selectable
 
-        return super().get_bind(mapper, **kwargs)
+        engines = self._db.engines
+
+        if isinstance(clause, sa.Table) and "bind_key" in clause.metadata.info:
+            key = clause.metadata.info["bind_key"]
+
+            if key not in engines:
+                raise sa.exc.UnboundExecutionError(
+                    f"Bind key '{key}' is not in 'SQLALCHEMY_BINDS' config."
+                )
+
+            return engines[key]
+
+        if None in engines:
+            return engines[None]
+
+        return super().get_bind(mapper=mapper, clause=clause, bind=bind, **kwargs)
+
+
+def __getattr__(name: str) -> t.Any:
+    import warnings
+
+    if name == "SignallingSession":
+        warnings.warn(
+            "'SignallingSession' has been renamed to 'Session'. The old name is"
+            " deprecated and will be removed in Flask-SQLAlchemy 3.1.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return Session
+
+    raise AttributeError(name)
