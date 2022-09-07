@@ -120,8 +120,8 @@ by overriding the ``query_class`` class attribute on the model::
     class MyModel(db.Model):
         query_class = GetOrQuery
 
-In this case, the ``get_or`` method will be only availble on queries
-orginating from ``MyModel.query``.
+In this case, the ``get_or`` method will be only available on queries
+originating from ``MyModel.query``.
 
 
 Model Metaclass

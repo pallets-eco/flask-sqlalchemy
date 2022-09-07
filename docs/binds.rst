@@ -13,7 +13,7 @@ What are binds?  In SQLAlchemy speak a bind is something that can execute
 SQL statements and is usually a connection or engine.  In Flask-SQLAlchemy
 binds are always engines that are created for you automatically behind the
 scenes.  Each of these engines is then associated with a short key (the
-bind key).  This key is then used at model declaration time to assocate a
+bind key).  This key is then used at model declaration time to associate a
 model with a specific engine.
 
 If no bind key is specified for a model the default connection is used
