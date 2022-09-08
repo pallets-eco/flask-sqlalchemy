@@ -79,18 +79,3 @@ class Session(sa.orm.Session):
 def _app_ctx_id() -> int:
     """Get the id of the current Flask application context for the session scope."""
     return id(app_ctx._get_current_object())  # type: ignore[attr-defined]
-
-
-def __getattr__(name: str) -> t.Any:
-    import warnings
-
-    if name == "SignallingSession":
-        warnings.warn(
-            "'SignallingSession' has been renamed to 'Session'. The old name is"
-            " deprecated and will be removed in Flask-SQLAlchemy 3.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return Session
-
-    raise AttributeError(name)

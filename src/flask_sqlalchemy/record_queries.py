@@ -137,18 +137,3 @@ def _record_end(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
             location=location,
         )
     )
-
-
-def __getattr__(name: str) -> t.Any:
-    import warnings
-
-    if name == "get_debug_queries":
-        warnings.warn(
-            "'get_debug_queries' is renamed to 'get_recorded_queries'. The old name is"
-            " deprecated and will be removed in Flask-SQLAlchemy 3.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return get_recorded_queries
-
-    raise AttributeError(name)

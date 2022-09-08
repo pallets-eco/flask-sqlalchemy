@@ -102,18 +102,3 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
             error_out=error_out,
             count=count,
         )
-
-
-def __getattr__(name: str) -> t.Any:
-    import warnings
-
-    if name == "BaseQuery":
-        warnings.warn(
-            "'BaseQuery' is renamed to 'Query'. The old name is deprecated and will be"
-            " removed in Flask-SQLAlchemy 3.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return Query
-
-    raise AttributeError(name)
