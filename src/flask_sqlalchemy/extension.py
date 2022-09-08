@@ -203,7 +203,7 @@ class SQLAlchemy:
         if app is not None:
             self.init_app(app)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if not has_app_context() and self._app is None:
             return f"<{type(self).__name__}>"
 
@@ -341,7 +341,9 @@ class SQLAlchemy:
         factory = self._make_session_factory(options)
         return sa.orm.scoped_session(factory, scope)
 
-    def _make_session_factory(self, options: dict[str, t.Any]) -> sa.orm.sessionmaker:
+    def _make_session_factory(
+        self, options: dict[str, t.Any]
+    ) -> sa.orm.sessionmaker[Session]:  # type: ignore[type-var]
         """Create the SQLAlchemy :class:`sqlalchemy.orm.sessionmaker` used by
         :meth:`_make_scoped_session`.
 
@@ -532,10 +534,13 @@ class SQLAlchemy:
 
                 options["connect_args"]["check_same_thread"] = False
             else:
-                if not os.path.isabs(url.database):
+                if not os.path.isabs(url.database):  # type: ignore[arg-type]
                     os.makedirs(app.instance_path, exist_ok=True)
                     options["url"] = url.set(
-                        database=os.path.join(app.instance_path, url.database)
+                        database=os.path.join(
+                            app.instance_path,
+                            url.database,  # type: ignore[arg-type]
+                        )
                     )
         elif url.drivername.startswith("mysql"):
             options.setdefault("pool_recycle", 7200)
@@ -588,7 +593,7 @@ class SQLAlchemy:
         if not has_app_context() and self._app is not None:
             app = self._app
         else:
-            app = current_app._get_current_object()
+            app = current_app._get_current_object()  # type: ignore[attr-defined]
 
         return self._app_engines[app]
 
@@ -783,7 +788,7 @@ class SQLAlchemy:
 
     def relationship(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> sa.orm.RelationshipProperty:
+    ) -> sa.orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
@@ -795,7 +800,7 @@ class SQLAlchemy:
 
     def dynamic_loader(
         self, argument: t.Any, **kwargs: t.Any
-    ) -> sa.orm.RelationshipProperty:
+    ) -> sa.orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.dynamic_loader` that applies this extension's
         :attr:`Query` class for relationships and backrefs.
 
@@ -805,7 +810,9 @@ class SQLAlchemy:
         self._set_rel_query(kwargs)
         return sa.orm.dynamic_loader(argument, **kwargs)
 
-    def _relation(self, *args: t.Any, **kwargs: t.Any) -> sa.orm.RelationshipProperty:
+    def _relation(
+        self, *args: t.Any, **kwargs: t.Any
+    ) -> sa.orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 

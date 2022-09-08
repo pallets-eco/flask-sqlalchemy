@@ -27,7 +27,9 @@ class _QueryProperty:
         ...
 
     def __get__(self, obj: Model | None, cls: t.Type[Model]) -> Query:
-        return cls.query_class(cls, session=cls.__fsa__.session())
+        return cls.query_class(
+            cls, session=cls.__fsa__.session()  # type: ignore[arg-type]
+        )
 
 
 class Model:
@@ -50,7 +52,7 @@ class Model:
     defaults to :class:`.Query`.
     """
 
-    query: t.ClassVar[Query] = _QueryProperty()
+    query: t.ClassVar[Query] = _QueryProperty()  # type: ignore[assignment]
     """A SQLAlchemy query for a model. Equivalent to ``db.session.query(Model)``. Can be
     customized per-model by overriding :attr:`query_class`.
 
@@ -60,14 +62,14 @@ class Model:
     """
 
     def __repr__(self) -> str:
-        state: sa.orm.InstanceState = sa.inspect(self)
+        state = sa.inspect(self)
 
         if state.transient:
             pk = f"(transient {id(self)})"
         elif state.pending:
             pk = f"(pending {id(self)})"
         else:
-            pk = ", ".join(str(value) for value in state.identity)
+            pk = ", ".join(map(str, state.identity))
 
         return f"<{type(self).__name__} {pk}>"
 
@@ -124,7 +126,7 @@ class NameMetaMixin(type):
         ):
             del cls.__table__
 
-    def __table_cls__(cls, *args, **kwargs) -> sa.Table | None:
+    def __table_cls__(cls, *args: t.Any, **kwargs: t.Any) -> sa.Table | None:
         """This is called by SQLAlchemy during mapper setup. It determines the final
         table object that the model will use.
 

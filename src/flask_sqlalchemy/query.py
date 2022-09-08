@@ -10,7 +10,7 @@ from flask import abort
 from .pagination import Pagination
 
 
-class Query(sa.orm.Query):
+class Query(sa.orm.Query):  # type: ignore[type-arg]
     """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with some extra methods
     useful for querying in a web application.
 

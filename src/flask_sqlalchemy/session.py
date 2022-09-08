@@ -28,9 +28,13 @@ class Session(sa.orm.Session):
         self._db = db
         self._model_changes: dict[object, tuple[t.Any, str]] = {}
 
-    def get_bind(
-        self, mapper=None, clause=None, bind=None, **kwargs: t.Any
-    ) -> sa.engine.Engine:
+    def get_bind(  # type: ignore[override]
+        self,
+        mapper: t.Any | None = None,
+        clause: t.Any | None = None,
+        bind: sa.engine.Engine | sa.engine.Connection | None = None,
+        **kwargs: t.Any,
+    ) -> sa.engine.Engine | sa.engine.Connection:
         """Select an engine based on the ``bind_key`` of the metadata associated with
         the model or table being queried. If no bind key is set, uses the default bind.
 
@@ -74,7 +78,7 @@ class Session(sa.orm.Session):
 
 def _app_ctx_id() -> int:
     """Get the id of the current Flask application context for the session scope."""
-    return id(app_ctx._get_current_object())
+    return id(app_ctx._get_current_object())  # type: ignore[attr-defined]
 
 
 def __getattr__(name: str) -> t.Any:

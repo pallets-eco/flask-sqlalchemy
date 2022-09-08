@@ -41,7 +41,7 @@ def get_recorded_queries() -> list[_QueryInfo]:
     .. versionchanged:: 3.0
         The info object attribute ``context`` is renamed to ``location``.
     """
-    return g.get("_sqlalchemy_queries", [])
+    return g.get("_sqlalchemy_queries", [])  # type: ignore[no-any-return]
 
 
 @dataclasses.dataclass
@@ -58,7 +58,7 @@ class _QueryInfo:
         ``context`` is renamed to ``location``.
     """
 
-    statement: str
+    statement: str | None
     parameters: t.Any
     start_time: float
     end_time: float
@@ -93,19 +93,19 @@ class _QueryInfo:
         return getattr(self, name)
 
 
-def _listen(engine: sa.Engine) -> None:
+def _listen(engine: sa.engine.Engine) -> None:
     sa.event.listen(engine, "before_cursor_execute", _record_start, named=True)
     sa.event.listen(engine, "after_cursor_execute", _record_end, named=True)
 
 
-def _record_start(context: sa.ExecutionContext, **kwargs: t.Any) -> None:
+def _record_start(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
     if not has_app_context():
         return
 
-    context._fsa_start_time = perf_counter()
+    context._fsa_start_time = perf_counter()  # type: ignore[attr-defined]
 
 
-def _record_end(context: sa.ExecutionContext, **kwargs: t.Any) -> None:
+def _record_end(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
     if not has_app_context():
         return
 
@@ -132,7 +132,7 @@ def _record_end(context: sa.ExecutionContext, **kwargs: t.Any) -> None:
         _QueryInfo(
             statement=context.statement,
             parameters=context.parameters,
-            start_time=context._fsa_start_time,
+            start_time=context._fsa_start_time,  # type: ignore[attr-defined]
             end_time=perf_counter(),
             location=location,
         )
