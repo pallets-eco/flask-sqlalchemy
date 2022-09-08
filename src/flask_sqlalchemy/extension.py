@@ -59,6 +59,10 @@ class SQLAlchemy:
         for a list of arguments.
 
     .. versionchanged:: 3.0
+        An active Flask application context is always required to access ``session`` and
+        ``engine``.
+
+    .. versionchanged:: 3.0
         Separate ``metadata`` are used for each bind key.
 
     .. versionchanged:: 3.0
@@ -198,13 +202,11 @@ class SQLAlchemy:
         self._app_engines: WeakKeyDictionary[Flask, dict[str | None, sa.engine.Engine]]
         self._app_engines = WeakKeyDictionary()
 
-        self._app: Flask | None = app
-
         if app is not None:
             self.init_app(app)
 
     def __repr__(self) -> str:
-        if not has_app_context() and self._app is None:
+        if not has_app_context():
             return f"<{type(self).__name__}>"
 
         message = f"{type(self).__name__} {self.engine.url}"
@@ -234,7 +236,6 @@ class SQLAlchemy:
 
         :param app: The Flask application to initialize.
         """
-        # We intentionally don't set self._app, to support initializing multiple apps.
         app.extensions["sqlalchemy"] = self
 
         if app.config.get("SQLALCHEMY_COMMIT_ON_TEARDOWN", False):
@@ -590,11 +591,7 @@ class SQLAlchemy:
 
         .. versionadded:: 3.0
         """
-        if not has_app_context() and self._app is not None:
-            app = self._app
-        else:
-            app = current_app._get_current_object()  # type: ignore[attr-defined]
-
+        app = current_app._get_current_object()  # type: ignore[attr-defined]
         return self._app_engines[app]
 
     @property

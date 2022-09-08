@@ -4,6 +4,7 @@ import sqlalchemy as sa
 from flask_sqlalchemy import SQLAlchemy
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_basic_binds(app):
     app.config["SQLALCHEMY_BINDS"] = {"foo": "sqlite://", "bar": "sqlite://"}
     db = SQLAlchemy(app)
@@ -50,6 +51,7 @@ def test_basic_binds(app):
     assert "baz" in metadata.tables
 
 
+@pytest.mark.usefixtures("app_ctx")
 def test_abstract_binds(app):
     app.config["SQLALCHEMY_BINDS"] = {"foo": "sqlite://"}
     db = SQLAlchemy(app)

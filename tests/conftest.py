@@ -26,7 +26,7 @@ def db(app):
 
 
 @pytest.fixture
-def Todo(db):
+def Todo(app, db):
     class Todo(db.Model):
         __tablename__ = "todos"
         id = db.Column("todo_id", db.Integer, primary_key=True)
@@ -41,6 +41,10 @@ def Todo(db):
             self.done = False
             self.pub_date = datetime.utcnow()
 
-    db.create_all()
+    with app.app_context():
+        db.create_all()
+
     yield Todo
-    db.drop_all()
+
+    with app.app_context():
+        db.drop_all()

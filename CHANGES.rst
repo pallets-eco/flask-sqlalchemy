@@ -72,6 +72,8 @@ Unreleased
     after every request.
 -   A custom model class can implement ``__init_subclass__`` with class parameters.
     :issue:`1002`
+-   An active Flask application context is always required to access ``session`` and
+    ``engine``, regardless of if an application was passed to the constructor.
 
 
 Version 2.5.1

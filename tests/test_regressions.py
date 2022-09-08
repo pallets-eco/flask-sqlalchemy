@@ -7,7 +7,8 @@ def db(app, db):
     return db
 
 
-def test_joined_inheritance(db):
+@pytest.mark.usefixtures("app_ctx")
+def test_joined_inheritance(app, db):
     class Base(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         type = db.Column(db.String(20))
@@ -22,7 +23,8 @@ def test_joined_inheritance(db):
     db.create_all()
 
 
-def test_single_table_inheritance(db):
+@pytest.mark.usefixtures("app_ctx")
+def test_single_table_inheritance(app, db):
     class Base(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         type = db.Column(db.String(20))

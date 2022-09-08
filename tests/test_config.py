@@ -16,6 +16,12 @@ def app_nr(app):
     return app
 
 
+@pytest.fixture
+def nr_app_ctx(app_nr):
+    with app_nr.app_context() as ctx:
+        yield ctx
+
+
 class TestConfigKeys:
     def test_default_error_without_uri_or_binds(self, app, recwarn):
         """
@@ -55,6 +61,7 @@ class TestConfigKeys:
         assert app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] is False
         assert app.config["SQLALCHEMY_ENGINE_OPTIONS"] == {}
 
+    @pytest.mark.usefixtures("app_ctx")
     def test_engine_creation_ok(self, app):
         """create_engine() isn't called until needed. Make sure we can
         do that without errors or warnings.
@@ -62,6 +69,7 @@ class TestConfigKeys:
         assert SQLAlchemy(app).engine
 
 
+@pytest.mark.usefixtures("nr_app_ctx")
 class TestCreateEngine:
     """Tests for _EngineConnector and SQLAlchemy methods involved in
     setting up the SQLAlchemy engine.
@@ -91,6 +99,7 @@ class TestCreateEngine:
         assert isinstance(db.engine.pool, sa.pool.StaticPool)
 
 
+@pytest.mark.usefixtures("nr_app_ctx")
 def test_sqlite_relative_to_instance_path(app):
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
     db = SQLAlchemy(app)
