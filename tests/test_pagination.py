@@ -1,84 +1,162 @@
+from __future__ import annotations
+
+import typing as t
+
 import pytest
+from flask import Flask
 from werkzeug.exceptions import NotFound
 
+from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.pagination import Pagination
 
 
-def test_basic_pagination():
-    p = Pagination(query=None, page=1, per_page=20, total=500, items=[])
+def _make_page(
+    *, page: int = 1, per_page: int = 10, total: int | None = 150
+) -> Pagination:
+    return Pagination(query=None, page=page, per_page=per_page, total=total, items=[])
+
+
+def test_first_page() -> None:
+    p = _make_page()
     assert p.page == 1
+    assert p.per_page == 10
+    assert p.total == 150
+    assert p.pages == 15
     assert not p.has_prev
+    assert p.prev_num is None
     assert p.has_next
-    assert p.total == 500
-    assert p.pages == 25
     assert p.next_num == 2
-    assert list(p.iter_pages()) == [1, 2, 3, 4, 5, None, 24, 25]
-    p.page = 10
-    assert list(p.iter_pages()) == [1, 2, None, 8, 9, 10, 11, 12, 13, 14, None, 24, 25]
 
 
-def test_pagination_pages_when_0_items_per_page():
-    p = Pagination(query=None, page=1, per_page=0, total=500, items=[])
+def test_last_page() -> None:
+    p = _make_page(page=15)
+    assert p.page == 15
+    assert p.has_prev
+    assert p.prev_num == 14
+    assert not p.has_next
+    assert p.next_num is None
+
+
+@pytest.mark.parametrize(
+    ("per_page", "total"),
+    [
+        (0, 150),
+        (10, 0),
+        (10, None),
+    ],
+)
+def test_0_pages(per_page: int, total: int | None) -> None:
+    p = _make_page(per_page=per_page, total=total)
     assert p.pages == 0
+    assert not p.has_prev
+    assert not p.has_next
 
 
-def test_pagination_pages_when_total_is_none():
-    p = Pagination(query=None, page=1, per_page=20, total=None, items=[])
-    assert p.pages == 0
+@pytest.mark.parametrize(
+    ("page", "expect"),
+    [
+        (1, [1, 2, 3, 4, 5, None, 14, 15]),
+        (2, [1, 2, 3, 4, 5, 6, None, 14, 15]),
+        (3, [1, 2, 3, 4, 5, 6, 7, None, 14, 15]),
+        (4, [1, 2, 3, 4, 5, 6, 7, 8, None, 14, 15]),
+        (5, [1, 2, 3, 4, 5, 6, 7, 8, 9, None, 14, 15]),
+        (6, [1, 2, None, 4, 5, 6, 7, 8, 9, 10, None, 14, 15]),
+        (7, [1, 2, None, 5, 6, 7, 8, 9, 10, 11, None, 14, 15]),
+        (8, [1, 2, None, 6, 7, 8, 9, 10, 11, 12, None, 14, 15]),
+        (9, [1, 2, None, 7, 8, 9, 10, 11, 12, 13, 14, 15]),
+        (10, [1, 2, None, 8, 9, 10, 11, 12, 13, 14, 15]),
+        (11, [1, 2, None, 9, 10, 11, 12, 13, 14, 15]),
+        (12, [1, 2, None, 10, 11, 12, 13, 14, 15]),
+        (13, [1, 2, None, 11, 12, 13, 14, 15]),
+        (14, [1, 2, None, 12, 13, 14, 15]),
+        (15, [1, 2, None, 13, 14, 15]),
+    ],
+)
+def test_iter_pages(page: int, expect: list[int | None]) -> None:
+    p = _make_page(page=page)
+    assert list(p.iter_pages()) == expect
 
 
-def test_query_paginate(app, db, Todo):
+def test_iter_0_pages() -> None:
+    p = _make_page(total=0)
+    assert list(p.iter_pages()) == []
+
+
+@pytest.mark.parametrize("page", [1, 2, 3, 4])
+def test_iter_pages_short(page: int) -> None:
+    p = _make_page(page=page, total=40)
+    assert list(p.iter_pages()) == [1, 2, 3, 4]
+
+
+class _PaginateCallable:
+    def __init__(self, app: Flask, Todo: t.Any) -> None:
+        self.app = app
+        self.Todo = Todo
+
+    def __call__(
+        self,
+        page: int | None = None,
+        per_page: int | None = None,
+        max_per_page: int | None = None,
+        error_out: bool = True,
+        count: bool = True,
+    ) -> Pagination:
+        with self.app.test_request_context(
+            query_string={"page": page, "per_page": per_page}
+        ):
+            return self.Todo.query.paginate(  # type: ignore[no-any-return]
+                max_per_page=max_per_page, error_out=error_out, count=count
+            )
+
+
+@pytest.fixture
+def paginate(app: Flask, db: SQLAlchemy, Todo: t.Any) -> _PaginateCallable:
     with app.app_context():
-        db.session.add_all([Todo("", "") for _ in range(100)])
+        for i in range(1, 101):
+            db.session.add(Todo(title=f"task {i}"))
+
         db.session.commit()
 
-    @app.route("/")
-    def index():
-        p = Todo.query.paginate()
-        return f"{len(p.items)} items retrieved"
+    return _PaginateCallable(app, Todo)
 
-    c = app.test_client()
-    # request default
-    r = c.get("/")
-    assert r.status_code == 200
-    # request args
-    r = c.get("/?per_page=10")
-    assert r.data.decode("utf8") == "10 items retrieved"
 
-    with app.app_context():
-        # query default
-        p = Todo.query.paginate()
-        assert p.total == 100
+def test_paginate(paginate: _PaginateCallable) -> None:
+    p = paginate()
+    assert p.page == 1
+    assert p.per_page == 20
+    assert len(p.items) == 20
+    assert p.total == 100
+    assert p.pages == 5
+
+
+def test_paginate_qs(paginate: _PaginateCallable) -> None:
+    p = paginate(page=2, per_page=10)
+    assert p.page == 2
+    assert p.per_page == 10
+
+
+def test_paginate_max(paginate: _PaginateCallable) -> None:
+    p = paginate(per_page=100, max_per_page=50)
+    assert p.per_page == 50
+
+
+def test_no_count(paginate: _PaginateCallable) -> None:
+    p = paginate(count=False)
+    assert p.total is None
+
+
+@pytest.mark.parametrize(
+    ("page", "per_page"), [("abc", None), (None, "abc"), (0, None), (None, -1)]
+)
+def test_error_out(paginate: _PaginateCallable, page: t.Any, per_page: t.Any) -> None:
+    with pytest.raises(NotFound):
+        paginate(page=page, per_page=per_page)
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_query_paginate_more_than_20(app, db, Todo):
-    db.session.add_all(Todo("", "") for _ in range(20))
-    db.session.commit()
-
-    assert len(Todo.query.paginate(max_per_page=10).items) == 10
-
-
-@pytest.mark.usefixtures("app_ctx")
-def test_paginate_min(app, db, Todo):
-    db.session.add_all(Todo(str(x), "") for x in range(20))
-    db.session.commit()
-
-    assert Todo.query.paginate(error_out=False, page=-1).items[0].title == "0"
-    assert len(Todo.query.paginate(error_out=False, per_page=0).items) == 0
-    assert len(Todo.query.paginate(error_out=False, per_page=-1).items) == 20
+def test_no_items_404(Todo: t.Any) -> None:
+    p = Todo.query.paginate()
+    assert len(p.items) == 0
 
     with pytest.raises(NotFound):
-        Todo.query.paginate(page=0)
-
-    with pytest.raises(NotFound):
-        Todo.query.paginate(per_page=-1)
-
-
-@pytest.mark.usefixtures("app_ctx")
-def test_paginate_without_count(app, db, Todo):
-    with app.app_context():
-        db.session.add_all(Todo("", "") for _ in range(20))
-        db.session.commit()
-
-    assert len(Todo.query.paginate(count=False, page=1, per_page=10).items) == 10
+        Todo.query.paginate(page=2)

@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import inspect
+import typing as t
 
 import pytest
-from sqlalchemy.exc import ArgumentError
-from sqlalchemy.ext.declarative import declared_attr
+import sqlalchemy as sa
+import sqlalchemy.exc
+import sqlalchemy.orm
 
+from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.model import camel_to_snake_case
 
 
@@ -39,31 +44,31 @@ from flask_sqlalchemy.model import camel_to_snake_case
         # ("__test__Method", "test___method"),
     ],
 )
-def test_camel_to_snake_case(name, expect):
+def test_camel_to_snake_case(name: str, expect: str) -> None:
     assert camel_to_snake_case(name) == expect
 
 
-def test_name(db):
+def test_name(db: SQLAlchemy) -> None:
     class FOOBar(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class BazBar(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class Ham(db.Model):
         __tablename__ = "spam"
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     assert FOOBar.__tablename__ == "foo_bar"
     assert BazBar.__tablename__ == "baz_bar"
     assert Ham.__tablename__ == "spam"
 
 
-def test_single_name(db):
+def test_single_name(db: SQLAlchemy) -> None:
     """Single table inheritance should not set a new name."""
 
     class Duck(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class Mallard(Duck):
         pass
@@ -72,25 +77,25 @@ def test_single_name(db):
     assert Mallard.__tablename__ == "duck"
 
 
-def test_joined_name(db):
+def test_joined_name(db: SQLAlchemy) -> None:
     """Model has a separate primary key; it should set a new name."""
 
     class Duck(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class Donald(Duck):
-        id = db.Column(db.Integer, db.ForeignKey(Duck.id), primary_key=True)
+        id = sa.Column(sa.Integer, sa.ForeignKey(Duck.id), primary_key=True)
 
     assert Donald.__tablename__ == "donald"
 
 
-def test_mixin_id(db):
+def test_mixin_id(db: SQLAlchemy) -> None:
     """Primary key provided by mixin should still allow model to set
     tablename.
     """
 
     class Base:
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class Duck(Base, db.Model):
         pass
@@ -99,38 +104,38 @@ def test_mixin_id(db):
     assert Duck.__tablename__ == "duck"
 
 
-def test_mixin_attr(db):
+def test_mixin_attr(db: SQLAlchemy) -> None:
     """A declared attr tablename will be used down multiple levels of
     inheritance.
     """
 
     class Mixin:
-        @declared_attr
-        def __tablename__(cls):  # noqa: B902
-            return cls.__name__.upper()
+        @sa.orm.declared_attr
+        def __tablename__(cls) -> str:  # noqa: B902
+            return cls.__name__.upper()  # type: ignore[attr-defined,no-any-return]
 
     class Bird(Mixin, db.Model):
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class Duck(Bird):
         # object reference
-        id = db.Column(db.ForeignKey(Bird.id), primary_key=True)
+        id = sa.Column(sa.Integer, sa.ForeignKey(Bird.id), primary_key=True)
 
     class Mallard(Duck):
         # string reference
-        id = db.Column(db.ForeignKey("DUCK.id"), primary_key=True)
+        id = sa.Column(sa.Integer, sa.ForeignKey("DUCK.id"), primary_key=True)
 
     assert Bird.__tablename__ == "BIRD"
     assert Duck.__tablename__ == "DUCK"
     assert Mallard.__tablename__ == "MALLARD"
 
 
-def test_abstract_name(db):
+def test_abstract_name(db: SQLAlchemy) -> None:
     """Abstract model should not set a name. Subclass should set a name."""
 
     class Base(db.Model):
         __abstract__ = True
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class Duck(Base):
         pass
@@ -139,88 +144,85 @@ def test_abstract_name(db):
     assert Duck.__tablename__ == "duck"
 
 
-def test_complex_inheritance(db):
+def test_complex_inheritance(db: SQLAlchemy) -> None:
     """Joined table inheritance, but the new primary key is provided by a
     mixin, not directly on the class.
     """
 
     class Duck(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class IdMixin:
-        @declared_attr
-        def id(cls):  # noqa: B902
-            return db.Column(db.Integer, db.ForeignKey(Duck.id), primary_key=True)
+        @sa.orm.declared_attr
+        def id(cls) -> sa.Column[sa.Integer]:  # noqa: B902
+            return sa.Column(sa.Integer, sa.ForeignKey(Duck.id), primary_key=True)
 
-    class RubberDuck(IdMixin, Duck):
+    class RubberDuck(IdMixin, Duck):  # type: ignore[misc]
         pass
 
     assert RubberDuck.__tablename__ == "rubber_duck"
 
 
-@pytest.mark.usefixtures("app_ctx")
-def test_manual_name(db):
+def test_manual_name(db: SQLAlchemy) -> None:
     """Setting a manual name prevents generation for the immediate model. A
     name is generated for joined but not single-table inheritance.
     """
 
     class Duck(db.Model):
         __tablename__ = "DUCK"
-        id = db.Column(db.Integer, primary_key=True)
-        type = db.Column(db.String)
+        id = sa.Column(sa.Integer, primary_key=True)
+        type = sa.Column(sa.String)
 
         __mapper_args__ = {"polymorphic_on": type}
 
     class Daffy(Duck):
-        id = db.Column(db.Integer, db.ForeignKey(Duck.id), primary_key=True)
+        id = sa.Column(sa.Integer, sa.ForeignKey(Duck.id), primary_key=True)
 
-        __mapper_args__ = {"polymorphic_identity": "Warner"}
+        __mapper_args__ = {"polymorphic_identity": "Tower"}  # type: ignore[dict-item]
 
     class Donald(Duck):
-        __mapper_args__ = {"polymorphic_identity": "Disney"}
+        __mapper_args__ = {"polymorphic_identity": "Mouse"}  # type: ignore[dict-item]
 
     assert Duck.__tablename__ == "DUCK"
     assert Daffy.__tablename__ == "daffy"
     assert "__tablename__" not in Donald.__dict__
     assert Donald.__tablename__ == "DUCK"
-    # polymorphic condition for single-table query
-    assert 'WHERE "DUCK".type' in str(Donald.query)
 
 
-def test_primary_constraint(db):
+def test_primary_constraint(db: SQLAlchemy) -> None:
     """Primary key will be picked up from table args."""
 
     class Duck(db.Model):
-        id = db.Column(db.Integer)
+        id = sa.Column(sa.Integer)
 
-        __table_args__ = (db.PrimaryKeyConstraint(id),)
+        __table_args__ = (sa.PrimaryKeyConstraint(id),)
 
     assert Duck.__table__ is not None
     assert Duck.__tablename__ == "duck"
 
 
-def test_no_access_to_class_property(db):
+def test_no_access_to_class_property(db: SQLAlchemy) -> None:
     """Ensure the implementation doesn't access class properties or declared
     attrs while inspecting the unmapped model.
     """
 
     class class_property:
-        def __init__(self, f):
+        def __init__(self, f: t.Callable[..., t.Any]) -> None:
             self.f = f
 
-        def __get__(self, instance, owner):
+        def __get__(self, instance: t.Any, owner: t.Type[t.Any]) -> t.Any:
             return self.f(owner)
 
     class Duck(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class ns:
         is_duck = False
         floats = False
 
     class Witch(Duck):
-        @declared_attr
-        def is_duck(self):
+        @sa.orm.declared_attr
+        def is_duck(self) -> None:
             # declared attrs will be accessed during mapper configuration,
             # but make sure they're not accessed before that
             info = inspect.getouterframes(inspect.currentframe())[2]
@@ -228,15 +230,15 @@ def test_no_access_to_class_property(db):
             ns.is_duck = True
 
         @class_property
-        def floats(self):
+        def floats(self) -> None:
             ns.floats = True
 
     assert ns.is_duck
     assert not ns.floats
 
 
-def test_metadata_has_table(db):
-    user = db.Table("user", db.Column("id", db.Integer, primary_key=True))
+def test_metadata_has_table(db: SQLAlchemy) -> None:
+    user = db.Table("user", sa.Column("id", sa.Integer, primary_key=True))
 
     class User(db.Model):
         pass
@@ -244,8 +246,8 @@ def test_metadata_has_table(db):
     assert User.__table__ is user
 
 
-def test_correct_error_for_no_primary_key(db):
-    with pytest.raises(ArgumentError) as info:
+def test_correct_error_for_no_primary_key(db: SQLAlchemy) -> None:
+    with pytest.raises(sa.exc.ArgumentError) as info:
 
         class User(db.Model):
             pass
@@ -253,9 +255,9 @@ def test_correct_error_for_no_primary_key(db):
     assert "could not assemble any primary key" in str(info.value)
 
 
-def test_single_has_parent_table(db):
+def test_single_has_parent_table(db: SQLAlchemy) -> None:
     class Duck(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
+        id = sa.Column(sa.Integer, primary_key=True)
 
     class Call(Duck):
         pass

@@ -1,73 +1,66 @@
-import flask
-import pytest
+from __future__ import annotations
 
+import typing as t
+
+import pytest
+import sqlalchemy as sa
+from flask import Flask
+
+from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.track_modifications import before_models_committed
 from flask_sqlalchemy.track_modifications import models_committed
 
-pytestmark = pytest.mark.skipif(
-    not flask.signals_available, reason="Signals require the blinker library."
-)
+pytest.importorskip("blinker")
 
 
-@pytest.fixture()
-def app(app):
+@pytest.mark.usefixtures("app_ctx")
+def test_track_modifications(app: Flask) -> None:
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
-    return app
+    db = SQLAlchemy(app)
 
+    class Example(db.Model):
+        id = sa.Column(sa.Integer, primary_key=True)
+        data = sa.Column(sa.String)
 
-def test_before_committed(app, db, Todo):
-    class Namespace:
-        is_received = False
+    db.create_all()
+    before: list[tuple[t.Any, str]] = []
+    after: list[tuple[t.Any, str]] = []
 
-    def before_committed(sender, changes):
-        Namespace.is_received = True
+    def before_commit(sender: Flask, changes: list[tuple[t.Any, str]]) -> None:
+        nonlocal before
+        before = changes
 
-    before_models_committed.connect(before_committed)
-    todo = Todo("Awesome", "the text")
+    def after_commit(sender: Flask, changes: list[tuple[t.Any, str]]) -> None:
+        nonlocal after
+        after = changes
 
-    with app.app_context():
-        db.session.add(todo)
+    connect_before = before_models_committed.connected_to(before_commit, app)
+    connect_after = models_committed.connected_to(after_commit, app)
+
+    with connect_before, connect_after:
+        item = Example()
+
+        db.session.add(item)
+        assert not before
+        assert not after
+
         db.session.commit()
+        assert len(before) == 1
+        assert before[0] == (item, "insert")
+        assert before == after
 
-    assert Namespace.is_received
-    before_models_committed.disconnect(before_committed)
-
-
-def test_model_signals(app, db, Todo):
-    recorded = []
-
-    def committed(sender, changes):
-        assert isinstance(changes, list)
-        recorded.extend(changes)
-
-    models_committed.connect(committed)
-
-    with app.app_context():
-        todo = Todo("Awesome", "the text")
-        db.session.add(todo)
-        assert len(recorded) == 0
+        db.session.remove()
+        item = Example.query.get(1)
+        item.data = "test"  # type: ignore[assignment]
         db.session.commit()
+        assert len(before) == 1
+        assert before[0] == (item, "update")
+        assert before == after
 
-    assert len(recorded) == 1
-    assert recorded[0][0] == todo
-    assert recorded[0][1] == "insert"
-    del recorded[:]
-
-    with app.app_context():
-        db.session.add(todo)
-        todo.text = "aha"
+        db.session.remove()
+        item = Example.query.get(1)
+        db.session.delete(item)
         db.session.commit()
-
-    assert len(recorded) == 1
-    assert recorded[0][0] == todo
-    assert recorded[0][1] == "update"
-    del recorded[:]
-
-    with app.app_context():
-        db.session.delete(todo)
-        db.session.commit()
-
-    assert len(recorded) == 1
-    assert recorded[0][0] == todo
-    assert recorded[0][1] == "delete"
-    models_committed.disconnect(committed)
+        assert len(before) == 1
+        assert before[0] == (item, "delete")
+        assert before == after
