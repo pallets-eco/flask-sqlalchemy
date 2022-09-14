@@ -91,7 +91,7 @@ First time setup
 
     .. code-block:: text
 
-        $ git clone https://github.com/pallets/flask-sqlalchemy
+        $ git clone https://github.com/pallets-eco/flask-sqlalchemy
         $ cd flask-sqlalchemy
 
 -   Add your fork as a remote to push your work to. Replace
@@ -132,7 +132,7 @@ First time setup
 .. _username: https://docs.github.com/en/github/using-git/setting-your-username-in-git
 .. _email: https://docs.github.com/en/github/setting-up-and-managing-your-github-user-account/setting-your-commit-email-address
 .. _GitHub account: https://github.com/join
-.. _Fork: https://github.com/pallets/jinja/fork
+.. _Fork: https://github.com/pallets-eco/flask-sqlalchemy/fork
 .. _Clone: https://docs.github.com/en/github/getting-started-with-github/fork-a-repo#step-2-create-a-local-clone-of-your-fork
 
 
@@ -146,15 +146,15 @@ Start coding
     .. code-block:: text
 
         $ git fetch origin
-        $ git checkout -b your-branch-name origin/2.x
+        $ git checkout -b your-branch-name origin/3.0.x
 
     If you're submitting a feature addition or change, branch off of the
-    "master" branch.
+    "main" branch.
 
     .. code-block:: text
 
         $ git fetch origin
-        $ git checkout -b your-branch-name origin/master
+        $ git checkout -b your-branch-name origin/main
 
 -   Using your favorite editor, make your changes,
     `committing as you go`_.

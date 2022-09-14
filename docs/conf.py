@@ -31,9 +31,9 @@ html_context = {
     "project_links": [
         ProjectLink("Donate", "https://palletsprojects.com/donate"),
         ProjectLink("PyPI Releases", "https://pypi.org/project/Flask-SQLAlchemy/"),
-        ProjectLink("Source Code", "https://github.com/pallets/flask-sqlalchemy/"),
+        ProjectLink("Source Code", "https://github.com/pallets-eco/flask-sqlalchemy/"),
         ProjectLink(
-            "Issue Tracker", "https://github.com/pallets/flask-sqlalchemy/issues/"
+            "Issue Tracker", "https://github.com/pallets-eco/flask-sqlalchemy/issues/"
         ),
         ProjectLink("Website", "https://palletsprojects.com/"),
         ProjectLink("Twitter", "https://twitter.com/PalletsTeam"),

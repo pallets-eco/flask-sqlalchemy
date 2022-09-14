@@ -53,7 +53,7 @@ Contributing
 For guidance on setting up a development environment and how to make a
 contribution to Flask-SQLAlchemy, see the `contributing guidelines`_.
 
-.. _contributing guidelines: https://github.com/pallets/flask-sqlalchemy/blob/master/CONTRIBUTING.rst
+.. _contributing guidelines: https://github.com/pallets-eco/flask-sqlalchemy/blob/main/CONTRIBUTING.rst
 
 
 Donate
@@ -73,8 +73,8 @@ Links
 -   Documentation: https://flask-sqlalchemy.palletsprojects.com/
 -   Changes: https://flask-sqlalchemy.palletsprojects.com/changes/
 -   PyPI Releases: https://pypi.org/project/Flask-SQLAlchemy/
--   Source Code: https://github.com/pallets/flask-sqlalchemy/
--   Issue Tracker: https://github.com/pallets/flask-sqlalchemy/issues/
+-   Source Code: https://github.com/pallets-eco/flask-sqlalchemy/
+-   Issue Tracker: https://github.com/pallets-eco/flask-sqlalchemy/issues/
 -   Website: https://palletsprojects.com/
 -   Twitter: https://twitter.com/PalletsTeam
 -   Chat: https://discord.gg/pallets
