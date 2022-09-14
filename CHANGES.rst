@@ -4,8 +4,8 @@ Version 3.0.0
 Unreleased
 
 -   Drop support for Python 2, 3.4, 3.5, and 3.6.
--   Bump minimum version of Flask to 1.0.4.
--   Bump minimum version of SQLAlchemy to 1.2.
+-   Bump minimum version of Flask to 2.2.
+-   Bump minimum version of SQLAlchemy to 1.4.18.
 -   Remove previously deprecated code.
 -   The CamelCase to snake_case table name converter handles more
     patterns correctly. If such a name was already created in the
