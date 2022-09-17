@@ -6,23 +6,23 @@ from pallets_sphinx_themes import ProjectLink
 project = "Flask-SQLAlchemy"
 copyright = "2010 Pallets"
 author = "Pallets"
-release, version = get_version("Flask-SQLAlchemy", version_length=1)
+release, version = get_version("Flask-SQLAlchemy")
 
 # General --------------------------------------------------------------
 
-master_doc = "index"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "pallets_sphinx_themes",
     "sphinx_issues",
 ]
+autodoc_typehints = "description"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "flask": ("https://flask.palletsprojects.com/", None),
-    "sqlalchemy": ("https://docs.sqlalchemy.org/en/latest/", None),
+    "sqlalchemy": ("https://docs.sqlalchemy.org/", None),
 }
-issues_github_path = "pallets/flask-sqlalchemy"
+issues_github_path = "pallets-eco/flask-sqlalchemy"
 
 # HTML -----------------------------------------------------------------
 
@@ -50,9 +50,3 @@ html_favicon = "_static/flask-sqlalchemy-logo.png"
 html_logo = "_static/flask-sqlalchemy-logo.png"
 html_title = f"Flask-SQLAlchemy Documentation ({version})"
 html_show_sourcelink = False
-
-# LaTeX ----------------------------------------------------------------
-
-latex_documents = [
-    (master_doc, f"{project}-{version}.tex", html_title, author, "manual")
-]

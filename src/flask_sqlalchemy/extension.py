@@ -37,23 +37,23 @@ class SQLAlchemy:
     Accessing :attr:`session` and :attr:`engine` requires an active Flask application
     context. This includes methods like :meth:`create_all` which use the engine.
 
-    This class also provides access to names in SQLAlchemy's :mod:`sqlalchemy` and
-    :mod:`sqlalchemy.orm` modules. For example, you can use ``db.Column`` and
+    This class also provides access to names in SQLAlchemy's ``sqlalchemy`` and
+    ``sqlalchemy.orm`` modules. For example, you can use ``db.Column`` and
     ``db.relationship`` instead of importing ``sqlalchemy.Column`` and
     ``sqlalchemy.orm.relationship``. This can be convenient when defining models.
 
     :param app: Call :meth:`init_app` on this Flask application now.
-    :param metadata: Use this as the default :class:sqlalchemy.MetaData`. Useful for
-        setting a naming convention.
-    :param session_options: Arguments used by :attr:`db.session` to create each session
-        instance. A ``scopefunc`` key will be passed to :attr:`db.session`, not the
+    :param metadata: Use this as the default :class:`sqlalchemy.schema.MetaData`. Useful
+        for setting a naming convention.
+    :param session_options: Arguments used by :attr:`session` to create each session
+        instance. A ``scopefunc`` key will be passed to the scoped session, not the
         session instance. See :class:`sqlalchemy.orm.sessionmaker` for a list of
         arguments.
     :param query_class: Use this as the default query class for models and dynamic
         relationships. The query interface is considered legacy in SQLAlchemy 2.0.
     :param model_class: Use this as the model base class when creating the declarative
-        model class :attr:`db.Model`. Can also be a fully created declarative model
-        class for further customization.
+        model class :attr:`Model`. Can also be a fully created declarative model class
+        for further customization.
     :param engine_options: Default arguments used when creating every engine. These are
         lower precedence than application config. See :func:`sqlalchemy.create_engine`
         for a list of arguments.
@@ -135,7 +135,7 @@ class SQLAlchemy:
         """
 
         self.session = self._make_scoped_session(session_options)
-        """A :class:`sqlalchemy.orm.scoped_session` that creates instances of
+        """A :class:`sqlalchemy.orm.scoping.scoped_session` that creates instances of
         :class:`.Session` scoped to the current Flask application context. The session
         will be removed, returning the engine connection to the pool, when the
         application context exits.
@@ -149,8 +149,9 @@ class SQLAlchemy:
         """
 
         self.metadatas: dict[str | None, sa.MetaData] = {}
-        """Map of bind keys to :class:`sqlalchemy.MetaData` instances. The ``None`` key
-        refers to the default metadata, and is available as :attr:`metadata`.
+        """Map of bind keys to :class:`sqlalchemy.schema.MetaData` instances. The
+        ``None`` key refers to the default metadata, and is available as
+        :attr:`metadata`.
 
         Customize the default metadata by passing the ``metadata`` parameter to the
         extension. This can be used to set a naming convention. When metadata for
@@ -164,7 +165,8 @@ class SQLAlchemy:
             self.metadatas[None] = metadata
 
         self.Table = self._make_table_class()
-        """A :class:`sqlalchemy.Table` class that chooses a metadata automatically.
+        """A :class:`sqlalchemy.schema.Table` class that chooses a metadata
+        automatically.
 
         Unlike the base ``Table``, the ``metadata`` argument is not required. If it is
         not given, it is selected based on the ``bind_key`` argument.
@@ -318,8 +320,8 @@ class SQLAlchemy:
             track_modifications._listen(self.session)
 
     def _make_scoped_session(self, options: dict[str, t.Any]) -> sa.orm.scoped_session:
-        """Create a :class:`sqlalchemy.orm.scoped_session` around the factory from
-        :meth:`_make_session_factory`. The result is available as :attr:`session`.
+        """Create a :class:`sqlalchemy.orm.scoping.scoped_session` around the factory
+        from :meth:`_make_session_factory`. The result is available as :attr:`session`.
 
         The scope function can be customized using the ``scopefunc`` key in the
         ``session_options`` parameter to the extension. By default it uses the current
@@ -393,7 +395,7 @@ class SQLAlchemy:
         self.session.remove()
 
     def _make_metadata(self, bind_key: str | None) -> sa.MetaData:
-        """Get or create a :class:`sqlalchemy.MetaData` for the given bind key.
+        """Get or create a :class:`sqlalchemy.schema.MetaData` for the given bind key.
 
         This method is used for internal setup. Its signature may change at any time.
 
@@ -420,8 +422,8 @@ class SQLAlchemy:
         return metadata
 
     def _make_table_class(self) -> t.Type[sa.Table]:
-        """Create a SQLAlchemy :class:`sqlalchemy.Table` class that chooses a metadata
-        automatically based on the ``bind_key``. The result is available as
+        """Create a SQLAlchemy :class:`sqlalchemy.schema.Table` class that chooses a
+        metadata automatically based on the ``bind_key``. The result is available as
         :attr:`Table`.
 
         This method is used for internal setup. Its signature may change at any time.
@@ -498,8 +500,8 @@ class SQLAlchemy:
         """Apply driver-specific configuration to an engine.
 
         SQLite in-memory databases use ``StaticPool`` and disable ``check_same_thread``.
-        File paths are relative to the app's :func:`~flask.Flask.instance_path`, which
-        is created if it doesn't exist.
+        File paths are relative to the app's :attr:`~flask.Flask.instance_path`,
+        which is created if it doesn't exist.
 
         MySQL sets ``charset="utf8mb4"``, and ``pool_timeout`` defaults to 2 hours.
 

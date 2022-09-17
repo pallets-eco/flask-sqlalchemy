@@ -21,8 +21,8 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
     """
 
     def get_or_404(self, ident: t.Any, description: str | None = None) -> t.Any:
-        """Like :meth:`get` but aborts with a ``404 Not Found`` error instead of
-        returning ``None``.
+        """Like :meth:`~sqlalchemy.orm.Query.get` but aborts with a ``404 Not Found``
+        error instead of returning ``None``.
 
         :param ident: The primary key to query.
         :param description: A custom message to show on the error page.
@@ -35,8 +35,8 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
         return rv
 
     def first_or_404(self, description: str | None = None) -> t.Any:
-        """Like :meth:`first` but aborts with a ``404 Not Found`` error instead of
-        returning ``None``.
+        """Like :meth:`~sqlalchemy.orm.Query.first` but aborts with a ``404 Not Found``
+        error instead of returning ``None``.
 
         :param description: A custom message to show on the error page.
         """
@@ -48,8 +48,8 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
         return rv
 
     def one_or_404(self, description: str | None = None) -> t.Any:
-        """Like :meth:`one` but aborts with a ``404 Not Found`` error instead of raising
-        ``NoResultFound`` or ``MultipleResultsFound``.
+        """Like :meth:`~sqlalchemy.orm.Query.one` but aborts with a ``404 Not Found``
+        error instead of raising ``NoResultFound`` or ``MultipleResultsFound``.
 
         :param description: A custom message to show on the error page.
 

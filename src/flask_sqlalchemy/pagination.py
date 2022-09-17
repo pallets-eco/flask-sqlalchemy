@@ -35,7 +35,9 @@ class Pagination:
         items: list[t.Any],
     ) -> None:
         self.query = query
-        """The original query that was paginated."""
+        """The original query that was paginated. This is used to produce :meth:`next`
+        and :meth:`prev` pages.
+        """
 
         self.page = page
         """The current page."""
@@ -230,26 +232,6 @@ class Pagination:
         .. code-block:: python
 
             1, 2, None, 5, 6, 7, 8, 9, 10, 11, None, 19, 20
-
-        The following Jinja macro renders a simple pagination widget.
-
-        .. code-block:: jinja
-
-            {% macro render_pagination(pagination, endpoint) %}
-              <div class=pagination>
-                {% for page in pagination.iter_pages() %}
-                  {% if page %}
-                    {% if page != pagination.page %}
-                      <a href="{{ url_for(endpoint, page=page) }}">{{ page }}</a>
-                    {% else %}
-                      <strong>{{ page }}</strong>
-                    {% endif %}
-                  {% else %}
-                    <span class=ellipsis>…</span>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            {% endmacro %}
 
         :param left_edge: How many pages to show from the first page.
         :param left_current: How many pages to show left of the current page.

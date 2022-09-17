@@ -33,7 +33,7 @@ class _QueryProperty:
 
 
 class Model:
-    """The base class of the :class:`.SQLAlchemy.Model` declarative model class.
+    """The base class of the :attr:`.SQLAlchemy.Model` declarative model class.
 
     To define models, subclass :attr:`db.Model <.SQLAlchemy.Model>`, not this. To
     customize ``db.Model``, subclass this and pass it as ``model_class`` to

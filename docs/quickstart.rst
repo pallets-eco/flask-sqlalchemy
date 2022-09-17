@@ -1,187 +1,198 @@
 .. _quickstart:
 
-Quickstart
-==========
+Quick Start
+===========
 
 .. currentmodule:: flask_sqlalchemy
 
-Flask-SQLAlchemy is fun to use, incredibly easy for basic applications, and
-readily extends for larger applications.  For the complete guide, checkout
-the API documentation on the :class:`SQLAlchemy` class.
+Flask-SQLAlchemy simplifies using SQLAlchemy by automatically handling creating, using,
+and cleaning up the SQLAlchemy objects you'd normally work with. While it adds a few
+useful features, it still works like SQLAlchemy.
+
+This page will walk you through the basic use of Flask-SQLAlchemy. For full capabilities
+and customization, see the rest of these docs, including the API docs for the
+:class:`SQLAlchemy` object.
+
+
+Check the SQLAlchemy Documentation
+----------------------------------
+
+Flask-SQLAlchemy is a wrapper around SQLAlchemy. You should follow the
+`SQLAlchemy Tutorial`_ to learn about how to use it, and consult its documentation
+for detailed information about its features. These docs show how to set up
+Flask-SQLAlchemy itself, not how to use SQLAlchemy. Flask-SQLAlchemy sets up the
+engine, declarative model class, and scoped session automatically, so you can skip those
+parts of the SQLAlchemy tutorial.
+
+.. _SQLAlchemy Tutorial: https://docs.sqlalchemy.org/tutorial/index.html
+
 
 Installation
 ------------
 
-Install and update using `pip <https://pip.pypa.io/en/stable/quickstart/>`_::
+Flask-SQLAlchemy is available on `PyPI`_ and can be installed with various Python tools.
+For example, to install or update the latest version using pip:
+
+.. code-block:: text
 
     $ pip install -U Flask-SQLAlchemy
 
-A Minimal Application
----------------------
+.. _PyPI: https://pypi.org/project/Flask-SQLAlchemy/
 
-For the common case of having one Flask application all you have to do is
-to create your Flask application, load the configuration of choice and
-then create the :class:`SQLAlchemy` object by passing it the application.
 
-Once created, that object then contains all the functions and helpers
-from both :mod:`sqlalchemy` and :mod:`sqlalchemy.orm`.  Furthermore it
-provides a class called ``Model`` that is a declarative base which can be
-used to declare models::
+Configure the Extension
+-----------------------
+
+The only required Flask app config is the :data:`.SQLALCHEMY_DATABASE_URI` key. That
+is a connection string that tells SQLAlchemy what database to connect to.
+
+Create your Flask application object, load any config, and then initialize the
+:class:`SQLAlchemy` extension class with the application by calling
+:meth:`db.init_app <.SQLAlchemy.init_app>`. This example connects to a SQLite database,
+which is stored in the app's instance folder.
+
+.. code-block:: python
 
     from flask import Flask
     from flask_sqlalchemy import SQLAlchemy
 
+    # create the extension
+    db = SQLAlchemy()
+    # create the app
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
-    db = SQLAlchemy(app)
+    # configure the SQLite database, relative to the app instance folder
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///project.db"
+    # initialize the app with the extension
+    db.init_app(app)
 
+The ``db`` object gives you access to the :attr:`db.Model <.SQLAlchemy.Model>` class to
+define models, and the :attr:`db.session <.SQLAlchemy.session>` to execute queries.
+
+See :doc:`config` for an explanation of connections strings and what other configuration
+keys are used. The :class:`SQLAlchemy` object also takes some arguments to customize the
+objects it manages.
+
+
+Define Models
+-------------
+
+Subclass ``db.Model`` to define a model class. The ``db`` object makes the names in
+``sqlalchemy`` and ``sqlalchemy.orm`` available for convenience, such as ``db.Column``.
+The model will generate a table name by converting the ``CamelCase`` class name to
+``snake_case``.
+
+.. code-block:: python
 
     class User(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        username = db.Column(db.String(80), unique=True, nullable=False)
-        email = db.Column(db.String(120), unique=True, nullable=False)
+        username = db.Column(db.String, unique=True, nullable=False)
+        email = db.Column(db.String)
 
-        def __repr__(self):
-            return f"<User {self.username!r}>"
+The table name ``"user"`` will automatically be assigned to the model's table.
 
-To create the initial database schema, just import the ``db`` object from an
-interactive Python shell and run the
-:meth:`SQLAlchemy.create_all` method to create the
-tables (note that SQLite will create the database as well, this is not true in general)::
-
-    >>> from yourapplication import db
-    >>> db.create_all()
-
-Boom, and there is your database.  Now to create some users::
-
-    >>> from yourapplication import User
-    >>> admin = User(username='admin', email='admin@example.com')
-    >>> guest = User(username='guest', email='guest@example.com')
-
-But they are not yet in the database, so let's make sure they are::
-
-    >>> db.session.add(admin)
-    >>> db.session.add(guest)
-    >>> db.session.commit()
-
-Accessing the data in database is easy as a pie::
-
-    >>> User.query.all()
-    [<User 'admin'>, <User 'guest'>]
-    >>> User.query.filter_by(username='admin').first()
-    <User 'admin'>
-
-Note how we never defined a ``__init__`` method on the ``User`` class?
-That's because SQLAlchemy adds an implicit constructor to all model
-classes which accepts keyword arguments for all its columns and
-relationships.  If you decide to override the constructor for any
-reason, make sure to keep accepting ``**kwargs`` and call the super
-constructor with those ``**kwargs`` to preserve this behavior::
-
-    class Foo(db.Model):
-        # ...
-        def __init__(self, **kwargs):
-            super(Foo, self).__init__(**kwargs)
-            # do custom stuff
-
-Simple Relationships
---------------------
-
-SQLAlchemy connects to relational databases and what relational databases
-are really good at are relations.  As such, we shall have an example of an
-application that uses two tables that have a relationship to each other::
-
-    from datetime import datetime
+See :doc:`models` for more information about defining and creating models and tables.
 
 
-    class Post(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        title = db.Column(db.String(80), nullable=False)
-        body = db.Column(db.Text, nullable=False)
-        pub_date = db.Column(db.DateTime, nullable=False,
-            default=datetime.utcnow)
+Create the Tables
+-----------------
 
-        category_id = db.Column(db.Integer, db.ForeignKey('category.id'),
-            nullable=False)
-        category = db.relationship('Category',
-            backref=db.backref('posts', lazy=True))
+After all models and tables are defined, call :meth:`.SQLAlchemy.create_all` to create
+the table schema in the database. This requires an application context. Since you're not
+in a request at this point, create one manually.
 
-        def __repr__(self):
-            return f"<Post {self.title!r}>"
+.. code-block:: python
 
+    with app.app_context():
+        db.create_all()
 
-    class Category(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(db.String(50), nullable=False)
+If you define models in other modules, you must import them before calling
+``create_all``, otherwise SQLAlchemy will not know about them.
 
-        def __repr__(self):
-            return f"<Category {self.name!r}>"
+``create_all`` does not update tables if they are already in the database. If you change
+a model's columns, use a migration library like `Alembic`_ with `Flask-Alembic`_ or
+`Flask-Migrate`_ to generate migrations that update the database schema.
 
-First let's create some objects::
-
-    >>> py = Category(name='Python')
-    >>> Post(title='Hello Python!', body='Python is pretty cool', category=py)
-    >>> p = Post(title='Snakes', body='Ssssssss')
-    >>> py.posts.append(p)
-    >>> db.session.add(py)
-
-As you can see, there is no need to add the ``Post`` objects to the
-session. Since the ``Category`` is part of the session all objects
-associated with it through relationships will be added too.  It does
-not matter whether :meth:`db.session.add() <sqlalchemy.orm.session.Session.add>`
-is called before or after creating these objects.  The association can
-also be done on either side of the relationship - so a post can be
-created with a category or it can be added to the list of posts of
-the category.
-
-Let's look at the posts. Accessing them will load them from the database
-since the relationship is lazy-loaded, but you will probably not notice
-the difference - loading a list is quite fast::
-
-    >>> py.posts
-    [<Post 'Hello Python!'>, <Post 'Snakes'>]
-
-While lazy-loading a relationship is fast, it can easily become a major
-bottleneck when you end up triggering extra queries in a loop for more
-than a few objects.  For this case, SQLAlchemy lets you override the
-loading strategy on the query level. If you wanted a single query to
-load all categories and their posts, you could do it like this::
-
-    >>> from sqlalchemy.orm import joinedload
-    >>> query = Category.query.options(joinedload('posts'))
-    >>> for category in query:
-    ...     print(category, category.posts)
-    <Category 'Python'> [<Post 'Hello Python!'>, <Post 'Snakes'>]
+.. _Alembic: https://alembic.sqlalchemy.org/
+.. _Flask-Alembic: https://flask-alembic.readthedocs.io/
+.. _Flask-Migrate: https://flask-migrate.readthedocs.io/
 
 
-If you want to get a query object for that relationship, you can do so
-using :meth:`~sqlalchemy.orm.query.Query.with_parent`.  Let's exclude
-that post about Snakes for example::
+Query the Data
+--------------
 
-    >>> Post.query.with_parent(py).filter(Post.title != 'Snakes').all()
-    [<Post 'Hello Python!'>]
+Within a Flask view or CLI command, you can use ``db.session`` to execute queries and
+modify model data.
+
+SQLAlchemy automatically defines an ``__init__`` method for each model that assigns any
+keyword arguments to corresponding database columns and other attributes.
+
+``db.session.add(obj)`` adds an object to the session, to be inserted. Modifying an
+object's attributes updates the object. ``db.session.delete(obj)`` deletes an object.
+Remember to call ``db.session.commit()`` after modifying, adding, or deleting any data.
+
+``db.session.execute(db.select(...))`` constructs a query to select data from the
+database. Building queries is the main feature of SQLAlchemy, so you'll want to read its
+`tutorial on select`_ to learn all about it.
+
+.. _tutorial on select: https://docs.sqlalchemy.org/tutorial/data_select.html
+
+.. code-block:: python
+
+    @app.route("/users")
+    def user_list():
+        users = db.session.execute(db.select(User).order_by(User.username)).all()
+        return render_template("user/list.html", users=users)
+
+    @app.route("/users/create", methods=["GET", "POST"])
+    def user_create():
+        if request.method == "POST":
+            user = User(
+                username=request.form["username"],
+                email=request.form["email"],
+            )
+            db.session.add(user)
+            db.session.commit()
+            return redirect(url_for("user_detail", id=user.id))
+
+        return render_template("user/create.html")
+
+    @app.route("/user/<int:id>")
+    def user_detail(id):
+        user = User.query.get_or_404(id)
+        return render_template("user/detail.html", user=user)
+
+    @app.route("/user/<int:id>/delete", methods=["GET", "POST"])
+    def user_delete(id):
+        user = User.query.get_or_404(id)
+
+        if request.method == "POST":
+            db.session.delete(user)
+            db.session.commit
+            return redirect(url_for("user_list"))
+
+        return render_template("user/delete.html", user=user)
+
+You may see uses of ``Model.query`` to build queries. This is an older interface for
+queries that is considered legacy in SQLAlchemy 2.0. Prefer using
+``db.session.execute(db.select(...))`` instead.
+
+See :doc:`queries` for more information about queries.
 
 
-Road to Enlightenment
----------------------
+What to Remember
+----------------
 
-The only things you need to know compared to plain SQLAlchemy are:
+For the most part, you should use SQLAlchemy as usual. The :class:`SQLAlchemy` extension
+instance creates, configures, and gives access to the following things:
 
-1.  The :class:`SQLAlchemy` extension instance gives you access to the
-    following things:
-
-    -   All the functions and classes from the :mod:`sqlalchemy` and
-        :mod:`sqlalchemy.orm` modules.
-    -   a preconfigured scoped session called ``session``
-    -   the :attr:`~SQLAlchemy.metadata`
-    -   the :attr:`~SQLAlchemy.engine`
-    -   a :meth:`SQLAlchemy.create_all` and :meth:`SQLAlchemy.drop_all`
-        methods to create and drop tables according to the models.
-    -   a :class:`Model` baseclass that is a configured declarative base.
-
-2.  The :class:`Model` declarative base class behaves like a regular
-    Python class but has a ``query`` attribute attached that can be used to
-    query the model.  (:class:`Model` and :class:`Query`)
-
-3.  You have to commit the session, but you don't have to remove it at
-    the end of the request, Flask-SQLAlchemy does that for you.
+-   :attr:`.SQLAlchemy.Model` declarative model base class. It sets the table
+    name automatically instead of needing ``__tablename__``.
+-   :attr:`.SQLAlchemy.session` is a session that is scoped to the current
+    Flask application context. It is cleaned up after every request.
+-   :attr:`.SQLAlchemy.metadata` and :attr:`.SQLAlchemy.metadatas` gives access to each
+    metadata defined in the config.
+-   :attr:`.SQLAlchemy.engine` and :attr:`.SQLAlchemy.engines` gives access to each
+    engine defined in the config.
+-   :meth:`.SQLAlchemy.create_all` creates all tables.
+-   You must be in an active Flask application context to execute queries and to access
+    the session and engine.

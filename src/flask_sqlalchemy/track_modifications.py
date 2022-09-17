@@ -13,8 +13,20 @@ if t.TYPE_CHECKING:
     from .session import Session
 
 _signals = Namespace()
+
 models_committed = _signals.signal("models-committed")
+"""This Blinker signal is sent after the session is committed if there were changed
+models in the session.
+
+The sender is the application that emitted the changes. The receiver is passed the
+``changes`` argument with a list of tuples in the form ``(instance, operation)``.
+The operations are ``"insert"``, ``"update"``, and ``"delete"``.
+"""
+
 before_models_committed = _signals.signal("before-models-committed")
+"""This signal works exactly like :data:`models_committed` but is emitted before the
+commit takes place.
+"""
 
 
 def _listen(session: sa.orm.scoped_session) -> None:

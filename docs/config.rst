@@ -1,163 +1,199 @@
-.. currentmodule:: flask_sqlalchemy
-
 Configuration
 =============
 
-The following configuration values exist for Flask-SQLAlchemy.
-Flask-SQLAlchemy loads these values from your main Flask config which can
-be populated in various ways.  Note that some of those cannot be modified
-after the engine was created so make sure to configure as early as
-possible and to not modify them at runtime.
 
 Configuration Keys
 ------------------
 
-A list of configuration keys currently understood by the extension:
+Configuration is loaded from the Flask ``app.config`` when :meth:`.SQLAlchemy.init_app`
+is called. The configuration is not read again after that. Therefore, all configuration
+must happen before initializing the application.
 
-.. tabularcolumns:: |p{6.5cm}|p{8.5cm}|
+.. module:: flask_sqlalchemy.config
 
-================================== =========================================
-``SQLALCHEMY_DATABASE_URI``        The database URI that should be used for
-                                   the connection.  Examples:
+.. data:: SQLALCHEMY_DATABASE_URI
 
-                                   - ``sqlite:////tmp/test.db``
-                                   - ``mysql://username:password@server/db``
-``SQLALCHEMY_BINDS``               A dictionary that maps bind keys to
-                                   SQLAlchemy connection URIs.  For more
-                                   information about binds see :ref:`binds`.
-``SQLALCHEMY_ECHO``                If set to `True` SQLAlchemy will log all
-                                   the statements issued to stderr which can
-                                   be useful for debugging.
-``SQLALCHEMY_RECORD_QUERIES``      Can be used to explicitly disable or
-                                   enable query recording.  Query recording
-                                   automatically happens in debug or testing
-                                   mode.  See :func:`get_debug_queries` for
-                                   more information.
-``SQLALCHEMY_ENGINE_OPTIONS``      A dictionary of keyword args to send to
-                                   :func:`~sqlalchemy.create_engine`.  See
-                                   also ``engine_options`` to :class:`SQLAlchemy`.
-================================== =========================================
+    The database connection URI used for the default engine. It can be either a string
+    or a SQLAlchemy ``URL`` instance. See below and :external:doc:`core/engines` for
+    examples.
 
-.. versionchanged:: 3.0
-    ``SQLALCHEMY_TRACK_MODIFICATIONS`` defaults to ``False``.
+    At least one of this and :data:`SQLALCHEMY_BINDS` must be set.
 
-.. versionchanged:: 3.0
-    ``SQLALCHEMY_DATABASE_URI`` no longer defaults to
-    ``'sqlite:///:memory:'``
+    .. versionchanged:: 3.0
+        No longer defaults to an in-memory SQLite database if not set.
+
+.. data:: SQLALCHEMY_ENGINE_OPTIONS
+
+    A dict of arguments to pass to :func:`sqlalchemy.create_engine` for the default
+    engine.
+
+    This takes precedence over the ``engine_options`` argument to :class:`.SQLAlchemy`,
+    which can be used to set default options for all engines.
+
+    .. versionchanged:: 3.0
+        Only applies to the default bind.
+
+    .. versionadded:: 2.4
+
+.. data:: SQLALCHEMY_BINDS
+
+    A dict mapping bind keys to engine options. The value can be a string or a
+    SQLAlchemy ``URL`` instance. Or it can be a dict of arguments, including the ``url``
+    key, that will be passed to :func:`sqlalchemy.create_engine`. The ``None`` key can
+    be used to configure the default bind, but :data:`SQLALCHEMY_ENGINE_OPTIONS` and
+    :data:`SQLALCHEMY_DATABASE_URI` take precedence.
+
+    At least one of this and :data:`SQLALCHEMY_DATABASE_URI` must be set.
+
+    .. versionadded:: 0.12
+
+.. data:: SQLALCHEMY_ECHO
+
+    The default value for ``echo`` and ``echo_pool`` for every engine. This is useful to
+    quickly debug the connections and queries issued from SQLAlchemy.
+
+    .. versionchanged:: 3.0
+        Sets ``echo_pool`` in addition to ``echo``.
+
+.. data:: SQLALCHEMY_RECORD_QUERIES
+
+    If enabled, information about each query during a request will be recorded. Use
+    :func:`.get_recorded_queries` to get a list of queries that were issued during the
+    request.
+
+    If not set, this is enabled if ``app.debug`` or ``app.testing`` are enabled.
+
+.. data:: SQLALCHEMY_TRACK_MODIFICATIONS
+
+    If enabled, all ``insert``, ``update``, and ``delete`` operations on models are
+    recorded, then sent in :data:`.models_committed` and
+    :data:`.before_models_committed` signals when ``session.commit()`` is called.
+
+    This adds a significant amount of overhead to every session. Prefer using
+    SQLAlchemy's :external:doc:`orm/events` directly for the exact information you need.
+
+    .. versionchanged:: 3.0
+        Disabled by default.
+
+    .. versionadded:: 2.0
+
+.. data:: SQLALCHEMY_COMMIT_ON_TEARDOWN
+
+    Call ``db.session.commit()`` automatically if the request finishes without an
+    unhandled exception.
+
+    .. deprecated:: 3.0
+        Will be removed in Flask-SQLAlchemy 3.1.
 
 .. versionchanged:: 3.0
     Removed ``SQLALCHEMY_NATIVE_UNICODE``, ``SQLALCHEMY_POOL_SIZE``,
     ``SQLALCHEMY_POOL_TIMEOUT``, ``SQLALCHEMY_POOL_RECYCLE``, and
     ``SQLALCHEMY_MAX_OVERFLOW``.
 
-.. versionchanged:: 3.0
-    Deprecated ``SQLALCHEMY_COMMIT_ON_TEARDOWN``.
 
-.. versionadded:: 2.4
-    Added ``SQLALCHEMY_ENGINE_OPTIONS``.
-
-.. versionchanged:: 2.4
-    Deprecated ``SQLALCHEMY_NATIVE_UNICODE``, ``SQLALCHEMY_POOL_SIZE``,
-    ``SQLALCHEMY_POOL_TIMEOUT``, ``SQLALCHEMY_POOL_RECYCLE``, and
-    ``SQLALCHEMY_MAX_OVERFLOW``.
-
-.. versionadded:: 2.0
-    Added ``SQLALCHEMY_TRACK_MODIFICATIONS``.
-
-.. versionadded:: 0.17
-    Added ``SQLALCHEMY_MAX_OVERFLOW``.
-
-.. versionadded:: 0.12
-    Added ``SQLALCHEMY_BINDS``.
-
-.. versionadded:: 0.8
-    Added ``SQLALCHEMY_NATIVE_UNICODE``, ``SQLALCHEMY_POOL_SIZE``,
-    ``SQLALCHEMY_POOL_TIMEOUT`` and ``SQLALCHEMY_POOL_RECYCLE``.
-
-
-Connection URI Format
+Connection URL Format
 ---------------------
 
-For a complete list of connection URIs head over to the SQLAlchemy
-documentation under (`Supported Databases
-<https://docs.sqlalchemy.org/en/latest/core/engines.html>`_).  This here shows
-some common connection strings.
+See SQLAlchemy's documentation on :external:doc:`core/engines` for a complete
+description of syntax, dialects, and options.
 
-SQLAlchemy indicates the source of an Engine as a URI combined with
-optional keyword arguments to specify options for the Engine. The form of
-the URI is::
+A basic database connection URL uses the following format. Username, password, host, and
+port are optional depending on the database type and configuration.
 
-    dialect+driver://username:password@host:port/database
+.. code-block:: text
 
-Many of the parts in the string are optional.  If no driver is specified
-the default one is selected (make sure to *not* include the ``+`` in that
-case).
+    dialect://username:password@host:port/database
 
-Postgres::
+Here are some example connection strings:
 
-    postgresql://scott:tiger@localhost/mydatabase
+.. code-block:: text
 
-MySQL::
+    # SQLite, relative to Flask instance path
+    sqlite:///project.db
 
-    mysql://scott:tiger@localhost/mydatabase
+    # PostgreSQL
+    postgresql://scott:tiger@localhost/project
 
-Oracle::
+    # MySQL / MariaDB
+    mysql://scott:tiger@localhost/project
 
-    oracle://scott:tiger@127.0.0.1:1521/sidname
+SQLite does not use a user or host, so its URLs always start with _three_ slashes
+instead of two. The ``dbname`` value is a file path. Absolute paths start with a
+_fourth_ slash (on Linux or Mac). Relative paths are relative to the Flask application's
+:attr:`~flask.Flask.instance_path`.
 
-SQLite (note that platform path conventions apply)::
 
-    #Unix/Mac (note the four leading slashes)
-    sqlite:////absolute/path/to/foo.db
-    #Windows (note 3 leading forward slashes and backslash escapes)
-    sqlite:///C:\\absolute\\path\\to\\foo.db
-    #Windows (alternative using raw string)
-    r'sqlite:///C:\absolute\path\to\foo.db'
+Default Driver Options
+----------------------
+
+Some default options are set for SQLite and MySQL engines to make them more usable by
+default in web applications.
+
+SQLite relative file paths are relative to the Flask instance path instead of the
+current working directory. In-memory databases use a static pool and
+``check_same_thread`` to work across requests.
+
+MySQL (and MariaDB) servers are configured to drop connections that have been idle for
+8 hours, which can result in an error like ``2013: Lost connection to MySQL server
+during query``. A default ``pool_recycle`` value of 2 hours (7200 seconds) is used to
+recreate connections before that timeout.
+
+
+Engine Configuration Precedence
+-------------------------------
+
+Because Flask-SQLAlchemy has support for multiple engines, there are rules for which
+config overrides other config. Most applications will only have a single database and
+only need to use :data:`SQLALCHEMY_DATABASE_URI` and :data:`SQLALCHEMY_ENGINE_OPTIONS`.
+
+-   If the ``engine_options`` argument is given to :class:`.SQLAlchemy`, it sets default
+    options for *all* engines. :data:`SQLALCHEMY_ECHO` sets the default value for both
+    ``echo`` and ``echo_pool`` for all engines.
+-   The options for each engine in :data:`.SQLALCHEMY_BINDS` override those defaults.
+-   :data:`.SQLALCHEMY_ENGINE_OPTIONS` overrides the ``None`` key in
+    ``SQLALCHEMY_BINDS``, and :data:`.SQLALCHEMY_DATABASE_URI` overrides the ``url`` key
+    in that engine's options.
+
 
 Using custom MetaData and naming conventions
 --------------------------------------------
 
-You can optionally construct the :class:`SQLAlchemy` object with a custom
-:class:`~sqlalchemy.schema.MetaData` object.
-This allows you to, among other things,
-specify a `custom constraint naming convention
-<https://docs.sqlalchemy.org/en/latest/core/constraints.html#constraint-naming-conventions>`_
-in conjunction with SQLAlchemy 0.9.2 or higher.
-Doing so is important for dealing with database migrations (for instance using
-`alembic <https://alembic.sqlalchemy.org/en/latest/>`_ as stated
-`here <https://alembic.sqlalchemy.org/en/latest/naming.html>`_. Here's an
-example, as suggested by the SQLAlchemy docs::
+You can optionally construct the :class:`.SQLAlchemy` object with a custom
+:class:`~sqlalchemy.schema.MetaData` object. This allows you to specify a custom
+constraint `naming convention`_. This makes constraint names consistent and predictable,
+useful when using migrations, as described by `Alembic`_.
+
+.. code-block:: python
 
     from sqlalchemy import MetaData
-    from flask import Flask
     from flask_sqlalchemy import SQLAlchemy
 
-    convention = {
+    db = SQLAlchemy(metadata=MetaData(naming_convention={
         "ix": 'ix_%(column_0_label)s',
         "uq": "uq_%(table_name)s_%(column_0_name)s",
         "ck": "ck_%(table_name)s_%(constraint_name)s",
         "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
         "pk": "pk_%(table_name)s"
-    }
+    }))
 
-    metadata = MetaData(naming_convention=convention)
-    db = SQLAlchemy(app, metadata=metadata)
+.. _naming convention: https://docs.sqlalchemy.org/core/constraints.html#constraint-naming-conventions
+.. _Alembic: https://alembic.sqlalchemy.org/en/latest/naming.html
 
-For more info about :class:`~sqlalchemy.schema.MetaData`,
-`check out the official docs on it
-<https://docs.sqlalchemy.org/en/latest/core/metadata.html>`_.
-
-.. _timeouts:
 
 Timeouts
 --------
 
-Certain database backends may impose different inactive connection timeouts,
-which interferes with Flask-SQLAlchemy's connection pooling.
+Certain databases may be configured to close inactive connections after a period of
+time. MySQL and MariaDB are configured for this by default, but database services may
+also configure this type of limit. This can result in an error like
+``2013: Lost connection to MySQL server during query``.
 
-By default, MariaDB is configured to have a 600 second timeout. This often
-surfaces hard to debug, production environment only exceptions like ``2013: Lost connection to MySQL server during query``.
+If you encounter this error, try setting ``pool_recycle`` in the engine options to
+a value less than the database's timeout.
 
-If you are using a backend (or a pre-configured database-as-a-service) with a
-lower connection timeout, it is recommended that you set
-`SQLALCHEMY_POOL_RECYCLE` to a value less than your backend's timeout.
+Alternatively, you can try setting ``pool_pre_ping`` if you expect the database to close
+connections often, such as if it's running in a container that may restart.
+
+See SQAlchemy's docs on `dealing with disconnects`_ for more information.
+
+.. _dealing with disconnects: https://docs.sqlalchemy.org/core/pooling.html#dealing-with-disconnects
