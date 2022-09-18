@@ -37,6 +37,26 @@ def test_last_page() -> None:
     assert p.next_num is None
 
 
+def test_item_numbers_first_page() -> None:
+    p = _make_page()
+    p.items = list(range(10))
+    assert p.first == 1
+    assert p.last == 10
+
+
+def test_item_numbers_last_page() -> None:
+    p = _make_page(page=15)
+    p.items = list(range(5))
+    assert p.first == 141
+    assert p.last == 145
+
+
+def test_item_numbers_0() -> None:
+    p = _make_page(total=0)
+    assert p.first == 0
+    assert p.last == 0
+
+
 @pytest.mark.parametrize(
     ("per_page", "total"),
     [

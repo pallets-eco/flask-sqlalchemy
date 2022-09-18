@@ -50,11 +50,18 @@ pages and the current page is 7, the following values are yielded.
     users.iter_pages()
     [1, 2, None, 5, 6, 7, 8, 9, 10, 11, None, 19, 20]
 
+You can use the :attr:`~.Pagination.total` attribute to show the total number of
+results, and :attr:`~.Pagination.first` and :attr:`~.Pagination.last` to show the
+range of items on the current page.
+
 The following Jinja macro renders a simple pagination widget.
 
 .. code-block:: jinja
 
     {% macro render_pagination(pagination, endpoint) %}
+      <div class=page-items>
+        {{ page.first }} - {{ page.last }} of {{ page.total }}
+      </div>
       <div class=pagination>
         {% for page in pagination.iter_pages() %}
           {% if page %}
@@ -69,6 +76,3 @@ The following Jinja macro renders a simple pagination widget.
         {% endfor %}
       </div>
     {% endmacro %}
-
-You might also use the :attr:`~.Pagination.total` attribute to show the total number of
-results.
