@@ -524,7 +524,8 @@ class SQLAlchemy:
             ``NullPool`` if ``pool_size`` is 0.
 
         .. versionchanged:: 3.0
-            MySQL sets ``charset="utf8mb4". It does not set ``pool_size`` to 10.
+            MySQL sets ``charset="utf8mb4". It does not set ``pool_size`` to 10. It
+            does not set ``pool_recycle`` if not using a queue pool.
 
         .. versionchanged:: 3.0
             Renamed from ``apply_driver_hacks``, this method is internal. It does not
@@ -553,7 +554,12 @@ class SQLAlchemy:
                         )
                     )
         elif url.drivername.startswith("mysql"):
-            options.setdefault("pool_recycle", 7200)
+            # set queue defaults only when using queue pool
+            if (
+                "pool_class" not in options
+                or options["pool_class"] is sa.pool.QueuePool
+            ):
+                options.setdefault("pool_recycle", 7200)
 
             if "charset" not in url.query:
                 options["url"] = url.update_query_dict({"charset": "utf8mb4"})
