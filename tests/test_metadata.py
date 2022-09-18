@@ -49,21 +49,21 @@ def test_create_drop_all(app: Flask) -> None:
         id = sa.Column(sa.Integer, primary_key=True)
 
     with pytest.raises(sa.exc.OperationalError):
-        User.query.all()
+        db.session.execute(sa.select(User)).scalars()
 
     with pytest.raises(sa.exc.OperationalError):
-        Post.query.all()
+        db.session.execute(sa.select(Post)).scalars()
 
     db.create_all()
-    User.query.all()
-    Post.query.all()
+    db.session.execute(sa.select(User)).scalars()
+    db.session.execute(sa.select(Post)).scalars()
     db.drop_all()
 
     with pytest.raises(sa.exc.OperationalError):
-        User.query.all()
+        db.session.execute(sa.select(User)).scalars()
 
     with pytest.raises(sa.exc.OperationalError):
-        Post.query.all()
+        db.session.execute(sa.select(Post)).scalars()
 
 
 @pytest.mark.usefixtures("app_ctx")
@@ -80,10 +80,10 @@ def test_create_key_spec(app: Flask, bind_key: str | list[str | None]) -> None:
         id = sa.Column(sa.Integer, primary_key=True)
 
     db.create_all(bind_key=bind_key)
-    Post.query.all()
+    db.session.execute(sa.select(Post)).scalars()
 
     with pytest.raises(sa.exc.OperationalError):
-        User.query.all()
+        db.session.execute(sa.select(User)).scalars()
 
 
 @pytest.mark.usefixtures("app_ctx")

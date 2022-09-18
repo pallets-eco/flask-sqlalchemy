@@ -87,6 +87,9 @@ Unreleased
     supported. :issue:`998, 1045`
 -   Added ``Pagination.first`` and ``last`` properties, which give the number of the
     first and last item on the page. :issue:`567`
+-   Added ``get_or_404``, ``first_or_404``, and ``one_or_404`` methods to the extension
+    object. These use SQLAlchemy's preferred ``session.execute(select())`` pattern
+    instead of the legacy query interface. :issue:`1088`
 
 
 Version 2.5.1

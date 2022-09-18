@@ -53,51 +53,49 @@ returned rows.
 
     user = db.session.execute(db.select(User).filter_by(username=username)).one()
 
-
-Legacy Query Interface
-----------------------
-
-.. warning::
-    SQLAlchemy 2.0 has designated the ``Query`` interface as "legacy". It will no
-    longer be updated and may be deprecated in the future. Prefer using
-    ``db.session.execute(db.select(...))`` instead.
-
-Flask-SQLAlchemy adds a ``query`` object to each model. This can be used to query
-instances of a given model. ``User.query`` is a shortcut for ``db.session.query(User)``.
-
-.. code-block:: python
-
-    # get the user with id 5
-    user = User.query.get(5)
-
-    # get a user by username
-    user = User.query.filter_by(username=username).one()
+    users = db.session.execute(db.select(User).order_by(User.username)).scalars()
 
 
 Queries for Views
-`````````````````
+-----------------
 
 If you write a Flask view function it's often useful to return a ``404 Not Found`` error
 for missing entries. Flask-SQLAlchemy provides some extra query methods.
 
--   :meth:`.Query.get_or_404` will raise a 404 if the row with the given id doesn't
+-   :meth:`.SQLAlchemy.get_or_404` will raise a 404 if the row with the given id doesn't
     exist, otherwise it will return the instance.
--   :meth:`.Query.first_or_404` will raise a 404 if the query does not return any
+-   :meth:`.SQLAlchemy.first_or_404` will raise a 404 if the query does not return any
     results, otherwise it will return the first result.
--   :meth:`.Query.one_or_404` will raise a 404 if the query does not return exactly one
-    result, otherwise it will return the result.
+-   :meth:`.SQLAlchemy.one_or_404` will raise a 404 if the query does not return exactly
+    one result, otherwise it will return the result.
 
 .. code-block:: python
 
-    @app.route("/user/<username>")
-    def show_user(username):
-        user = User.query.filter_by(username=username).one_or_404()
+    @app.route("/user-by-id/<int:id>)
+    def user_by_id(id):
+        user = db.get_or_404(User, id)
+        return render_template("show_user.html", user=user)
+
+    @app.route("/user-by-username/<username>")
+    def user_by_username(username):
+        user = db.one_or_404(db.select(User).filter_by(username=username))
         return render_template("show_user.html", user=user)
 
 You can add a custom message to the 404 error:
 
     .. code-block:: python
 
-        user = User.query.filter_by(username=username).one_or_404(
+        user = db.one_or_404(
+            db.select(User).filter_by(username=username),
             description=f"No user named '{username}'."
         )
+
+
+Legacy Query Interface
+----------------------
+
+You may see uses of ``Model.query`` to build queries. This is an older interface for
+queries that is considered legacy in SQLAlchemy 2.0. Prefer using the
+``db.session.execute(db.select(...))`` pattern instead.
+
+See :doc:`legacy-query` for documentation.

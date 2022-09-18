@@ -132,7 +132,9 @@ Remember to call ``db.session.commit()`` after modifying, adding, or deleting an
 
 ``db.session.execute(db.select(...))`` constructs a query to select data from the
 database. Building queries is the main feature of SQLAlchemy, so you'll want to read its
-`tutorial on select`_ to learn all about it.
+`tutorial on select`_ to learn all about it. You'll usually use the ``Result.scalars()``
+method to get a list of results, or the ``Result.first()`` method to get a single
+result.
 
 .. _tutorial on select: https://docs.sqlalchemy.org/tutorial/data_select.html
 
@@ -140,7 +142,7 @@ database. Building queries is the main feature of SQLAlchemy, so you'll want to 
 
     @app.route("/users")
     def user_list():
-        users = db.session.execute(db.select(User).order_by(User.username)).all()
+        users = db.session.execute(db.select(User).order_by(User.username)).scalars()
         return render_template("user/list.html", users=users)
 
     @app.route("/users/create", methods=["GET", "POST"])
@@ -158,12 +160,12 @@ database. Building queries is the main feature of SQLAlchemy, so you'll want to 
 
     @app.route("/user/<int:id>")
     def user_detail(id):
-        user = User.query.get_or_404(id)
+        user = db.get_or_404(User, id)
         return render_template("user/detail.html", user=user)
 
     @app.route("/user/<int:id>/delete", methods=["GET", "POST"])
     def user_delete(id):
-        user = User.query.get_or_404(id)
+        user = db.get_or_404(User, id)
 
         if request.method == "POST":
             db.session.delete(user)

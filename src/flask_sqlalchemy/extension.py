@@ -9,6 +9,7 @@ import sqlalchemy.event
 import sqlalchemy.exc
 import sqlalchemy.orm
 import sqlalchemy.pool
+from flask import abort
 from flask import current_app
 from flask import Flask
 from flask import has_app_context
@@ -701,6 +702,60 @@ class SQLAlchemy:
             for bind_key, engine in self.engines.items()
             for table in self.metadatas[bind_key].tables.values()
         }
+
+    def get_or_404(
+        self, entity: t.Type[t.Any], ident: t.Any, description: str | None = None
+    ) -> t.Any:
+        """Like :meth:`session.get() <sqlalchemy.orm.Session.get>` but aborts with a
+        ``404 Not Found`` error instead of returning ``None``.
+
+        :param entity: The model class to query.
+        :param ident: The primary key to query.
+        :param description: A custom message to show on the error page.
+
+        .. versionadded:: 3.0
+        """
+        value = self.session.get(entity, ident)
+
+        if value is None:
+            abort(404, description=description)
+
+        return value
+
+    def first_or_404(
+        self, statement: sa.sql.Select, description: str | None = None
+    ) -> t.Any:
+        """Like :meth:`Result.scalar() <sqlalchemy.engine.Result.scalar>`, but aborts
+        with a ``404 Not Found`` error instead of returning ``None``.
+
+        :param statement: The ``select`` statement to execute.
+        :param description: A custom message to show on the error page.
+
+        .. versionadded:: 3.0
+        """
+        value = self.session.execute(statement).scalar()
+
+        if value is None:
+            abort(404, description=description)
+
+        return value
+
+    def one_or_404(
+        self, statement: sa.sql.Select, description: str | None = None
+    ) -> t.Any:
+        """Like :meth:`Result.scalar_one() <sqlalchemy.engine.Result.scalar_one>`,
+        but aborts with a ``404 Not Found`` error instead of raising ``NoResultFound``
+        or ``MultipleResultsFound``.
+
+        :param statement: The ``select`` statement to execute.
+        :param description: A custom message to show on the error page.
+
+        .. versionadded:: 3.0
+        """
+        try:
+            return self.session.execute(statement).scalar_one()
+        except (sa.exc.NoResultFound, sa.exc.MultipleResultsFound):
+            abort(404, description=description)
 
     def _call_for_binds(
         self, bind_key: str | None | list[str | None], op_name: str
