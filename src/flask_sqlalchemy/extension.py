@@ -57,6 +57,8 @@ class SQLAlchemy:
     :param engine_options: Default arguments used when creating every engine. These are
         lower precedence than application config. See :func:`sqlalchemy.create_engine`
         for a list of arguments.
+    :param add_models_to_shell: Add the ``db`` instance and all model classes to
+        ``flask shell``.
 
     .. versionchanged:: 3.0
         An active Flask application context is always required to access ``session`` and
@@ -71,6 +73,9 @@ class SQLAlchemy:
 
     .. versionchanged:: 3.0
         The session class can be customized in ``session_options``.
+
+    .. versionchanged:: 3.0
+        Added the ``add_models_to_shell`` parameter.
 
     .. versionchanged:: 3.0
         Engines are created when calling ``init_app`` rather than the first time they
@@ -120,6 +125,7 @@ class SQLAlchemy:
         query_class: t.Type[Query] = Query,
         model_class: t.Type[Model] | sa.orm.DeclarativeMeta = Model,
         engine_options: dict[str, t.Any] | None = None,
+        add_models_to_shell: bool = True,
     ):
         if session_options is None:
             session_options = {}
@@ -203,6 +209,7 @@ class SQLAlchemy:
         self._engine_options = engine_options
         self._app_engines: WeakKeyDictionary[Flask, dict[str | None, sa.engine.Engine]]
         self._app_engines = WeakKeyDictionary()
+        self._add_models_to_shell = add_models_to_shell
 
         if app is not None:
             self.init_app(app)
@@ -239,6 +246,11 @@ class SQLAlchemy:
         :param app: The Flask application to initialize.
         """
         app.extensions["sqlalchemy"] = self
+
+        if self._add_models_to_shell:
+            from .cli import add_models_to_shell
+
+            app.shell_context_processor(add_models_to_shell)
 
         if app.config.get("SQLALCHEMY_COMMIT_ON_TEARDOWN", False):
             import warnings
