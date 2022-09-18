@@ -1,65 +1,90 @@
-.. _contexts:
+Flask Application Context
+=========================
 
-.. currentmodule:: flask_sqlalchemy
+An active Flask application context is required to make queries and to access
+``db.engine`` and ``db.session``. This is because the session is scoped to the context
+so that it is cleaned up properly after every request or CLI command.
 
-Introduction into Contexts
-==========================
+Regardless of how an application is initialized with the extension, it is not stored for
+later use. Instead, the extension uses Flask's ``current_app`` proxy to get the active
+application, which requires an active application context.
 
-If you are planning on using only one application you can largely skip
-this chapter.  Just pass your application to the :class:`SQLAlchemy`
-constructor and you're usually set.  However if you want to use more than
-one application or create the application dynamically in a function you
-want to read on.
 
-If you define your application in a function, but the :class:`SQLAlchemy`
-object globally, how does the latter learn about the former?  The answer
-is the :meth:`~SQLAlchemy.init_app` function::
+Automatic Context
+-----------------
 
-    from flask import Flask
-    from flask_sqlalchemy import SQLAlchemy
+When Flask is handling a request or a CLI command, an application context will
+automatically be pushed. Therefore you don't need to do anything special to use the
+database during requests or CLI commands.
 
-    db = SQLAlchemy()
+
+Manual Context
+--------------
+
+If you try to use the database when an application context is not active, you will see
+the following error.
+
+.. code-block:: text
+
+    RuntimeError: Working outside of application context.
+
+    This typically means that you attempted to use functionality that needed
+    the current application. To solve this, set up an application context
+    with app.app_context(). See the documentation for more information.
+
+If you find yourself in a situation where you need the database and don't have a
+context, you can push one with ``app_context``. This is common when calling
+``db.create_all`` to creat the tables, for example.
+
+.. code-block:: python
 
     def create_app():
         app = Flask(__name__)
-        db.init_app(app)
+        app.config.from_object("project.config")
+
+        import project.models
+
+        with app.app_context():
+            db.create_all()
+
         return app
 
 
-What it does is prepare the application to work with
-:class:`SQLAlchemy`.  However that does not now bind the
-:class:`SQLAlchemy` object to your application.  Why doesn't it do that?
-Because there might be more than one application created.
+Tests
+-----
 
-So how does :class:`SQLAlchemy` come to know about your application?
-You will have to setup an application context.  If you are working inside
-a Flask view function or a CLI command, that automatically happens. However,
-if you are working inside the interactive shell, you will have to do that
-yourself (see `Creating an Application Context
-<https://flask.palletsprojects.com/appcontext/#manually-push-a-context>`_).
+If you test your application using the Flask test client to make requests to your
+endpoints, the context will be available as part of the request. If you need to test
+something about your database or models directly, rather than going through a request,
+you need to push a context manually.
 
-If you try to perform database operations outside an application context, you
-will see the following error:
+Only push a context exactly where and for how long it's needed for each test. Do not
+push an application context globally for every test, as that can interfere with how the
+session is cleaned up.
 
-    No application found. Either work inside a view function or push an
-    application context.
+.. code-block:: python
 
-In a nutshell, do something like this:
+    def test_user_model(app):
+        user = User()
 
->>> from yourapp import create_app
->>> app = create_app()
->>> app.app_context().push()
-
-Alternatively, use the with-statement to take care of setup and teardown::
-
-    def my_function():
         with app.app_context():
-            user = db.User(...)
             db.session.add(user)
             db.session.commit()
 
-Some functions inside Flask-SQLAlchemy also accept optionally the
-application to operate on:
+If you find yourself writing many tests like that, you can use a pytest fixture to push
+a context for a specific test.
 
->>> from yourapp import db, create_app
->>> db.create_all(app=create_app())
+.. code-block:: python
+
+    import pytest
+
+    @pytest.mark.fixture
+    def app_ctx(app):
+        with app.app_context():
+            yield
+
+    @pytest.mark.usefixtures("app_ctx")
+    def test_user_model(app):
+        user = User()
+        db.session.add(user)
+        db.session.commit()

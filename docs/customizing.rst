@@ -1,45 +1,35 @@
-.. _customizing:
+Advanced Customization
+======================
 
-.. currentmodule:: flask_sqlalchemy
-
-Customizing
-===========
-
-Flask-SQLAlchemy defines sensible defaults. However, sometimes customization is
-needed. There are various ways to customize how the models are defined and
-interacted with.
-
-These customizations are applied at the creation of the :class:`SQLAlchemy`
-object and extend to all models derived from its ``Model`` class.
+The various objects managed by the extension can be customized by passing arguments to
+the :class:`.SQLAlchemy` constructor.
 
 
 Model Class
 -----------
 
-SQLAlchemy models all inherit from a declarative base class. This is exposed
-as ``db.Model`` in Flask-SQLAlchemy, which all models extend. This can be
-customized by subclassing the default and passing the custom class to
-``model_class``.
+SQLAlchemy models all inherit from a declarative base class. This is exposed as
+``db.Model`` in Flask-SQLAlchemy, which all models extend. This can be customized by
+subclassing the default and passing the custom class to ``model_class``.
 
-The following example gives every model an integer primary key, or a foreign
-key for joined-table inheritance.
+The following example gives every model an integer primary key, or a foreign key for
+joined-table inheritance.
 
 .. note::
+    Integer primary keys for everything is not necessarily the best database design
+    (that's up to your project's requirements), this is only an example.
 
-    Integer primary keys for everything is not necessarily the best database
-    design (that's up to your project's requirements), this is only an example.
+.. code-block:: python
 
-::
-
-    from flask_sqlalchemy import Model, SQLAlchemy
+    from flask_sqlalchemy.model import model
     import sqlalchemy as sa
-    from sqlalchemy.ext.declarative import declared_attr
+    import sqlalchemy.orm
 
     class IdModel(Model):
-        @declared_attr
+        @sa.orm.declared_attr
         def id(cls):
             for base in cls.__mro__[1:-1]:
-                if getattr(base, '__table__', None) is not None:
+                if getattr(base, "__table__", None) is not None:
                     type = sa.ForeignKey(base.id)
                     break
             else:
@@ -56,101 +46,147 @@ key for joined-table inheritance.
         title = db.Column(db.String)
 
 
-Model Mixins
-------------
+Abstract Models and Mixins
+--------------------------
 
-If behavior is only needed on some models rather than all models, use mixin
-classes to customize only those models. For example, if some models should
-track when they are created or updated::
+If behavior is only needed on some models rather than all models, use an abstract model
+base class to customize only those models. For example, if some models should track when
+they are created or updated.
+
+.. code-block:: python
 
     from datetime import datetime
 
-    class TimestampMixin(object):
-        created = db.Column(
-            db.DateTime, nullable=False, default=datetime.utcnow)
+    class TimestampModel(db.Model):
+        __abstract__ = True
+        created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
         updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
     class Author(db.Model):
         ...
 
+    class Post(TimestampModel):
+        ...
+
+This can also be done with a mixin class, inheriting from ``db.Model`` separately.
+
+.. code-block:: python
+
+    class TimestampMixin:
+        created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+        updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
+
     class Post(TimestampMixin, db.Model):
         ...
+
+
+Session Class
+-------------
+
+Flask-SQLAlchemy's :class:`.Session` class chooses which engine to query based on the
+bind key associated with the model or table. However, there are other strategies such as
+horizontal sharding that can be implemented with a different session class. The
+``class_`` key to the ``session_options`` argument to the extension to change the
+session class.
+
+Flask-SQLAlchemy will always pass the extension instance as the ``db`` argument to the
+session, so it must accept that to continue working. That can be used to get access to
+``db.engines``.
+
+.. code-block:: python
+
+    from sqlalchemy.ext.horizontal_shard import ShardedSession
+    from flask_sqlalchemy.session import Session
+
+    class CustomSession(ShardedSession, Session):
+        ...
+
+    db = SQLAlchemy(session_options={"class_": CustomSession})
 
 
 Query Class
 -----------
 
-It is also possible to customize what is available for use on the
-special ``query`` property of models. For example, providing a
-``get_or`` method::
+.. warning::
+    The query interface is considered legacy in SQLAlchemy 2.0. This includes
+    ``session.query``, ``Model.query``, ``db.Query``, and ``lazy="dynamic"``
+    relationships. Prefer using selects instead of the query class.
 
-    from flask_sqlalchemy import BaseQuery, SQLAlchemy
+It is possible to customize the query interface used by the session, models, and
+relationships. This can be used to add extra query methods. For example, you could add
+a ``get_or`` method that gets a row or returns a default.
 
-    class GetOrQuery(BaseQuery):
+.. code-block:: python
+
+    from flask_sqlalchemy.query import Query
+
+    class GetOrQuery(Query):
         def get_or(self, ident, default=None):
-            return self.get(ident) or default
+            out = self.get(ident)
+
+            if out is None:
+                return default
+
+            return out
 
     db = SQLAlchemy(query_class=GetOrQuery)
 
-    # get a user by id, or return an anonymous user instance
     user = User.query.get_or(user_id, anonymous_user)
 
-And now all queries executed from the special ``query`` property
-on Flask-SQLAlchemy models can use the ``get_or`` method as part
-of their queries. All relationships defined with
-``db.relationship`` (but not :func:`sqlalchemy.orm.relationship`)
-will also be provided with this functionality.
+Passing the ``query_class`` argument will customize ``db.Query``, ``db.session.query``,
+``Model.query``, and ``db.relationship(lazy="dynamic")`` relationships. It's also
+possible to customize these on a per-object basis.
 
-It also possible to define a custom query class for individual
-relationships as well, by providing the ``query_class`` keyword
-in the definition. This works with both ``db.relationship``
-and ``sqlalchemy.relationship``::
+To customize a specific model's ``query`` property, set the ``query_class`` attribute on
+the model class.
 
-    class MyModel(db.Model):
-        cousin = db.relationship('OtherModel', query_class=GetOrQuery)
+.. code-block:: python
 
-.. note::
-
-    If a query class is defined on a relationship, it will take precedence over
-    the query class attached to its corresponding model.
-
-It is also possible to define a specific query class for individual models
-by overriding the ``query_class`` class attribute on the model::
-
-    class MyModel(db.Model):
+    class User(db.Model):
         query_class = GetOrQuery
 
-In this case, the ``get_or`` method will be only availble on queries
-orginating from ``MyModel.query``.
+To customize a specific dynamic relationship, pass the ``query_class`` argument to the
+relationship.
+
+.. code-block:: python
+
+    db.relationship(User, lazy="dynamic", query_class=GetOrQuery)
+
+To customize only ``session.query``, pass the ``query_cls`` key to the
+``session_options`` argument to the constructor.
+
+.. code-block:: python
+
+    db = SQLAlchemy(session_options={"query_cls": GetOrQuery})
 
 
 Model Metaclass
 ---------------
 
 .. warning::
+    Metaclasses are an advanced topic, and you probably don't need to customize them to
+    achieve what you want. It is mainly documented here to show how to disable table
+    name generation.
 
-    Metaclasses are an advanced topic, and you probably don't need to customize
-    them to achieve what you want. It is mainly documented here to show how to
-    disable table name generation.
+The model metaclass is responsible for setting up the SQLAlchemy internals when defining
+model subclasses. Flask-SQLAlchemy adds some extra behaviors through mixins; its default
+metaclass, :class:`~.DefaultMeta`, inherits them all.
 
-The model metaclass is responsible for setting up the SQLAlchemy internals when
-defining model subclasses. Flask-SQLAlchemy adds some extra behaviors through
-mixins; its default metaclass, :class:`~model.DefaultMeta`, inherits them all.
-
-* :class:`~model.BindMetaMixin`: ``__bind_key__`` is extracted from the class
-  and applied to the table. See :ref:`binds`.
-* :class:`~model.NameMetaMixin`: If the model does not specify a
-  ``__tablename__`` but does specify a primary key, a name is automatically
-  generated.
+-   :class:`.BindMetaMixin`: ``__bind_key__`` sets the bind to use for the model.
+-   :class:`.NameMetaMixin`: If the model does not specify a ``__tablename__`` but does
+    specify a primary key, a name is automatically generated.
 
 You can add your own behaviors by defining your own metaclass and creating the
-declarative base yourself. Be sure to still inherit from the mixins you want
-(or just inherit from the default metaclass).
+declarative base yourself. Be sure to still inherit from the mixins you want (or just
+inherit from the default metaclass).
 
-Passing a declarative base class instead of a simple model base class, as shown
-above, to ``base_class`` will cause Flask-SQLAlchemy to use this base instead
-of constructing one with the default metaclass. ::
+Passing a declarative base class instead of a simple model base class to ``model_class``
+will cause Flask-SQLAlchemy to use this base instead of constructing one with the
+default metaclass.
 
+.. code-block:: python
+
+    from sqlalchemy.orm import declarative_base
     from flask_sqlalchemy import SQLAlchemy
     from flask_sqlalchemy.model import DefaultMeta, Model
 
@@ -163,28 +199,32 @@ of constructing one with the default metaclass. ::
 
         # custom class-only methods could go here
 
-    db = SQLAlchemy(model_class=declarative_base(
-        cls=Model, metaclass=CustomMeta, name='Model'))
+    CustomModel = declarative_base(cls=Model, metaclass=CustomMeta, name="Model")
+    db = SQLAlchemy(model_class=CustomModel)
 
 You can also pass whatever other arguments you want to
-:func:`~sqlalchemy.ext.declarative.declarative_base` to customize the base
-class as needed.
+:func:`~sqlalchemy.orm.declarative_base` to customize the base class.
+
 
 Disabling Table Name Generation
 ```````````````````````````````
 
-Some projects prefer to set each model's ``__tablename__`` manually rather than
-relying on Flask-SQLAlchemy's detection and generation. The table name
-generation can be disabled by defining a custom metaclass. ::
+Some projects prefer to set each model's ``__tablename__`` manually rather than relying
+on Flask-SQLAlchemy's detection and generation. The simple way to achieve that is to
+set each ``__tablename__`` and not modify the base class. However, the table name
+generation can be disabled by defining a custom metaclass with only the
+``BindMetaMixin`` and not the ``NameMetaMixin``.
 
+.. code-block:: python
+
+    from sqlalchemy.orm import DeclarativeMeta, declarative_base
     from flask_sqlalchemy.model import BindMetaMixin, Model
-    from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
 
     class NoNameMeta(BindMetaMixin, DeclarativeMeta):
         pass
 
-    db = SQLAlchemy(model_class=declarative_base(
-        cls=Model, metaclass=NoNameMeta, name='Model'))
+    CustomModel = declarative_base(cls=Model, metaclass=NoNameMeta, name="Model")
+    db = SQLAlchemy(model_class=CustomModel)
 
-This creates a base that still supports the ``__bind_key__`` feature but does
-not generate table names.
+This creates a base that still supports the ``__bind_key__`` feature but does not
+generate table names.
