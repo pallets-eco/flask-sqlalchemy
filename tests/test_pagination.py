@@ -40,7 +40,6 @@ def test_last_page() -> None:
 @pytest.mark.parametrize(
     ("per_page", "total"),
     [
-        (0, 150),
         (10, 0),
         (10, None),
     ],

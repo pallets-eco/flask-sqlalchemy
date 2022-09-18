@@ -95,7 +95,7 @@ class Pagination:
             else:
                 page = 1
 
-        if per_page < 0:
+        if per_page < 1:
             if error_out:
                 abort(404)
             else:
@@ -110,7 +110,7 @@ class Pagination:
         *,
         page: int | None = None,
         per_page: int | None = None,
-        max_per_page: int | None = None,
+        max_per_page: int | None = 100,
         error_out: bool = True,
         count: bool = True,
     ) -> Pagination:
@@ -125,10 +125,10 @@ class Pagination:
             offset and limit. Defaults to the ``per_page`` query arg during a request,
             or 20 otherwise.
         :param max_per_page: The maximum allowed value for ``per_page``, to limit a
-            user-provided value.
+            user-provided value. Use ``None`` for no limit. Defaults to 100.
         :param error_out: Abort with a ``404 Not Found`` error if no items are returned
-            and ``page`` is not 1, or if ``page`` is less than 1 or ``per_page`` is
-            negative, or if either are not ints.
+            and ``page`` is not 1, or if ``page`` or ``per_page`` is less than 1, or if
+            either are not ints.
         :param count: Calculate the total number of values by issuing an extra count
             query. For very complex queries this may be inaccurate or slow, so it can be
             disabled and set manually if necessary.
@@ -137,6 +137,12 @@ class Pagination:
 
         .. versionchanged:: 3.0
             The ``count`` query is more efficient.
+
+        .. versionchanged:: 3.0
+            ``per_page`` cannot be 0.
+
+        .. versionchanged:: 3.0
+            ``max_per_page`` defaults to 100.
         """
         page, per_page = cls._prepare_args(
             page=page,
@@ -170,7 +176,7 @@ class Pagination:
     @property
     def pages(self) -> int:
         """The total number of pages."""
-        if self.per_page == 0 or self.total is None:
+        if self.total is None:
             return 0
 
         return ceil(self.total / self.per_page)

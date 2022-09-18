@@ -77,6 +77,8 @@ Unreleased
     :issue:`508, 944`
 -   Model classes and the ``db`` instance are available without imports in
     ``flask shell``. :issue:`1089`
+-   ``Pagination`` ``per_page`` cannot be 0. :issue:`1091`
+-   ``Pagination`` ``max_per_page`` defaults to 100. :issue:`1091`
 
 
 Version 2.5.1
