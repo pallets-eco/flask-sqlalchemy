@@ -78,7 +78,7 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
             offset and limit. Defaults to the ``per_page`` query arg during a request,
             or 20 otherwise.
         :param max_per_page: The maximum allowed value for ``per_page``, to limit a
-            user-provided value.
+            user-provided value. Use ``None`` for no limit. Defaults to 100.
         :param error_out: Abort with a ``404 Not Found`` error if no items are returned
             and ``page`` is not 1, or if ``page`` or ``per_page`` is less than 1, or if
             either are not ints.
@@ -94,6 +94,9 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
 
         .. versionchanged:: 3.0
             All parameters are keyword-only.
+
+        .. versionchanged:: 3.0
+            ``max_per_page`` defaults to 100.
         """
         return Pagination.apply_to_query(
             self,

@@ -110,7 +110,7 @@ class Pagination:
         *,
         page: int | None = None,
         per_page: int | None = None,
-        max_per_page: int | None = None,
+        max_per_page: int | None = 100,
         error_out: bool = True,
         count: bool = True,
     ) -> Pagination:
@@ -125,7 +125,7 @@ class Pagination:
             offset and limit. Defaults to the ``per_page`` query arg during a request,
             or 20 otherwise.
         :param max_per_page: The maximum allowed value for ``per_page``, to limit a
-            user-provided value.
+            user-provided value. Use ``None`` for no limit. Defaults to 100.
         :param error_out: Abort with a ``404 Not Found`` error if no items are returned
             and ``page`` is not 1, or if ``page`` or ``per_page`` is less than 1, or if
             either are not ints.
@@ -140,6 +140,9 @@ class Pagination:
 
         .. versionchanged:: 3.0
             ``per_page`` cannot be 0.
+
+        .. versionchanged:: 3.0
+            ``max_per_page`` defaults to 100.
         """
         page, per_page = cls._prepare_args(
             page=page,
