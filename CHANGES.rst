@@ -85,6 +85,8 @@ Unreleased
     :issue:`803`
 -   SQLite driver-level URIs that look like ``sqlite:///file:name.db?uri=true`` are
     supported. :issue:`998, 1045`
+-   Added ``Pagination.first`` and ``last`` properties, which give the number of the
+    first and last item on the page. :issue:`567`
 
 
 Version 2.5.1

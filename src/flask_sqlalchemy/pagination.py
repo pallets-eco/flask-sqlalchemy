@@ -174,9 +174,31 @@ class Pagination:
     # TODO: apply_to_select, requires access to session
 
     @property
+    def first(self) -> int:
+        """The number of the first item on the page, starting from 1, or 0 if there are
+        no items.
+
+        .. versionadded:: 3.0
+        """
+        if len(self.items) == 0:
+            return 0
+
+        return (self.page - 1) * self.per_page + 1
+
+    @property
+    def last(self) -> int:
+        """The number of the last item on the page, starting from 1, inclusive, or 0 if
+        there are no items.
+
+        .. versionadded:: 3.0
+        """
+        first = self.first
+        return max(first, first + len(self.items) - 1)
+
+    @property
     def pages(self) -> int:
         """The total number of pages."""
-        if self.total is None:
+        if self.total == 0 or self.total is None:
             return 0
 
         return ceil(self.total / self.per_page)
