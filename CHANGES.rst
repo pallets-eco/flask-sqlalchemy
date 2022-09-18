@@ -83,6 +83,8 @@ Unreleased
     ``app.testing``. :issue:`1092`
 -   MySQL engines don't set a default for ``pool_recycle`` if not using a queue pool.
     :issue:`803`
+-   SQLite driver-level URIs that look like ``sqlite:///file:name.db?uri=true`` are
+    supported. :issue:`998, 1045`
 
 
 Version 2.5.1
