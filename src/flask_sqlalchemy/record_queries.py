@@ -14,8 +14,7 @@ from flask import has_app_context
 
 def get_recorded_queries() -> list[_QueryInfo]:
     """Get the list of recorded query information for the current session. Queries are
-    recorded if the app is in debug or testing mode, or if the config
-    :data:`.SQLALCHEMY_RECORD_QUERIES` is enabled.
+    recorded if the config :data:`.SQLALCHEMY_RECORD_QUERIES` is enabled.
 
     Each query info object has the following attributes:
 
@@ -40,6 +39,9 @@ def get_recorded_queries() -> list[_QueryInfo]:
 
     .. versionchanged:: 3.0
         The info object attribute ``context`` is renamed to ``location``.
+
+    .. versionchanged:: 3.0
+        Not enabled automatically in debug or testing mode.
     """
     return g.get("_sqlalchemy_queries", [])  # type: ignore[no-any-return]
 

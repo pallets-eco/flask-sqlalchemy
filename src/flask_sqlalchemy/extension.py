@@ -315,12 +315,7 @@ class SQLAlchemy:
             self._apply_driver_defaults(options, app)
             engines[key] = self._make_engine(key, options, app)
 
-        record: bool | None = app.config.setdefault("SQLALCHEMY_RECORD_QUERIES", None)
-
-        if record is None:
-            record = app.debug or app.testing
-
-        if record:
+        if app.config.setdefault("SQLALCHEMY_RECORD_QUERIES", False):
             from . import record_queries
 
             for engine in engines.values():
