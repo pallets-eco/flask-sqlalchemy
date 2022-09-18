@@ -75,6 +75,8 @@ Unreleased
 -   An active Flask application context is always required to access ``session`` and
     ``engine``, regardless of if an application was passed to the constructor.
     :issue:`508, 944`
+-   Model classes and the ``db`` instance are available without imports in
+    ``flask shell``. :issue:`1089`
 
 
 Version 2.5.1
