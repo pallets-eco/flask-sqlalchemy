@@ -72,7 +72,6 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
         """Apply an offset and limit to the query based on the current page and number
         of items per page, returning a :class:`.Pagination` object.
 
-        :param query: The query to paginate.
         :param page: The current page, used to calculate the offset. Defaults to the
             ``page`` query arg during a request, or 1 otherwise.
         :param per_page: The maximum number of items on a page, used to calculate the
@@ -81,9 +80,8 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
         :param max_per_page: The maximum allowed value for ``per_page``, to limit a
             user-provided value.
         :param error_out: Abort with a ``404 Not Found`` error if no items are returned
-            and ``page`` is not 1, or if ``page`` is less than 1 or ``per_page`` is
-            negative, or if either are not ints. If disabled, an invalid ``page``
-            defaults to 1, and ``per_page`` defaults to 20.
+            and ``page`` is not 1, or if ``page`` or ``per_page`` is less than 1, or if
+            either are not ints.
         :param count: Calculate the total number of values by issuing an extra count
             query. For very complex queries this may be inaccurate or slow, so it can be
             disabled and set manually if necessary.
@@ -93,6 +91,9 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
 
         .. versionchanged:: 3.0
             The ``count`` query is more efficient.
+
+        .. versionchanged:: 3.0
+            All parameters are keyword-only.
         """
         return Pagination.apply_to_query(
             self,
