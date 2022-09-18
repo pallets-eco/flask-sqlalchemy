@@ -521,7 +521,7 @@ class SQLAlchemy:
 
         .. versionchanged:: 3.0
             SQLite paths are relative to ``app.instance_path``. It does not use
-            ``NullPool`` if ``pool_size`` is 0.
+            ``NullPool`` if ``pool_size`` is 0. Driver-level URIs are supported.
 
         .. versionchanged:: 3.0
             MySQL sets ``charset="utf8mb4". It does not set ``pool_size`` to 10. It
@@ -545,14 +545,22 @@ class SQLAlchemy:
 
                 options["connect_args"]["check_same_thread"] = False
             else:
-                if not os.path.isabs(url.database):  # type: ignore[arg-type]
+                # the url might look like sqlite:///file:path?uri=true
+                is_uri = url.query.get("uri", False)
+
+                if is_uri:
+                    db_str = url.database[5:]
+                else:
+                    db_str = url.database
+
+                if not os.path.isabs(db_str):  # type: ignore[arg-type]
                     os.makedirs(app.instance_path, exist_ok=True)
-                    options["url"] = url.set(
-                        database=os.path.join(
-                            app.instance_path,
-                            url.database,  # type: ignore[arg-type]
-                        )
-                    )
+                    db_str = os.path.join(app.instance_path, db_str)
+
+                    if is_uri:
+                        db_str = f"file:{db_str}"
+
+                    options["url"] = url.set(database=db_str)
         elif url.drivername.startswith("mysql"):
             # set queue defaults only when using queue pool
             if (
