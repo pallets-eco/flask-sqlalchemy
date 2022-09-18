@@ -61,7 +61,8 @@ must happen before initializing the application.
     :func:`.get_recorded_queries` to get a list of queries that were issued during the
     request.
 
-    If not set, this is enabled if ``app.debug`` or ``app.testing`` are enabled.
+    .. versionchanged:: 3.0
+        Not enabled automatically in debug or testing mode.
 
 .. data:: SQLALCHEMY_TRACK_MODIFICATIONS
 

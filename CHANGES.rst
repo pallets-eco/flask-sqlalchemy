@@ -79,6 +79,8 @@ Unreleased
     ``flask shell``. :issue:`1089`
 -   ``Pagination`` ``per_page`` cannot be 0. :issue:`1091`
 -   ``Pagination`` ``max_per_page`` defaults to 100. :issue:`1091`
+-   ``SQLALCHEMY_RECORD_QUERIES`` is not enabled automatically with ``app.debug`` or
+    ``app.testing``. :issue:`1092`
 
 
 Version 2.5.1
