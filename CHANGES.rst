@@ -20,11 +20,9 @@ Unreleased
     that are difficult to debug. Call ``db.session.commit()`` directly instead.
     :issue:`216`
 -   Change the default MySQL character set to "utf8mb4". :issue:`875`
--   ``Pagination``, ``Pagination.iter_pages``, and ``Query.paginate`` parameters are
-    keyword-only.
+-   ``Pagination.iter_pages`` and ``Query.paginate`` parameters are keyword-only.
 -   ``Pagination`` is iterable, iterating over its items. :issue:`70`
--   ``Pagination.apply_to_query`` can be used instead of ``query.paginate``.
--   ``Query.paginate`` ``count`` is more efficient.
+-   Pagination count query is more efficient.
 -   ``Pagination.iter_pages`` is more efficient. :issue:`622`
 -   ``Pagination.iter_pages`` ``right_current`` parameter is inclusive.
 -   ``Query`` is renamed from ``BaseQuery``.
@@ -77,8 +75,8 @@ Unreleased
     :issue:`508, 944`
 -   Model classes and the ``db`` instance are available without imports in
     ``flask shell``. :issue:`1089`
--   ``Pagination`` ``per_page`` cannot be 0. :issue:`1091`
--   ``Pagination`` ``max_per_page`` defaults to 100. :issue:`1091`
+-   Pagination ``per_page`` cannot be 0. :issue:`1091`
+-   Pagination ``max_per_page`` defaults to 100. :issue:`1091`
 -   ``SQLALCHEMY_RECORD_QUERIES`` is not enabled automatically with ``app.debug`` or
     ``app.testing``. :issue:`1092`
 -   MySQL engines don't set a default for ``pool_recycle`` if not using a queue pool.
@@ -87,6 +85,11 @@ Unreleased
     supported. :issue:`998, 1045`
 -   Added ``Pagination.first`` and ``last`` properties, which give the number of the
     first and last item on the page. :issue:`567`
+-   Added ``get_or_404``, ``first_or_404``, ``one_or_404``, and ``paginate`` methods to
+    the extension object. These use SQLAlchemy's preferred ``session.execute(select())``
+    pattern instead of the legacy query interface. :issue:`1088`
+-   Creating ``Pagination`` objects manually is no longer a public API. They should be
+    created with ``db.paginate`` or ``query.paginate``. :issue:`1088`
 
 
 Version 2.5.1

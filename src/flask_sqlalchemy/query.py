@@ -8,6 +8,7 @@ import sqlalchemy.orm
 from flask import abort
 
 from .pagination import Pagination
+from .pagination import QueryPagination
 
 
 class Query(sa.orm.Query):  # type: ignore[type-arg]
@@ -93,13 +94,10 @@ class Query(sa.orm.Query):  # type: ignore[type-arg]
             The ``count`` query is more efficient.
 
         .. versionchanged:: 3.0
-            All parameters are keyword-only.
-
-        .. versionchanged:: 3.0
             ``max_per_page`` defaults to 100.
         """
-        return Pagination.apply_to_query(
-            self,
+        return QueryPagination(
+            query=self,
             page=page,
             per_page=per_page,
             max_per_page=max_per_page,

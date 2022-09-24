@@ -17,7 +17,7 @@ def test_query_info(app: Flask) -> None:
         id = sa.Column(sa.Integer, primary_key=True)
 
     db.create_all()
-    Example.query.filter(Example.id < 5).all()
+    db.session.execute(sa.select(Example).filter(Example.id < 5)).scalars()
     info = get_recorded_queries()[-1]
     assert info.statement is not None
     assert "SELECT" in info.statement
