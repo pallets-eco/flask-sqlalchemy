@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block body %}
+  <h2>All Items</h2>
+  <form action="{{ url_for("update_done") }}" method=post>
+    <table border=1>
+      <thead>
+        <tr>
+          <th>#
+          <th>Title
+          <th>Date
+          <th>Done?
+      <tbody>
+      {%- for todo in todos %}
+      <tr>
+        <td>{{ todo.id }}
+        <td>{{ todo.title }}
+        <td>{{ todo.pub_date.strftime("%Y-%m-%d %H:%M") }}
+        <td rowspan=2><input type=checkbox name=done.{{ todo.id }} {{ "checked" if todo.done }}>
+      <tr>
+        <td colspan=3>{{ todo.text }}</td>
+      {%- endfor %}
+      <tfoot>
+        <tr>
+          <td colspan=3><a href="{{ url_for("new") }}">New</a>
+          <td><input type=submit value="Save">
+    </table>
+  </form>
+{% endblock %}

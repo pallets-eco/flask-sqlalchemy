@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block body %}
+  <h2>New Item</h2>
+  <form method=post>
+    <p>
+      <label>Title:
+      <input name=title value="{{ request.form.title }}">
+      </label>
+    <p>
+      <label>Text:<br>
+      <textarea name=text rows=10 cols=40>{{ request.form.text }}</textarea>
+      </label>
+    <p>
+      <input type=submit value="Save"><br><br>
+      <a href="{{ url_for("show_all") }}">Back to list</a>
+  </form>
+{% endblock %}

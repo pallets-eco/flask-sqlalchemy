@@ -1,0 +1,8 @@
+<!doctype html>
+<title>Todo</title>
+<h1>Todo</h1>
+{%- for category, message in get_flashed_messages(with_categories=true) %}
+  <p class="flask {{ category }}-flash">
+    {{ "Error: " if category == 'error' }}{{ message }}
+{%- endfor %}
+{% block body %}{% endblock %}
