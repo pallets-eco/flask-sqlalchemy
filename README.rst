@@ -34,17 +34,21 @@ A Simple Example
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///example.sqlite"
     db = SQLAlchemy(app)
 
-
     class User(db.Model):
         id = db.Column(db.Integer, primary_key=True)
         username = db.Column(db.String, unique=True, nullable=False)
-        email = db.Column(db.String, unique=True, nullable=False)
 
+    with app.app_context():
+        db.create_all()
 
-    db.session.add(User(username="Flask", email="example@example.com"))
-    db.session.commit()
+    with app.app_context():
+        db.session.add(User(username="example"))
+        db.session.commit()
 
-    users = User.query.all()
+    @app.route("/users")
+    def user_list():
+        users = db.session.execute(db.select(User)).scalars()
+        return render_template("user_list.html", users=users)
 
 
 Contributing
