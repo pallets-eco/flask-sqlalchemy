@@ -50,6 +50,18 @@ def test_one_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
+def test_paginate(db: SQLAlchemy, Todo: t.Any) -> None:
+    db.session.add_all(Todo() for _ in range(150))
+    db.session.commit()
+    p = Todo.query.paginate()
+    assert p.total == 150
+    assert len(p.items) == 20
+    p2 = p.next()
+    assert p2.page == 2
+    assert p2.total == 150
+
+
+@pytest.mark.usefixtures("app_ctx")
 def test_default_query_class(db: SQLAlchemy) -> None:
     class Parent(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)

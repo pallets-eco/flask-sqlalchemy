@@ -10,51 +10,82 @@ from flask import request
 
 
 class Pagination:
-    """Returned by :meth:`.Query.paginate`, this describes the current page of data.
+    """Apply an offset and limit to the query based on the current page and number of
+    items per page.
 
-    :param query: The original query that was paginated.
-    :param page: The current page.
-    :param per_page: The maximum number of items on a page.
-    :param total: The total number of items across all pages.
-    :param items: The items on the current page.
+    Don't create pagination objects manually. They are created by
+    :meth:`.SQLAlchemy.paginate` and :meth:`.Query.paginate`.
 
-    .. versionchanged:: 3.0
-        All parameters are keyword-only.
+    This is a base class, a subclass must implement :meth:`_query_items` and
+    :meth:`_query_count`. Those methods will use arguments passed as ``kwargs`` to
+    perform the queries.
+
+    :param page: The current page, used to calculate the offset. Defaults to the
+        ``page`` query arg during a request, or 1 otherwise.
+    :param per_page: The maximum number of items on a page, used to calculate the
+        offset and limit. Defaults to the ``per_page`` query arg during a request,
+        or 20 otherwise.
+    :param max_per_page: The maximum allowed value for ``per_page``, to limit a
+        user-provided value. Use ``None`` for no limit. Defaults to 100.
+    :param error_out: Abort with a ``404 Not Found`` error if no items are returned
+        and ``page`` is not 1, or if ``page`` or ``per_page`` is less than 1, or if
+        either are not ints.
+    :param count: Calculate the total number of values by issuing an extra count
+        query. For very complex queries this may be inaccurate or slow, so it can be
+        disabled and set manually if necessary.
+    :param kwargs: Information about the query to paginate. Different subclasses will
+        require different arguments.
 
     .. versionchanged:: 3.0
         Iterating over a pagination object iterates over its items.
+
+    .. versionchanged:: 3.0
+        Creating instances manually is not a public API.
     """
 
     def __init__(
         self,
-        *,
-        query: sa.orm.Query[t.Any] | None,
-        page: int,
-        per_page: int,
-        total: int | None,
-        items: list[t.Any],
+        page: int | None = None,
+        per_page: int | None = None,
+        max_per_page: int | None = 100,
+        error_out: bool = True,
+        count: bool = True,
+        **kwargs: t.Any,
     ) -> None:
-        self.query = query
-        """The original query that was paginated. This is used to produce :meth:`next`
-        and :meth:`prev` pages.
-        """
+        self._query_args = kwargs
+        page, per_page = self._prepare_page_args(
+            page=page,
+            per_page=per_page,
+            max_per_page=max_per_page,
+            error_out=error_out,
+        )
 
-        self.page = page
+        self.page: int = page
         """The current page."""
 
-        self.per_page = per_page
+        self.per_page: int = per_page
         """The maximum number of items on a page."""
 
-        self.total = total
-        """The total number of items across all pages."""
+        items = self._query_items()
 
-        self.items = items
+        if not items and page != 1 and error_out:
+            abort(404)
+
+        self.items: list[t.Any] = items
         """The items on the current page. Iterating over the pagination object is
         equivalent to iterating over the items.
         """
 
+        if count:
+            total = self._query_count()
+        else:
+            total = None
+
+        self.total: int | None = total
+        """The total number of items across all pages."""
+
     @staticmethod
-    def _prepare_args(
+    def _prepare_page_args(
         *,
         page: int | None = None,
         per_page: int | None = None,
@@ -103,75 +134,37 @@ class Pagination:
 
         return page, per_page
 
-    @classmethod
-    def apply_to_query(
-        cls,
-        query: sa.orm.Query[t.Any],
-        *,
-        page: int | None = None,
-        per_page: int | None = None,
-        max_per_page: int | None = 100,
-        error_out: bool = True,
-        count: bool = True,
-    ) -> Pagination:
-        """Apply an offset and limit to the query based on the current page and number
-        of items per page, returning a :class:`Pagination` object. This is called by
-        :meth:`.Query.paginate`, or can be called manually.
+    @property
+    def _query_offset(self) -> int:
+        """The index of the first item to query, passed to ``offset()``.
 
-        :param query: The query to paginate.
-        :param page: The current page, used to calculate the offset. Defaults to the
-            ``page`` query arg during a request, or 1 otherwise.
-        :param per_page: The maximum number of items on a page, used to calculate the
-            offset and limit. Defaults to the ``per_page`` query arg during a request,
-            or 20 otherwise.
-        :param max_per_page: The maximum allowed value for ``per_page``, to limit a
-            user-provided value. Use ``None`` for no limit. Defaults to 100.
-        :param error_out: Abort with a ``404 Not Found`` error if no items are returned
-            and ``page`` is not 1, or if ``page`` or ``per_page`` is less than 1, or if
-            either are not ints.
-        :param count: Calculate the total number of values by issuing an extra count
-            query. For very complex queries this may be inaccurate or slow, so it can be
-            disabled and set manually if necessary.
+        :meta private:
 
         .. versionadded:: 3.0
-
-        .. versionchanged:: 3.0
-            The ``count`` query is more efficient.
-
-        .. versionchanged:: 3.0
-            ``per_page`` cannot be 0.
-
-        .. versionchanged:: 3.0
-            ``max_per_page`` defaults to 100.
         """
-        page, per_page = cls._prepare_args(
-            page=page,
-            per_page=per_page,
-            max_per_page=max_per_page,
-            error_out=error_out,
-        )
-        items = query.limit(per_page).offset((page - 1) * per_page).all()
+        return (self.page - 1) * self.per_page
 
-        if not items and page != 1 and error_out:
-            abort(404)
+    def _query_items(self) -> list[t.Any]:
+        """Execute the query to get the items on the current page.
 
-        if count:
-            total = query.options(sa.orm.lazyload("*")).order_by(None).count()
-            # Using `.with_entities([sa.func.count()]).scalar()` is an alternative, but
-            # is not guaranteed to be correct for many possible queries. If custom
-            # counting is needed, it can be disabled here and set manually after.
-        else:
-            total = None
+        Uses init arguments stored in :attr:`_query_args`.
 
-        return cls(
-            query=query,
-            page=page,
-            per_page=per_page,
-            total=total,
-            items=items,
-        )
+        :meta private:
 
-    # TODO: apply_to_select, requires access to session
+        .. versionadded:: 3.0
+        """
+        raise NotImplementedError
+
+    def _query_count(self) -> int:
+        """Execute the query to get the total number of items.
+
+        Uses init arguments stored in :attr:`_query_args`.
+
+        :meta private:
+
+        .. versionadded:: 3.0
+        """
+        raise NotImplementedError
 
     @property
     def first(self) -> int:
@@ -216,12 +209,22 @@ class Pagination:
 
         return self.page - 1
 
-    def prev(self, error_out: bool = False) -> Pagination:
-        """Query the :class:`Pagination` object for the previous page."""
-        assert self.query is not None
-        return self.apply_to_query(
-            self.query, page=self.page - 1, per_page=self.per_page, error_out=error_out
+    def prev(self, *, error_out: bool = False) -> Pagination:
+        """Query the :class:`Pagination` object for the previous page.
+
+        :param error_out: Abort with a ``404 Not Found`` error if no items are returned
+            and ``page`` is not 1, or if ``page`` or ``per_page`` is less than 1, or if
+            either are not ints.
+        """
+        p = type(self)(
+            page=self.page - 1,
+            per_page=self.per_page,
+            error_out=error_out,
+            count=False,
+            **self._query_args,
         )
+        p.total = self.total
+        return p
 
     @property
     def has_next(self) -> bool:
@@ -236,12 +239,22 @@ class Pagination:
 
         return self.page + 1
 
-    def next(self, error_out: bool = False) -> Pagination:
-        """Query the :class:`Pagination` object for the next page."""
-        assert self.query is not None
-        return self.apply_to_query(
-            self.query, page=self.page + 1, per_page=self.per_page, error_out=error_out
+    def next(self, *, error_out: bool = False) -> Pagination:
+        """Query the :class:`Pagination` object for the next page.
+
+        :param error_out: Abort with a ``404 Not Found`` error if no items are returned
+            and ``page`` is not 1, or if ``page`` or ``per_page`` is less than 1, or if
+            either are not ints.
+        """
+        p = type(self)(
+            page=self.page + 1,
+            per_page=self.per_page,
+            error_out=error_out,
+            count=False,
+            **self._query_args,
         )
+        p.total = self.total
+        return p
 
     def iter_pages(
         self,
@@ -306,3 +319,39 @@ class Pagination:
 
     def __iter__(self) -> t.Iterator[t.Any]:
         yield from self.items
+
+
+class SelectPagination(Pagination):
+    """Returned by :meth:`.SQLAlchemy.paginate`. Takes ``select`` and ``session``
+    arguments in addition to the :class:`Pagination` arguments.
+
+    .. versionadded:: 3.0
+    """
+
+    def _query_items(self) -> list[t.Any]:
+        select = self._query_args["select"]
+        select = select.limit(self.per_page).offset(self._query_offset)
+        session = self._query_args["session"]
+        return list(session.execute(select).unique().scalars())
+
+    def _query_count(self) -> int:
+        select = self._query_args["select"]
+        sub = select.options(sa.orm.lazyload("*")).order_by(None).subquery()
+        session = self._query_args["session"]
+        return session.execute(sa.select(sa.func.count()).select_from(sub)).scalar()
+
+
+class QueryPagination(Pagination):
+    """Returned by :meth:`.Query.paginate`. Takes a ``query`` argument in addition to
+    the :class:`Pagination` arguments.
+
+    .. versionadded:: 3.0
+    """
+
+    def _query_items(self) -> list[t.Any]:
+        query = self._query_args["query"]
+        return query.limit(self.per_page).offset(self._query_offset).all()
+
+    def _query_count(self) -> int:
+        # Query.count automatically disables eager loads
+        return self._query_args["query"].order_by(None).count()

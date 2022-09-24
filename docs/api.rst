@@ -39,15 +39,6 @@ Model
 .. autoclass:: NameMetaMixin
 
 
-Query
------
-
-.. module:: flask_sqlalchemy.query
-
-.. autoclass:: Query
-    :members:
-
-
 Session
 -------
 
@@ -62,7 +53,42 @@ Pagination
 
 .. module:: flask_sqlalchemy.pagination
 
-.. autoclass:: Pagination
+.. class:: Pagination
+
+    A slice of the total items in a query obtained by applying an offset and limit to
+    based on the current page and number of items per page.
+
+    Don't create pagination objects manually. They are created by
+    :meth:`.SQLAlchemy.paginate` and :meth:`.Query.paginate`.
+
+    .. versionchanged:: 3.0
+        Iterating over a pagination object iterates over its items.
+
+    .. versionchanged:: 3.0
+        Creating instances manually is not a public API.
+
+    .. autoattribute:: page
+    .. autoattribute:: per_page
+    .. autoattribute:: items
+    .. autoattribute:: total
+    .. autoproperty:: first
+    .. autoproperty:: last
+    .. autoproperty:: pages
+    .. autoproperty:: has_prev
+    .. autoproperty:: prev_num
+    .. automethod:: prev
+    .. autoproperty:: has_next
+    .. autoproperty:: next_num
+    .. automethod:: next
+    .. automethod:: iter_pages
+
+
+Query
+-----
+
+.. module:: flask_sqlalchemy.query
+
+.. autoclass:: Query
     :members:
 
 

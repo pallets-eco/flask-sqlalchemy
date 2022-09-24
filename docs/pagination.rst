@@ -5,9 +5,8 @@ If you have a lot of results, you may only want to show a certain number at a ti
 allowing the user to click next and previous links to see pages of data. This is
 sometimes called *pagination*, and uses the verb *paginate*.
 
-Pagination is currently available through the ``Model.query`` and ``session.query``
-interfaces by calling the :meth:`.Query.paginate` method. This returns a
-:class:`.Pagination` object.
+Call :meth:`.SQLAlchemy.paginate` on a select statement to get a :class:`.Pagination`
+object.
 
 During a request, this will take ``page`` and ``per_page`` arguments from the query
 string ``request.args``. Pass ``max_per_page`` to prevent users from requesting too many
@@ -16,7 +15,7 @@ per page.
 
 .. code-block:: python
 
-    page = User.query.order_by(User.join_date).paginate()
+    page = db.paginate(db.select(User).order_by(User.join_date))
     return render_template("user/list.html", page=page)
 
 

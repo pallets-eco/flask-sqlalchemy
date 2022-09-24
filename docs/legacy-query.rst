@@ -47,3 +47,23 @@ You can add a custom message to the 404 error:
         user = User.query.filter_by(username=username).one_or_404(
             description=f"No user named '{username}'."
         )
+
+
+Pagination
+----------
+
+If you have a lot of results, you may only want to show a certain number at a time,
+allowing the user to click next and previous links to see pages of data.
+
+Call :meth:`~.Query.paginate` on a query to get a :class:`.Pagination` object. See
+:doc:`/pagination` for more information about the pagination object.
+
+During a request, this will take ``page`` and ``per_page`` arguments from the query
+string ``request.args``. Pass ``max_per_page`` to prevent users from requesting too many
+results on a single page. If not given, the default values will be page 1 with 20 items
+per page.
+
+.. code-block:: python
+
+    page = User.query.order_by(User.join_date).paginate()
+    return render_template("user/list.html", page=page)
