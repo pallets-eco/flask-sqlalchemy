@@ -7,40 +7,46 @@ Unreleased
 -   Bump minimum version of Flask to 2.2.
 -   Bump minimum version of SQLAlchemy to 1.4.18.
 -   Remove previously deprecated code.
+-   The session is scoped to the current app context instead of the thread. This
+    requires that an app context is active. This ensures that the session is cleaned up
+    after every request.
+-   An active Flask application context is always required to access ``session`` and
+    ``engine``, regardless of if an application was passed to the constructor.
+    :issue:`508, 944`
+-   Different bind keys use different SQLAlchemy ``MetaData`` registries, allowing
+    tables in different databases to have the same name. Bind keys are stored and looked
+    up on the resulting metadata rather than the model or table.
+-   ``SQLALCHEMY_DATABASE_URI`` does not default to ``sqlite:///:memory:``. An error is
+    raised if neither it nor ``SQLALCHEMY_BINDS`` define any engines. :pr:`731`
+-   Configuring SQLite with a relative path is relative to ``app.instance_path`` instead
+    of ``app.root_path``. The instance folder is created if necessary. :issue:`462`
+-   Added ``get_or_404``, ``first_or_404``, ``one_or_404``, and ``paginate`` methods to
+    the extension object. These use SQLAlchemy's preferred ``session.execute(select())``
+    pattern instead of the legacy query interface. :issue:`1088`
+-   Setup methods that create the engines and session are renamed with a leading
+    underscore. They are considered internal interfaces which may change at any time.
+-   All parameters to ``SQLAlchemy`` except ``app`` are keyword-only.
+-   Renamed the ``bind`` parameter to ``bind_key`` and removed the ``app`` parameter
+    from various ``SQLAlchemy`` methods.
+-   The extension object uses ``__getattr__`` to alias names from the SQLAlchemy
+    package, rather than copying them as attributes.
+-   The extension object is stored directly as ``app.extensions["sqlalchemy"]``.
+    :issue:`698`
+-   The session class can be customized by passing the ``class_`` key in the
+    ``session_options`` parameter. :issue:`327`
+-   ``SignallingSession`` is renamed to ``Session``.
+-   ``Session.get_bind`` more closely matches the base implementation.
+-   Model classes and the ``db`` instance are available without imports in
+    ``flask shell``. :issue:`1089`
 -   The ``CamelCase`` to ``snake_case`` table name converter handles more patterns
     correctly. If such a that was was already created in the database changed, either
     use Alembic to rename the table, or set ``__tablename__`` to keep the old name.
     :issue:`406`
--   Set ``SQLALCHEMY_TRACK_MODIFICATIONS`` to ``False`` by default. :pr:`727`
--   Remove default ``'sqlite:///:memory:'`` setting for ``SQLALCHEMY_DATABASE_URI``,
-    raise error when both it and ``SQLALCHEMY_BINDS`` are unset. :pr:`731`
--   Configuring SQLite with a relative path is relative to ``app.instance_path`` instead
-    of ``app.root_path``. The instance folder is created if necessary. :issue:`462`
--   Deprecate ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` as it can cause various design issues
-    that are difficult to debug. Call ``db.session.commit()`` directly instead.
-    :issue:`216`
--   Change the default MySQL character set to "utf8mb4". :issue:`875`
--   ``Pagination.iter_pages`` and ``Query.paginate`` parameters are keyword-only.
--   ``Pagination`` is iterable, iterating over its items. :issue:`70`
--   Pagination count query is more efficient.
--   ``Pagination.iter_pages`` is more efficient. :issue:`622`
--   ``Pagination.iter_pages`` ``right_current`` parameter is inclusive.
--   ``Query`` is renamed from ``BaseQuery``.
--   ``Query.one_or_404`` is added.
--   ``get_debug_queries`` is renamed to ``get_recorded_queries`` to better match the
-    config and functionality.
--   Recorded query info is a dataclass instead of a tuple. The ``context`` attribute is
-    renamed to ``location``. Finding the location uses a more inclusive check.
--   The ``SQLAlchemy`` extension object uses ``__getattr__`` to alias names from the
-    SQLAlchemy package, rather than copying them as attributes.
--   The query class is applied to ``backref`` in ``relationship``. :issue:`417`
--   ``SignallingSession`` is renamed to ``Session``.
--   ``Session.get_bind`` more closely matches the base implementation.
 -   ``Model`` ``repr`` distinguishes between transient and pending instances.
     :issue:`967`
--   Different bind keys use different SQLAlchemy ``MetaData`` registries, allowing
-    tables in different databases to have the same name. Bind keys are stored and looked
-    up on the resulting metadata rather than the model or table.
+-   A custom model class can implement ``__init_subclass__`` with class parameters.
+    :issue:`1002`
+-   ``db.Table`` is a subclass instead of a function.
 -   The ``engine_options`` parameter is applied as defaults before per-engine
     configuration.
 -   ``SQLALCHEMY_BINDS`` values can either be an engine URL, or a dict of engine options
@@ -49,47 +55,39 @@ Unreleased
     :issue:`783`
 -   Engines are created when calling ``init_app`` rather than the first time they are
     accessed. :issue:`698`
--   The extension instance is stored directly as ``app.extensions["sqlalchemy"]``.
-    :issue:`698`
--   All parameters except ``app`` are keyword-only.
--   Setup methods that create the engines and session are renamed with a leading
-    underscore. They are considered internal interfaces which may change at any time.
--   ``db.Table`` is a subclass instead of a function.
--   The session class can be customized by passing the ``class_`` key in the
-    ``session_options`` parameter. :issue:`327`
--   SQLite engines do not use ``NullPool`` if ``pool_size`` is 0.
--   MySQL engines do not set ``pool_size`` to 10.
 -   ``db.engines`` exposes the map of bind keys to engines for the current app.
 -   ``get_engine``, ``get_tables_for_bind``, and ``get_binds`` are deprecated.
--   Renamed the ``bind`` parameter to ``bind_key`` and removed the ``app`` parameter
-    from various methods.
--   ``SQLALCHEMY_RECORD_QUERIES`` configuration takes precedence over ``app.debug`` and
-    ``app.testing``, allowing it to be disabled in those modes.
--   The session is scoped to the current app context instead of the thread. This
-    requires that an app context is active. This ensures that the session is cleaned up
-    after every request.
--   A custom model class can implement ``__init_subclass__`` with class parameters.
-    :issue:`1002`
--   An active Flask application context is always required to access ``session`` and
-    ``engine``, regardless of if an application was passed to the constructor.
-    :issue:`508, 944`
--   Model classes and the ``db`` instance are available without imports in
-    ``flask shell``. :issue:`1089`
--   Pagination ``per_page`` cannot be 0. :issue:`1091`
--   Pagination ``max_per_page`` defaults to 100. :issue:`1091`
--   ``SQLALCHEMY_RECORD_QUERIES`` is not enabled automatically with ``app.debug`` or
-    ``app.testing``. :issue:`1092`
--   MySQL engines don't set a default for ``pool_recycle`` if not using a queue pool.
-    :issue:`803`
 -   SQLite driver-level URIs that look like ``sqlite:///file:name.db?uri=true`` are
     supported. :issue:`998, 1045`
--   Added ``Pagination.first`` and ``last`` properties, which give the number of the
-    first and last item on the page. :issue:`567`
--   Added ``get_or_404``, ``first_or_404``, ``one_or_404``, and ``paginate`` methods to
-    the extension object. These use SQLAlchemy's preferred ``session.execute(select())``
-    pattern instead of the legacy query interface. :issue:`1088`
+-   SQLite engines do not use ``NullPool`` if ``pool_size`` is 0.
+-   MySQL engines use the "utf8mb4" charset by default. :issue:`875`
+-   MySQL engines do not set ``pool_size`` to 10.
+-   MySQL engines don't set a default for ``pool_recycle`` if not using a queue pool.
+    :issue:`803`
+-   ``Query`` is renamed from ``BaseQuery``.
+-   Added ``Query.one_or_404``.
+-   The query class is applied to ``backref`` in ``relationship``. :issue:`417`
 -   Creating ``Pagination`` objects manually is no longer a public API. They should be
     created with ``db.paginate`` or ``query.paginate``. :issue:`1088`
+-   ``Pagination.iter_pages`` and ``Query.paginate`` parameters are keyword-only.
+-   ``Pagination`` is iterable, iterating over its items. :issue:`70`
+-   Pagination count query is more efficient.
+-   ``Pagination.iter_pages`` is more efficient. :issue:`622`
+-   ``Pagination.iter_pages`` ``right_current`` parameter is inclusive.
+-   Pagination ``per_page`` cannot be 0. :issue:`1091`
+-   Pagination ``max_per_page`` defaults to 100. :issue:`1091`
+-   Added ``Pagination.first`` and ``last`` properties, which give the number of the
+    first and last item on the page. :issue:`567`
+-   ``SQLALCHEMY_RECORD_QUERIES`` is disabled by default, and is not enabled
+    automatically with ``app.debug`` or ``app.testing``. :issue:`1092`
+-   ``get_debug_queries`` is renamed to ``get_recorded_queries`` to better match the
+    config and functionality.
+-   Recorded query info is a dataclass instead of a tuple. The ``context`` attribute is
+    renamed to ``location``. Finding the location uses a more inclusive check.
+-   ``SQLALCHEMY_TRACK_MODIFICATIONS`` is disabled by default. :pr:`727`
+-   ``SQLALCHEMY_COMMIT_ON_TEARDOWN`` is deprecated. It can cause various design issues
+    that are difficult to debug. Call ``db.session.commit()`` directly instead.
+    :issue:`216`
 
 
 Version 2.5.1
