@@ -14,6 +14,7 @@ from flask import current_app
 from flask import Flask
 from flask import has_app_context
 
+from .model import _QueryProperty
 from .model import DefaultMeta
 from .model import Model
 from .pagination import Pagination
@@ -503,6 +504,7 @@ class SQLAlchemy:
 
         model.metadata = metadata  # type: ignore[union-attr]
         model.query_class = self.Query
+        model.query = _QueryProperty()
         model.__fsa__ = self
         return model
 
