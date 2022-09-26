@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.orm
@@ -26,13 +28,17 @@ def test_custom_model_class(app: Flask) -> None:
     assert isinstance(db.Model, DefaultMeta)
 
 
-def test_custom_declarative_class(app: Flask) -> None:
+@pytest.mark.usefixtures("app_ctx")
+@pytest.mark.parametrize("base", [Model, object])
+def test_custom_declarative_class(app: Flask, base: t.Any) -> None:
     class CustomMeta(DefaultMeta):
         pass
 
-    CustomModel = sa.orm.declarative_base(cls=Model, name="Model", metaclass=CustomMeta)
+    CustomModel = sa.orm.declarative_base(cls=base, name="Model", metaclass=CustomMeta)
     db = SQLAlchemy(app, model_class=CustomModel)
     assert db.Model is CustomModel
+    assert db.Model.query_class is db.Query
+    assert "query" in db.Model.__dict__
 
 
 @pytest.mark.usefixtures("app_ctx")
