@@ -15,13 +15,13 @@ def test_db_url_environ(monkeypatch):
 
 
 def test_init_db_command(runner, monkeypatch):
-    class Recorder:
-        called = False
+    called = False
 
     def fake_init_db():
-        Recorder.called = True
+        nonlocal called
+        called = True
 
     monkeypatch.setattr("flaskr.init_db", fake_init_db)
     result = runner.invoke(args=["init-db"])
     assert "Initialized" in result.output
-    assert Recorder.called
+    assert called

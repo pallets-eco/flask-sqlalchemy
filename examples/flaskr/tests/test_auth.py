@@ -2,6 +2,7 @@ import pytest
 from flask import g
 from flask import session
 
+from flaskr import db
 from flaskr.auth.models import User
 
 
@@ -11,32 +12,34 @@ def test_register(client, app):
 
     # test that successful registration redirects to the login page
     response = client.post("/auth/register", data={"username": "a", "password": "a"})
-    assert "http://localhost/auth/login" == response.headers["Location"]
+    assert response.headers["Location"] == "/auth/login"
 
     # test that the user was inserted into the database
     with app.app_context():
-        assert User.query.filter_by(username="a").first() is not None
+        select = db.select(User).filter_by(username="a")
+        user = db.session.execute(select).scalar()
+        assert user is not None
 
 
 def test_user_password(app):
     user = User(username="a", password="a")
-    assert user.password != "a"
+    assert user.password_hash != "a"
     assert user.check_password("a")
 
 
 @pytest.mark.parametrize(
     ("username", "password", "message"),
     (
-        ("", "", b"Username is required."),
-        ("a", "", b"Password is required."),
-        ("test", "test", b"already registered"),
+        ("", "", "Username is required."),
+        ("a", "", "Password is required."),
+        ("test", "test", "already registered"),
     ),
 )
 def test_register_validate_input(client, username, password, message):
     response = client.post(
         "/auth/register", data={"username": username, "password": password}
     )
-    assert message in response.data
+    assert message in response.text
 
 
 def test_login(client, auth):
@@ -45,7 +48,7 @@ def test_login(client, auth):
 
     # test that successful login redirects to the index page
     response = auth.login()
-    assert response.headers["Location"] == "http://localhost/"
+    assert response.headers["Location"] == "/"
 
     # login request set the user_id in the session
     # check that the user is loaded from the session
@@ -57,11 +60,11 @@ def test_login(client, auth):
 
 @pytest.mark.parametrize(
     ("username", "password", "message"),
-    (("a", "test", b"Incorrect username."), ("test", "a", b"Incorrect password.")),
+    (("a", "test", "Incorrect username."), ("test", "a", "Incorrect password.")),
 )
 def test_login_validate_input(auth, username, password, message):
     response = auth.login(username, password)
-    assert message in response.data
+    assert message in response.text
 
 
 def test_logout(client, auth):

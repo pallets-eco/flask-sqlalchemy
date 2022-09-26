@@ -17,7 +17,8 @@ bp = Blueprint("blog", __name__)
 @bp.route("/")
 def index():
     """Show all the posts, most recent first."""
-    posts = Post.query.order_by(Post.created.desc()).all()
+    select = db.select(Post).order_by(Post.created.desc())
+    posts = db.session.execute(select).scalars()
     return render_template("blog/index.html", posts=posts)
 
 
@@ -33,7 +34,7 @@ def get_post(id, check_author=True):
     :raise 404: if a post with the given id doesn't exist
     :raise 403: if the current user isn't the author
     """
-    post = Post.query.get_or_404(id, f"Post id {id} doesn't exist.")
+    post = db.get_or_404(Post, id, description=f"Post id {id} doesn't exist.")
 
     if check_author and post.author != g.user:
         abort(403)

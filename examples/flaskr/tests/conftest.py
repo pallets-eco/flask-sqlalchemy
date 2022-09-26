@@ -23,11 +23,11 @@ def app():
     # set _password to pre-generated hashes, since hashing for each test is slow
     with app.app_context():
         init_db()
-        user = User(username="test", _password=_user1_pass)
+        user = User(username="test", password_hash=_user1_pass)
         db.session.add_all(
             (
                 user,
-                User(username="other", _password=_user2_pass),
+                User(username="other", password_hash=_user2_pass),
                 Post(
                     title="test title",
                     body="test\nbody",

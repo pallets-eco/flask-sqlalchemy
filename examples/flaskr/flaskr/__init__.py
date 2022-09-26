@@ -19,16 +19,12 @@ def create_app(test_config=None):
 
     if db_url is None:
         # default to a sqlite database in the instance folder
-        db_path = os.path.join(app.instance_path, "flaskr.sqlite")
-        db_url = f"sqlite:///{db_path}"
-        # ensure the instance folder exists
-        os.makedirs(app.instance_path, exist_ok=True)
+        db_url = "sqlite:///flaskr.sqlite"
 
     app.config.from_mapping(
         # default secret that should be overridden in environ or config
         SECRET_KEY=os.environ.get("SECRET_KEY", "dev"),
         SQLALCHEMY_DATABASE_URI=db_url,
-        SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
 
     if test_config is None:

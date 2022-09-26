@@ -33,7 +33,11 @@ def load_logged_in_user():
     """If a user id is stored in the session, load the user object from
     the database into ``g.user``."""
     user_id = session.get("user_id")
-    g.user = User.query.get(user_id) if user_id is not None else None
+
+    if user_id is not None:
+        g.user = db.session.get(User, user_id)
+    else:
+        g.user = None
 
 
 @bp.route("/register", methods=("GET", "POST"))
@@ -52,8 +56,8 @@ def register():
             error = "Username is required."
         elif not password:
             error = "Password is required."
-        elif db.session.query(
-            User.query.filter_by(username=username).exists()
+        elif db.session.execute(
+            db.select(db.select(User).filter_by(username=username).exists())
         ).scalar():
             error = f"User {username} is already registered."
 
@@ -75,7 +79,8 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
         error = None
-        user = User.query.filter_by(username=username).first()
+        select = db.select(User).filter_by(username=username)
+        user = db.session.execute(select).scalar()
 
         if user is None:
             error = "Incorrect username."
