@@ -175,7 +175,7 @@ result.
         return render_template("user/delete.html", user=user)
 
 You may see uses of ``Model.query`` to build queries. This is an older interface for
-queries that is considered legacy in SQLAlchemy 2.0. Prefer using
+queries that is considered legacy in SQLAlchemy. Prefer using
 ``db.session.execute(db.select(...))`` instead.
 
 See :doc:`queries` for more information about queries.

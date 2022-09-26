@@ -57,8 +57,8 @@ class Model:
     customized per-model by overriding :attr:`query_class`.
 
     .. warning::
-        The ``Query`` interface is considered legacy in SQLAlchemy 2.0. Prefer using the
-        ``execute(select())`` pattern instead.
+        The query interface is considered legacy in SQLAlchemy. Prefer using
+        ``session.execute(select())`` instead.
     """
 
     def __repr__(self) -> str:

@@ -108,9 +108,9 @@ Query Class
 -----------
 
 .. warning::
-    The query interface is considered legacy in SQLAlchemy 2.0. This includes
+    The query interface is considered legacy in SQLAlchemy. This includes
     ``session.query``, ``Model.query``, ``db.Query``, and ``lazy="dynamic"``
-    relationships. Prefer using selects instead of the query class.
+    relationships. Prefer using ``session.execute(select(...))`` instead.
 
 It is possible to customize the query interface used by the session, models, and
 relationships. This can be used to add extra query methods. For example, you could add

@@ -4,9 +4,8 @@ Legacy Query Interface
 ======================
 
 .. warning::
-    SQLAlchemy 2.0 has designated the ``Query`` interface as "legacy". It will no
-    longer be updated and may be deprecated in the future. Prefer using
-    ``db.session.execute(db.select(...))`` instead.
+    The query interface is considered legacy in SQLAlchemy. Prefer using
+    ``session.execute(select(...))`` instead.
 
 Flask-SQLAlchemy adds a ``query`` object to each model. This can be used to query
 instances of a given model. ``User.query`` is a shortcut for ``db.session.query(User)``.

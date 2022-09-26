@@ -94,8 +94,8 @@ You can add a custom message to the 404 error:
 Legacy Query Interface
 ----------------------
 
-You may see uses of ``Model.query`` to build queries. This is an older interface for
-queries that is considered legacy in SQLAlchemy 2.0. Prefer using the
-``db.session.execute(db.select(...))`` pattern instead.
+You may see uses of ``Model.query`` or ``session.query`` to build queries. That query
+interface is considered legacy in SQLAlchemy. Prefer using the
+``session.execute(select(...))`` instead.
 
 See :doc:`legacy-query` for documentation.

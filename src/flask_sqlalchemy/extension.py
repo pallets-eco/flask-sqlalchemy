@@ -53,7 +53,7 @@ class SQLAlchemy:
         session instance. See :class:`sqlalchemy.orm.sessionmaker` for a list of
         arguments.
     :param query_class: Use this as the default query class for models and dynamic
-        relationships. The query interface is considered legacy in SQLAlchemy 2.0.
+        relationships. The query interface is considered legacy in SQLAlchemy.
     :param model_class: Use this as the model base class when creating the declarative
         model class :attr:`Model`. Can also be a fully created declarative model class
         for further customization.
@@ -138,7 +138,7 @@ class SQLAlchemy:
         relationships.
 
         .. warning::
-            The query interface is considered legacy in SQLAlchemy 2.0.
+            The query interface is considered legacy in SQLAlchemy.
 
         Customize this by passing the ``query_class`` parameter to the extension.
         """
