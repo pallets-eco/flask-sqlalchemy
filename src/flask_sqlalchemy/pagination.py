@@ -338,7 +338,8 @@ class SelectPagination(Pagination):
         select = self._query_args["select"]
         sub = select.options(sa.orm.lazyload("*")).order_by(None).subquery()
         session = self._query_args["session"]
-        return session.execute(sa.select(sa.func.count()).select_from(sub)).scalar()
+        out = session.execute(sa.select(sa.func.count()).select_from(sub)).scalar()
+        return out  # type: ignore[no-any-return]
 
 
 class QueryPagination(Pagination):
@@ -350,8 +351,10 @@ class QueryPagination(Pagination):
 
     def _query_items(self) -> list[t.Any]:
         query = self._query_args["query"]
-        return query.limit(self.per_page).offset(self._query_offset).all()
+        out = query.limit(self.per_page).offset(self._query_offset).all()
+        return out  # type: ignore[no-any-return]
 
     def _query_count(self) -> int:
         # Query.count automatically disables eager loads
-        return self._query_args["query"].order_by(None).count()
+        out = self._query_args["query"].order_by(None).count()
+        return out  # type: ignore[no-any-return]

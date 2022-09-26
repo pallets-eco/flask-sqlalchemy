@@ -29,6 +29,7 @@ jobs:
           - {name: '3.8', python: '3.8', tox: py38}
           - {name: '3.7', python: '3.7', tox: py37}
           - {name: 'PyPy 3.9', python: 'pypy3.9', tox: pypy39}
+          - {name: 'Typing', python: '3.10', os: ubuntu-latest, tox: typing}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4

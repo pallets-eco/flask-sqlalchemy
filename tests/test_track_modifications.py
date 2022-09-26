@@ -50,7 +50,7 @@ def test_track_modifications(app: Flask) -> None:
         assert before == after
 
         db.session.remove()
-        item = db.session.get(Example, 1)
+        item = db.session.get(Example, 1)  # type: ignore[assignment]
         item.data = "test"  # type: ignore[assignment]
         db.session.commit()
         assert len(before) == 1
@@ -58,7 +58,7 @@ def test_track_modifications(app: Flask) -> None:
         assert before == after
 
         db.session.remove()
-        item = db.session.get(Example, 1)
+        item = db.session.get(Example, 1)  # type: ignore[assignment]
         db.session.delete(item)
         db.session.commit()
         assert len(before) == 1

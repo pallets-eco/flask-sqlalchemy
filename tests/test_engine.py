@@ -95,8 +95,9 @@ def test_sqlite_driver_level_uri(app: Flask) -> None:
     db = SQLAlchemy(app)
     db.create_all()
     db_path = db.engine.url.database
-    assert db_path.startswith(f"file:{app.instance_path}")  # type: ignore[union-attr]
-    assert os.path.exists(db_path[5:])  # type: ignore[arg-type]
+    assert db_path is not None
+    assert db_path.startswith(f"file:{app.instance_path}")
+    assert os.path.exists(db_path[5:])
 
 
 @unittest.mock.patch.object(SQLAlchemy, "_make_engine", autospec=True)
