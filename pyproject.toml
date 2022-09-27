@@ -1,0 +1,103 @@
+[project]
+name = "Flask-SQLAlchemy"
+description = "Add SQLAlchemy support to your Flask application."
+readme = "README.rst"
+license = { text = "BSD-3-Clause" }
+authors = [{name = "Armin Ronacher", email = "armin.ronacher@active-4.com"},]
+maintainers = [{name = "Pallets", email = "contact@palletsprojects.com"},]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+dynamic = ["version"]
+requires-python = ">=3.7"
+dependencies = ["Flask>=2.2", "SQLAlchemy>=1.4.18"]
+
+[project.urls]
+Donate = "https://palletsprojects.com/donate"
+Documentation = "https://flask-sqlalchemy.palletsprojects.com/"
+Changes = "https://flask-sqlalchemy.palletsprojects.com/changes/"
+"Source Code" = "https://github.com/pallets-eco/flask-sqlalchemy/"
+"Issue Tracker" = "https://github.com/pallets-eco/flask-sqlalchemy/issues/"
+Twitter = "https://twitter.com/PalletsTeam"
+Chat = "https://discord.gg/pallets"
+
+[project.optional-dependencies]
+[build-system]
+requires = ["pdm-pep517>=1.0.0"]
+build-backend = "pdm.pep517.api"
+
+[tool.pdm]
+version = { source = "file", path = "src/flask_sqlalchemy/__init__.py" }
+
+[tool.pdm.dev-dependencies]
+tests = [
+    "pytest",
+    "blinker",
+]
+coverage = [
+    "pytest-cov",
+    "coverage[toml]",
+]
+mypy = [
+    "mypy",
+    "pytest",
+    "sqlalchemy[mypy]",
+]
+docs = [
+    "sphinx",
+    "pallets-sphinx-themes",
+    "sphinx-issues",
+    "sphinxcontrib-log-cabinet",
+]
+pre-commit = [
+    "pre-commit",
+]
+tox = [
+    "tox",
+    "tox-pdm",
+]
+
+[tool.pdm.build]
+source-includes = [
+    "docs/",
+    "examples/",
+    "tests/",
+    "CHANGES.rst",
+    "pdm.lock",
+    "tox.ini",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+branch = true
+source = ["flask_sqlalchemy", "tests"]
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
+[tool.mypy]
+python_version = "3.7"
+files = ["src/flask_sqlalchemy", "tests"]
+show_error_codes = true
+pretty = true
+strict = true
+# db.Model attribute doesn't recognize subclassing
+disable_error_code = ["name-defined"]
+# db.Model is Any
+disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+module = [
+    "cryptography.*",
+    "importlib_metadata.*",
+]
+ignore_missing_imports = true

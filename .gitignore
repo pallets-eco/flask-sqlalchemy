@@ -15,3 +15,4 @@ htmlcov/
 env/
 venv/
 .venv/
+.pdm.toml
