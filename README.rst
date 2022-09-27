@@ -41,14 +41,10 @@ A Simple Example
     with app.app_context():
         db.create_all()
 
-    with app.app_context():
         db.session.add(User(username="example"))
         db.session.commit()
 
-    @app.route("/users")
-    def user_list():
         users = db.session.execute(db.select(User)).scalars()
-        return render_template("user_list.html", users=users)
 
 
 Contributing
