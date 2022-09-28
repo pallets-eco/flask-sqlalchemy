@@ -61,10 +61,10 @@ Include the following in your patch:
 -   Use `Black`_ to format your code. This and other tools will run
     automatically if you install `pre-commit`_ using the instructions
     below.
+-   All code and docs should be wrapped at 88 characters.
 -   Include tests if your patch adds or changes code. Make sure the test
     fails without your patch.
--   Update any relevant docs pages and docstrings. Docs pages and
-    docstrings should be wrapped at 72 characters.
+-   Update any relevant docs pages and docstrings.
 -   Add an entry in ``CHANGES.rst``. Use the same style as other
     entries. Also include ``.. versionchanged::`` inline changelogs in
     relevant docstrings.
@@ -102,31 +102,20 @@ First time setup
 
         git remote add fork https://github.com/{username}/flask-sqlalchemy
 
--   Create a virtualenv.
+-   `Install PDM`_, the tool we use to manage the development environment.
+
+-   Use PDM to set up the development environment. This automatically creates a
+    virtualenv, installs development tools, and installs the project in editable mode.
 
     .. code-block:: text
 
-        $ python3 -m venv env
-        $ . env/bin/activate
-
-    On Windows, activating is different.
-
-    .. code-block:: text
-
-        > env\Scripts\activate
-
--   Install the development dependencies, then install Flask-SQLAlchemy
-    in editable mode.
-
-    .. code-block:: text
-
-        $ pip install -r requirements/dev.txt && pip install -e .
+        $ pdm sync
 
 -   Install the pre-commit hooks.
 
     .. code-block:: text
 
-        $ pre-commit install
+        $ pdm run pre-commit install
 
 .. _latest version of git: https://git-scm.com/downloads
 .. _username: https://docs.github.com/en/github/using-git/setting-your-username-in-git
@@ -134,6 +123,7 @@ First time setup
 .. _GitHub account: https://github.com/join
 .. _Fork: https://github.com/pallets-eco/flask-sqlalchemy/fork
 .. _Clone: https://docs.github.com/en/github/getting-started-with-github/fork-a-repo#step-2-create-a-local-clone-of-your-fork
+.. _Install PDM: https://pdm.fming.dev/latest/#installation
 
 
 Start coding
@@ -179,30 +169,27 @@ Run the basic test suite with pytest.
 
 .. code-block:: text
 
-    $ pytest
+    $ pdm run pytest
 
-This runs the tests for the current environment, which is usually
-sufficient. CI will run the full suite when you submit your pull
-request. You can run the full test suite with tox if you don't want to
-wait.
+This runs the tests for the current environment, which is usually sufficient. CI will
+run the full suite when you submit your pull request. You can run the full test suite in
+parallel with tox if you don't want to wait.
 
 .. code-block:: text
 
-    $ tox
+    $ pdm run tox -p
 
 
 Running test coverage
 ~~~~~~~~~~~~~~~~~~~~~
 
-Generating a report of lines that do not have test coverage can indicate
-where to start contributing. Run ``pytest`` using ``coverage`` and
-generate a report.
+Generating a report of lines that do not have test coverage can indicate where to start
+contributing. Collect coverage from the tests and generate a report.
 
 .. code-block:: text
 
-    $ pip install coverage
-    $ coverage run -m pytest
-    $ coverage html
+    $ pdm run pytest --cov
+    $ pdm run coverage html
 
 Open ``htmlcov/index.html`` in your browser to explore the report.
 
