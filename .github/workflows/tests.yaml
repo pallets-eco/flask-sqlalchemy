@@ -36,6 +36,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: |
-          pip install pdm
+          pip install pdm "importlib-metadata<5"
           pdm sync -dG tox
       - run: pdm run tox -e ${{ matrix.tox }}
