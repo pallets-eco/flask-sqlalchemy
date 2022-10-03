@@ -3,21 +3,42 @@ from __future__ import annotations
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc
+import sqlalchemy.orm
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.model import DefaultMeta
+from flask_sqlalchemy.model import Model
 
 
 def test_default_metadata(db: SQLAlchemy) -> None:
     assert db.metadata is db.metadatas[None]
     assert db.metadata.info["bind_key"] is None
+    assert db.Model.metadata is db.metadata
 
 
-def test_custom_metadata(app: Flask) -> None:
+def test_custom_metadata() -> None:
     metadata = sa.MetaData()
-    db = SQLAlchemy(app, metadata=metadata)
+    db = SQLAlchemy(metadata=metadata)
     assert db.metadata is metadata
     assert db.metadata.info["bind_key"] is None
+    assert db.Model.metadata is db.metadata
+
+
+def test_metadata_from_custom_model() -> None:
+    base = sa.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
+    metadata = base.metadata  # type: ignore[attr-defined]
+    db = SQLAlchemy(model_class=base)
+    assert db.Model.metadata is metadata
+    assert db.Model.metadata is db.metadata
+
+
+def test_custom_metadata_overrides_custom_model() -> None:
+    base = sa.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
+    metadata = sa.MetaData()
+    db = SQLAlchemy(model_class=base, metadata=metadata)
+    assert db.Model.metadata is metadata
+    assert db.Model.metadata is db.metadata
 
 
 def test_metadata_per_bind(app: Flask) -> None:

@@ -495,14 +495,20 @@ class SQLAlchemy:
         .. versionchanged:: 2.3
             ``model`` can be an already created declarative model class.
         """
-        metadata = self._make_metadata(None)
-
         if not isinstance(model, sa.orm.DeclarativeMeta):
+            metadata = self._make_metadata(None)
             model = sa.orm.declarative_base(
                 metadata=metadata, cls=model, name="Model", metaclass=DefaultMeta
             )
 
-        model.metadata = metadata  # type: ignore[union-attr]
+        if None not in self.metadatas:
+            # Use the model's metadata as the default metadata.
+            model.metadata.info["bind_key"] = None  # type: ignore[union-attr]
+            self.metadatas[None] = model.metadata  # type: ignore[union-attr]
+        else:
+            # Use the passed in default metadata as the model's metadata.
+            model.metadata = self.metadatas[None]  # type: ignore[union-attr]
+
         model.query_class = self.Query
         model.query = _QueryProperty()
         model.__fsa__ = self
