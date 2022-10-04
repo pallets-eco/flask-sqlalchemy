@@ -1,7 +1,7 @@
 Version 3.0.0
 -------------
 
-Unreleased
+Released 2022-10-04
 
 -   Drop support for Python 2, 3.4, 3.5, and 3.6.
 -   Bump minimum version of Flask to 2.2.
