@@ -169,7 +169,7 @@ result.
 
         if request.method == "POST":
             db.session.delete(user)
-            db.session.commit
+            db.session.commit()
             return redirect(url_for("user_list"))
 
         return render_template("user/delete.html", user=user)
