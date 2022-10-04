@@ -39,8 +39,8 @@ Released 2022-10-04
 -   Model classes and the ``db`` instance are available without imports in
     ``flask shell``. :issue:`1089`
 -   The ``CamelCase`` to ``snake_case`` table name converter handles more patterns
-    correctly. If such a that was was already created in the database changed, either
-    use Alembic to rename the table, or set ``__tablename__`` to keep the old name.
+    correctly. If model that was already created in the database changed, either use
+    Alembic to rename the table, or set ``__tablename__`` to keep the old name.
     :issue:`406`
 -   ``Model`` ``repr`` distinguishes between transient and pending instances.
     :issue:`967`
