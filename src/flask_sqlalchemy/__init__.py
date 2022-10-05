@@ -4,7 +4,7 @@ import typing as t
 
 from .extension import SQLAlchemy
 
-__version__ = "3.0.0"
+__version__ = "3.1.0.dev"
 
 __all__ = [
     "SQLAlchemy",
