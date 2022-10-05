@@ -18,14 +18,6 @@ class _QueryProperty:
     :meta private:
     """
 
-    @t.overload
-    def __get__(self, obj: None, cls: t.Type[Model]) -> Query:
-        ...
-
-    @t.overload
-    def __get__(self, obj: Model, cls: t.Type[Model]) -> Query:
-        ...
-
     def __get__(self, obj: Model | None, cls: t.Type[Model]) -> Query:
         return cls.query_class(
             cls, session=cls.__fsa__.session()  # type: ignore[arg-type]

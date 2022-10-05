@@ -70,30 +70,6 @@ class _QueryInfo:
     def duration(self) -> float:
         return self.end_time - self.start_time
 
-    @property
-    def context(self) -> str:
-        import warnings
-
-        warnings.warn(
-            "'context' is renamed to 'location'. The old name is deprecated and will be"
-            " removed in Flask-SQLAlchemy 3.1.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.location
-
-    def __getitem__(self, key: int) -> object:
-        import warnings
-
-        name = ("statement", "parameters", "start_time", "end_time", "location")[key]
-        warnings.warn(
-            "Query info is a dataclass, not a tuple. Lookup by index is deprecated and"
-            f" will be removed in Flask-SQLAlchemy 3.1. Use 'info.{name}' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return getattr(self, name)
-
 
 def _listen(engine: sa.engine.Engine) -> None:
     sa.event.listen(engine, "before_cursor_execute", _record_start, named=True)

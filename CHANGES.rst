@@ -3,6 +3,8 @@ Version 3.1.0
 
 Unreleased
 
+-   Remove previously deprecated code.
+
 
 Version 3.0.0
 -------------
