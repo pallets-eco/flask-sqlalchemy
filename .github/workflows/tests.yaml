@@ -25,17 +25,25 @@ jobs:
       matrix:
         include:
           - {name: '3.10', python: '3.10', tox: py310}
+          - {name: 'Lowest', python: '3.10', tox: py310-lowest}
           - {name: '3.9', python: '3.9', tox: py39}
           - {name: '3.8', python: '3.8', tox: py38}
           - {name: '3.7', python: '3.7', tox: py37}
-          - {name: 'PyPy 3.9', python: 'pypy3.9', tox: pypy39}
           - {name: 'Typing', python: '3.10', os: ubuntu-latest, tox: typing}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: 'pip'
+          cache-dependency-path: 'pdm.lock'
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pdm
+          key: ${{ matrix.python }}-pdm-${{ hashFiles('pdm.lock') }}
+          restore-keys: ${{ matrix.python }}-pdm-
       - run: |
-          pip install pdm "importlib-metadata<5"
+          pip install pdm
+          pdm config install.cache true
           pdm sync -dG tox
       - run: pdm run tox -e ${{ matrix.tox }}
