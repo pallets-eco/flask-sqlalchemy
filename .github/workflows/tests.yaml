@@ -35,7 +35,15 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
+          cache: 'pip'
+          cache-dependency-path: 'pdm.lock'
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pdm
+          key: ${{ matrix.python }}-pdm-${{ hashFiles('pdm.lock') }}
+          restore-keys: ${{ matrix.python }}-pdm-
       - run: |
           pip install pdm
+          pdm config install.cache true
           pdm sync -dG tox
       - run: pdm run tox -e ${{ matrix.tox }}
