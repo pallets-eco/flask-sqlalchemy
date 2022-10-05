@@ -8,6 +8,7 @@ docs/_build/
 .tox/
 .idea/
 .pytest_cache/
+.mypy_cache/
 htmlcov/
 .coverage
 .coverage.*
