@@ -98,11 +98,6 @@ class SQLAlchemy:
     .. versionchanged:: 3.0
         Removed the ``use_native_unicode`` parameter and config.
 
-    .. versionchanged:: 3.0
-        The ``COMMIT_ON_TEARDOWN`` configuration is deprecated and will
-        be removed in Flask-SQLAlchemy 3.1. Call ``db.session.commit()``
-        directly instead.
-
     .. versionchanged:: 2.4
         Added the ``engine_options`` parameter.
 
@@ -250,23 +245,12 @@ class SQLAlchemy:
         :param app: The Flask application to initialize.
         """
         app.extensions["sqlalchemy"] = self
+        app.teardown_appcontext(self._teardown_session)
 
         if self._add_models_to_shell:
             from .cli import add_models_to_shell
 
             app.shell_context_processor(add_models_to_shell)
-
-        if app.config.get("SQLALCHEMY_COMMIT_ON_TEARDOWN", False):
-            import warnings
-
-            warnings.warn(
-                "'SQLALCHEMY_COMMIT_ON_TEARDOWN' is deprecated and will be removed in"
-                " Flask-SQAlchemy 3.1. Call 'db.session.commit()'` directly instead.",
-                DeprecationWarning,
-            )
-            app.teardown_appcontext(self._teardown_commit)
-        else:
-            app.teardown_appcontext(self._teardown_session)
 
         basic_uri: str | sa.engine.URL | None = app.config.setdefault(
             "SQLALCHEMY_DATABASE_URI", None
@@ -382,20 +366,6 @@ class SQLAlchemy:
         options.setdefault("query_cls", self.Query)
         return sa.orm.sessionmaker(db=self, **options)
 
-    def _teardown_commit(self, exc: BaseException | None) -> None:
-        """Commit the session at the end of the request if there was not an unhandled
-        exception during the request.
-
-        :meta private:
-
-        .. deprecated:: 3.0
-            Will be removed in 3.1. Use ``db.session.commit()`` directly instead.
-        """
-        if exc is None:
-            self.session.commit()
-
-        self.session.remove()
-
     def _teardown_session(self, exc: BaseException | None) -> None:
         """Remove the current session at the end of the request.
 
@@ -452,21 +422,6 @@ class SQLAlchemy:
                 # this for no args so the correct error is shown.
                 if not args or (len(args) >= 2 and isinstance(args[1], sa.MetaData)):
                     return super().__new__(cls, *args, **kwargs)
-
-                if (
-                    bind_key is None
-                    and "info" in kwargs
-                    and "bind_key" in kwargs["info"]
-                ):
-                    import warnings
-
-                    warnings.warn(
-                        "'table.info['bind_key'] is deprecated and will not be used in"
-                        " Flask-SQLAlchemy 3.1. Pass the 'bind_key' parameter instead.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
-                    bind_key = kwargs["info"].get("bind_key")
 
                 metadata = self._make_metadata(bind_key)
                 return super().__new__(cls, args[0], metadata, *args[1:], **kwargs)
@@ -640,78 +595,6 @@ class SQLAlchemy:
         This requires that a Flask application context is active.
         """
         return self.engines[None]
-
-    def get_engine(self, bind_key: str | None = None) -> sa.engine.Engine:
-        """Get the engine for the given bind key for the current application.
-
-        This requires that a Flask application context is active.
-
-        :param bind_key: The name of the engine.
-
-        .. deprecated:: 3.0
-            Will be removed in Flask-SQLAlchemy 3.1. Use ``engines[key]`` instead.
-
-        .. versionchanged:: 3.0
-            Renamed the ``bind`` parameter to ``bind_key``. Removed the ``app``
-            parameter.
-        """
-        import warnings
-
-        warnings.warn(
-            "'get_engine' is deprecated and will be removed in Flask-SQLAlchemy 3.1."
-            " Use 'engine' or 'engines[key]' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.engines[bind_key]
-
-    def get_tables_for_bind(self, bind_key: str | None = None) -> list[sa.Table]:
-        """Get all tables in the metadata for the given bind key.
-
-        :param bind_key: The bind key to get.
-
-        .. deprecated:: 3.0
-            Will be removed in Flask-SQLAlchemy 3.1. Use ``metadata.tables`` instead.
-
-        .. versionchanged:: 3.0
-            Renamed the ``bind`` parameter to ``bind_key``.
-        """
-        import warnings
-
-        warnings.warn(
-            "'get_tables_for_bind' is deprecated and will be removed in"
-            " Flask-SQLAlchemy 3.1. Use 'metadata.tables' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return list(self.metadatas[bind_key].tables.values())
-
-    def get_binds(self) -> dict[sa.Table, sa.engine.Engine]:
-        """Map all tables to their engine based on their bind key, which can be used to
-        create a session with ``Session(binds=db.get_binds(app))``.
-
-        This requires that a Flask application context is active.
-
-        .. deprecated:: 3.0
-            Will be removed in Flask-SQLAlchemy 3.1. ``db.session`` supports multiple
-            binds directly.
-
-        .. versionchanged:: 3.0
-            Removed the ``app`` parameter.
-        """
-        import warnings
-
-        warnings.warn(
-            "'get_binds' is deprecated and will be removed in Flask-SQLAlchemy 3.1."
-            " 'db.session' supports multiple binds directly.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return {
-            table: engine
-            for bind_key, engine in self.engines.items()
-            for table in self.metadatas[bind_key].tables.values()
-        }
 
     def get_or_404(
         self, entity: t.Type[t.Any], ident: t.Any, *, description: str | None = None
@@ -955,23 +838,10 @@ class SQLAlchemy:
         .. versionchanged:: 3.0
             The :attr:`Query` class is set on ``backref``.
         """
-        # Deprecated, removed in SQLAlchemy 2.0. Accessed through ``__getattr__``.
         self._set_rel_query(kwargs)
         return sa.orm.relation(*args, **kwargs)
 
     def __getattr__(self, name: str) -> t.Any:
-        if name == "db":
-            import warnings
-
-            warnings.warn(
-                "The 'db' attribute is deprecated and will be removed in"
-                " Flask-SQLAlchemy 3.1. The extension is registered directly as"
-                " 'app.extensions[\"sqlalchemy\"]'.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self
-
         if name == "relation":
             return self._relation
 

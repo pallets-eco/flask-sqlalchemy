@@ -78,13 +78,8 @@ must happen before initializing the application.
 
     .. versionadded:: 2.0
 
-.. data:: SQLALCHEMY_COMMIT_ON_TEARDOWN
-
-    Call ``db.session.commit()`` automatically if the request finishes without an
-    unhandled exception.
-
-    .. deprecated:: 3.0
-        Will be removed in Flask-SQLAlchemy 3.1.
+.. versionchanged:: 3.1
+    Removed ``SQLALCHEMY_COMMIT_ON_TEARDOWN``.
 
 .. versionchanged:: 3.0
     Removed ``SQLALCHEMY_NATIVE_UNICODE``, ``SQLALCHEMY_POOL_SIZE``,
