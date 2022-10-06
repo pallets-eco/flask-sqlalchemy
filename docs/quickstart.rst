@@ -133,7 +133,7 @@ Remember to call ``db.session.commit()`` after modifying, adding, or deleting an
 ``db.session.execute(db.select(...))`` constructs a query to select data from the
 database. Building queries is the main feature of SQLAlchemy, so you'll want to read its
 `tutorial on select`_ to learn all about it. You'll usually use the ``Result.scalars()``
-method to get a list of results, or the ``Result.first()`` method to get a single
+method to get a list of results, or the ``Result.scalar()`` method to get a single
 result.
 
 .. _tutorial on select: https://docs.sqlalchemy.org/tutorial/data_select.html
