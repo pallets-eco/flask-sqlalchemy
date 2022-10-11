@@ -1,7 +1,7 @@
 Version 3.0.1
 -------------
 
-Unreleased
+Released 2022-10-11
 
 -   Export typing information instead of using external typeshed definitions.
     :issue:`1112`
