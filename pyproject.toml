@@ -72,6 +72,9 @@ source-includes = [
     "pdm.lock",
     "tox.ini",
 ]
+excludes = [
+    "docs/_build",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
