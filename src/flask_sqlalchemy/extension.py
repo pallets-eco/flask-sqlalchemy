@@ -278,7 +278,7 @@ class SQLAlchemy:
         if basic_uri is not None:
             basic_engine_options["url"] = basic_uri
 
-        if basic_engine_options:
+        if "url" in basic_engine_options:
             engine_options.setdefault(None, {}).update(basic_engine_options)
 
         if not engine_options:

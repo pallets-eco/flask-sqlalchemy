@@ -6,6 +6,17 @@ Unreleased
 -   Remove previously deprecated code.
 
 
+Version 3.0.1
+-------------
+
+Released 2022-10-11
+
+-   Export typing information instead of using external typeshed definitions.
+    :issue:`1112`
+-   If default engine options are set, but ``SQLALCHEMY_DATABASE_URI`` is not set, an
+    invalid default bind will not be configured. :issue:`1117`
+
+
 Version 3.0.0
 -------------
 
