@@ -68,7 +68,7 @@ def test_url_type(app: Flask, value: str | sa.engine.URL) -> None:
     assert str(db.engines["a"].url) == "sqlite://"
 
 
-def test_no_default_url(app: Flask) -> None:
+def test_no_binds_error(app: Flask) -> None:
     del app.config["SQLALCHEMY_DATABASE_URI"]
 
     with pytest.raises(RuntimeError) as info:
@@ -76,6 +76,15 @@ def test_no_default_url(app: Flask) -> None:
 
     e = "Either 'SQLALCHEMY_DATABASE_URI' or 'SQLALCHEMY_BINDS' must be set."
     assert str(info.value) == e
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_no_default_url(app: Flask) -> None:
+    del app.config["SQLALCHEMY_DATABASE_URI"]
+    app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
+    db = SQLAlchemy(app, engine_options={"echo": True})
+    assert None not in db.engines
+    assert "a" in db.engines
 
 
 @pytest.mark.usefixtures("app_ctx")
