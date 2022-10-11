@@ -3,6 +3,9 @@ Version 3.0.1
 
 Unreleased
 
+-   Export typing information instead of using external typeshed definitions.
+    :issue:`1112`
+
 
 Version 3.0.0
 -------------
