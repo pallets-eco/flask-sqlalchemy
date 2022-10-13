@@ -71,7 +71,7 @@ for missing entries. Flask-SQLAlchemy provides some extra query methods.
 
 .. code-block:: python
 
-    @app.route("/user-by-id/<int:id>)
+    @app.route("/user-by-id/<int:id>")
     def user_by_id(id):
         user = db.get_or_404(User, id)
         return render_template("show_user.html", user=user)
