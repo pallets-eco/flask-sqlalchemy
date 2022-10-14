@@ -92,7 +92,7 @@ def test_sqlite_relative_path(app: Flask) -> None:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test.db"
     db = SQLAlchemy(app)
     db.create_all()
-    assert isinstance(db.engine.pool, sa.pool.NullPool)
+    assert not isinstance(db.engine.pool, sa.pool.StaticPool)
     db_path = db.engine.url.database
     assert db_path.startswith(app.instance_path)  # type: ignore[union-attr]
     assert os.path.exists(db_path)  # type: ignore[arg-type]

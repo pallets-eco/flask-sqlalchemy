@@ -154,7 +154,7 @@ def test_complex_inheritance(db: SQLAlchemy) -> None:
 
     class IdMixin:
         @sa.orm.declared_attr
-        def id(cls) -> sa.Column[sa.Integer]:  # noqa: B902
+        def id(cls):  # type: ignore[no-untyped-def]  # noqa: B902
             return sa.Column(sa.Integer, sa.ForeignKey(Duck.id), primary_key=True)
 
     class RubberDuck(IdMixin, Duck):  # type: ignore[misc]
