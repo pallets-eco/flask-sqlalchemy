@@ -1,7 +1,7 @@
 Version 3.0.2
 -------------
 
-Unreleased
+Released 2022-10-14
 
 -   Update compatibility with SQLAlchemy 2. :issue:`1122`
 
