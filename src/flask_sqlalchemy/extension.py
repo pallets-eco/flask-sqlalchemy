@@ -978,8 +978,11 @@ class SQLAlchemy:
         if name == "event":
             return sa.event
 
+        if name.startswith("_"):
+            raise AttributeError(name)
+
         for mod in (sa, sa.orm):
-            if name in mod.__all__:
+            if hasattr(mod, name):
                 return getattr(mod, name)
 
         raise AttributeError(name)

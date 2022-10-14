@@ -1,14 +1,27 @@
 from __future__ import annotations
 
 import typing as t
+import warnings
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.exc
 from flask import Flask
 from werkzeug.exceptions import NotFound
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.query import Query
+
+
+@pytest.fixture(autouse=True)
+def ignore_query_warning() -> t.Generator[None, None, None]:
+    if hasattr(sa.exc, "LegacyAPIWarning"):
+        with warnings.catch_warnings():
+            exc = sa.exc.LegacyAPIWarning  # type: ignore[attr-defined]
+            warnings.simplefilter("ignore", exc)
+            yield
+    else:
+        yield
 
 
 @pytest.mark.usefixtures("app_ctx")
