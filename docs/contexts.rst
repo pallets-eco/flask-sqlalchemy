@@ -34,7 +34,7 @@ the following error.
 
 If you find yourself in a situation where you need the database and don't have a
 context, you can push one with ``app_context``. This is common when calling
-``db.create_all`` to creat the tables, for example.
+``db.create_all`` to create the tables, for example.
 
 .. code-block:: python
 
