@@ -59,7 +59,7 @@ The following Jinja macro renders a simple pagination widget.
 
     {% macro render_pagination(pagination, endpoint) %}
       <div class=page-items>
-        {{ page.first }} - {{ page.last }} of {{ page.total }}
+        {{ pagination.first }} - {{ pagination.last }} of {{ pagination.total }}
       </div>
       <div class=pagination>
         {% for page in pagination.iter_pages() %}
