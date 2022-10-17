@@ -169,7 +169,11 @@ Released 2019-04-24
 
 -   Drop support for Python 2.6 and 3.3. :pr:`687`
 -   Address SQLAlchemy 1.3 deprecations. :pr:`684`
--   Make engine configuration more flexible. :pr:`684`
+-   Make engine configuration more flexible. Added the ``engine_options`` parameter and
+    ``SQLALCHEMY_ENGINE_OPTIONS`` config. Deprecated the individual engine option config
+    keys ``SQLALCHEMY_NATIVE_UNICODE``, ``SQLALCHEMY_POOL_SIZE``,
+    ``SQLALCHEMY_POOL_TIMEOUT``, ``SQLALCHEMY_POOL_RECYCLE``, and
+    ``SQLALCHEMY_MAX_OVERFLOW``. :pr:`684`
 -   ``get_or_404()`` and ``first_or_404()`` now accept a ``description`` parameter to
     control the 404 message. :issue:`636`
 -   Use ``time.perf_counter`` for Python 3 on Windows. :issue:`638`
