@@ -77,7 +77,7 @@ tables can also be assigned to model classes with the ``__table__`` attribute in
 defining the full model.
 
 Call the :meth:`~.SQLAlchemy.reflect` method on the extension. It will reflect all the
-tables for each bind key. Each metadata's ``table`` attribute will contain the detected
+tables for each bind key. Each metadata's ``tables`` attribute will contain the detected
 table objects.
 
 .. code-block:: python
@@ -86,7 +86,7 @@ table objects.
         db.reflect()
 
     class User:
-        __table__ = db.metadata["user"]
+        __table__ = db.metadatas["auth"].tables["user"]
 
 In most cases, it will be more maintainable to define the model classes yourself. You
 only need to define the models and columns you will actually use, even if you're
