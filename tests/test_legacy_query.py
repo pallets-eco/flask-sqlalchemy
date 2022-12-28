@@ -17,7 +17,7 @@ from flask_sqlalchemy.query import Query
 def ignore_query_warning() -> t.Generator[None, None, None]:
     if hasattr(sa.exc, "LegacyAPIWarning"):
         with warnings.catch_warnings():
-            exc = sa.exc.LegacyAPIWarning  # type: ignore[attr-defined]
+            exc = sa.exc.LegacyAPIWarning
             warnings.simplefilter("ignore", exc)
             yield
     else:
