@@ -116,6 +116,7 @@ def test_reflect(app: Flask) -> None:
     db.Table("post", sa.Column("id", sa.Integer, primary_key=True), bind_key="post")
     db.create_all()
 
+    del app.extensions["sqlalchemy"]
     db = SQLAlchemy(app)
     assert not db.metadata.tables
     db.reflect()
