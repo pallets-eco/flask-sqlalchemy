@@ -597,7 +597,12 @@ class SQLAlchemy:
         return self.engines[None]
 
     def get_or_404(
-        self, entity: t.Type[t.Any], ident: t.Any, *, description: str | None = None
+        self,
+        entity: t.Type[t.Any],
+        ident: t.Any,
+        *,
+        description: str | None = None,
+        **kwargs: t.Any,
     ) -> t.Any:
         """Like :meth:`session.get() <sqlalchemy.orm.Session.get>` but aborts with a
         ``404 Not Found`` error instead of returning ``None``.
@@ -605,10 +610,14 @@ class SQLAlchemy:
         :param entity: The model class to query.
         :param ident: The primary key to query.
         :param description: A custom message to show on the error page.
+        :param kwargs: Extra arguments passed to ``session.get()``.
+
+        .. versionchanged:: 3.1
+            Pass extra keyword arguments to ``session.get()``.
 
         .. versionadded:: 3.0
         """
-        value = self.session.get(entity, ident)
+        value = self.session.get(entity, ident, **kwargs)
 
         if value is None:
             abort(404, description=description)
