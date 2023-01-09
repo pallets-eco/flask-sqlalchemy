@@ -244,6 +244,12 @@ class SQLAlchemy:
 
         :param app: The Flask application to initialize.
         """
+        if "sqlalchemy" in app.extensions:
+            raise RuntimeError(
+                "A 'SQLAlchemy' instance has already been registered on this Flask app."
+                " Import and use that instance instead."
+            )
+
         app.extensions["sqlalchemy"] = self
         app.teardown_appcontext(self._teardown_session)
 
@@ -581,6 +587,14 @@ class SQLAlchemy:
         .. versionadded:: 3.0
         """
         app = current_app._get_current_object()  # type: ignore[attr-defined]
+
+        if app not in self._app_engines:
+            raise RuntimeError(
+                "The current Flask app is not registered with this 'SQLAlchemy'"
+                " instance. Did you forget to call 'init_app', or did you create"
+                " multiple 'SQLAlchemy' instances?"
+            )
+
         return self._app_engines[app]
 
     @property
