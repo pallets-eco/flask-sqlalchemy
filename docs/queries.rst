@@ -51,7 +51,7 @@ returned rows.
 
 .. code-block:: python
 
-    user = db.session.execute(db.select(User).filter_by(username=username)).one()
+    user = db.session.execute(db.select(User).filter_by(username=username)).scalar_one()
 
     users = db.session.execute(db.select(User).order_by(User.username)).scalars()
 
