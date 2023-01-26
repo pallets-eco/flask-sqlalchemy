@@ -5,6 +5,8 @@ Unreleased
 
 -   Show helpful errors when mistakenly using multiple ``SQLAlchemy`` instances for the
     same app, or without calling ``init_app``. :pr:`1151`
+-   Fix issue with getting the engine associated with a model that uses polymorphic
+    table inheritance. :issue:`1155`
 
 
 Version 3.0.2

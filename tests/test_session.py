@@ -64,3 +64,31 @@ def test_session_uses_bind_key(app: Flask) -> None:
 
     assert db.session.get_bind(mapper=User) is db.engine
     assert db.session.get_bind(mapper=Post) is db.engines["a"]
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_get_bind_inheritance(app: Flask) -> None:
+    app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
+    db = SQLAlchemy(app)
+
+    class User(db.Model):
+        __bind_key__ = "a"
+        id = sa.Column(sa.Integer, primary_key=True)
+        type = sa.Column(sa.String, nullable=False)
+
+        __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "user"}
+
+    class Admin(User):
+        id = sa.Column(  # type: ignore[assignment]
+            sa.ForeignKey(User.id), primary_key=True
+        )
+        org = sa.Column(sa.String, nullable=False)
+
+        __mapper_args__ = {"polymorphic_identity": "admin"}
+
+    db.create_all()
+    db.session.add(Admin(org="pallets"))
+    db.session.commit()
+    admin = db.session.execute(db.select(Admin)).scalar_one()
+    db.session.expire(admin)
+    assert admin.org == "pallets"
