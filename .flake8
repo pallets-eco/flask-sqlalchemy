@@ -1,5 +1,3 @@
-# Config goes in pyproject.toml unless a tool doesn't support that.
-
 [flake8]
 extend-select =
     # bugbear
