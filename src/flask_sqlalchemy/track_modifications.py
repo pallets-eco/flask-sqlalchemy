@@ -29,7 +29,7 @@ commit takes place.
 """
 
 
-def _listen(session: sa.orm.scoped_session) -> None:
+def _listen(session: sa.orm.scoped_session[Session]) -> None:
     sa.event.listen(session, "before_flush", _record_ops, named=True)
     sa.event.listen(session, "before_commit", _record_ops, named=True)
     sa.event.listen(session, "before_commit", _before_commit)

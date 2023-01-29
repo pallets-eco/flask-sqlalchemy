@@ -79,9 +79,7 @@ def test_get_bind_inheritance(app: Flask) -> None:
         __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "user"}
 
     class Admin(User):
-        id = sa.Column(  # type: ignore[assignment]
-            sa.ForeignKey(User.id), primary_key=True
-        )
+        id = sa.Column(sa.ForeignKey(User.id), primary_key=True)
         org = sa.Column(sa.String, nullable=False)
 
         __mapper_args__ = {"polymorphic_identity": "admin"}

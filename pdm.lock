@@ -428,17 +428,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sqlalchemy"
-version = "2.0.0"
-extras = ["mypy"]
-requires_python = ">=3.7"
-summary = "Database Abstraction Library"
-dependencies = [
-    "mypy>=0.910",
-    "sqlalchemy==2.0.0",
-]
-
-[[package]]
 name = "tomli"
 version = "2.0.1"
 requires_python = ">=3.7"
@@ -521,7 +510,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:44bad6aae01e17b37f8234b6f2fd4d61e8e43b786473dc29c9d610f3b34e55d6"
+content_hash = "sha256:2decebce9f60e5e1669dbe8b3b6ff96ad20f63b899810677caf6306c0a868e3e"
 
 [metadata.files]
 "alabaster 0.7.13" = [
