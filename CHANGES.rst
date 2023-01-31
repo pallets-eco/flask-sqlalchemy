@@ -1,7 +1,7 @@
 Version 3.0.3
 -------------
 
-Unreleased
+Released 2023-01-31
 
 -   Show helpful errors when mistakenly using multiple ``SQLAlchemy`` instances for the
     same app, or without calling ``init_app``. :pr:`1151`
