@@ -27,7 +27,7 @@ def test_custom_metadata() -> None:
 
 def test_metadata_from_custom_model() -> None:
     base = sa.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
-    metadata = base.metadata  # type: ignore[attr-defined]
+    metadata = base.metadata
     db = SQLAlchemy(model_class=base)
     assert db.Model.metadata is metadata
     assert db.Model.metadata is db.metadata

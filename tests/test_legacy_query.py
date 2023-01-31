@@ -82,7 +82,7 @@ def test_default_query_class(db: SQLAlchemy) -> None:
 
     class Child(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
-        parent_id = sa.Column(sa.ForeignKey(Parent.id))
+        parent_id = sa.Column(sa.ForeignKey(Parent.id))  # type: ignore[var-annotated]
         parent2 = db.relationship(
             Parent,
             backref=db.backref("children2", lazy="dynamic", viewonly=True),
@@ -109,7 +109,7 @@ def test_custom_query_class(app: Flask) -> None:
 
     class Child(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
-        parent_id = sa.Column(sa.ForeignKey(Parent.id))
+        parent_id = sa.Column(sa.ForeignKey(Parent.id))  # type: ignore[var-annotated]
         parent2 = db.relationship(
             Parent,
             backref=db.backref("children2", lazy="dynamic", viewonly=True),

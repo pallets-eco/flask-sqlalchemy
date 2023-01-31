@@ -28,7 +28,7 @@ class Session(sa.orm.Session):
         self._db = db
         self._model_changes: dict[object, tuple[t.Any, str]] = {}
 
-    def get_bind(  # type: ignore[override]
+    def get_bind(
         self,
         mapper: t.Any | None = None,
         clause: t.Any | None = None,

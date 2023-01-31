@@ -8,7 +8,6 @@ import sqlalchemy as sa
 import sqlalchemy.event
 import sqlalchemy.exc
 import sqlalchemy.orm
-import sqlalchemy.pool
 from flask import abort
 from flask import current_app
 from flask import Flask
@@ -22,6 +21,7 @@ from .pagination import SelectPagination
 from .query import Query
 from .session import _app_ctx_id
 from .session import Session
+from .table import _Table
 
 
 class SQLAlchemy:
@@ -126,8 +126,8 @@ class SQLAlchemy:
         *,
         metadata: sa.MetaData | None = None,
         session_options: dict[str, t.Any] | None = None,
-        query_class: t.Type[Query] = Query,
-        model_class: t.Type[Model] | sa.orm.DeclarativeMeta = Model,
+        query_class: type[Query] = Query,
+        model_class: type[Model] | sa.orm.DeclarativeMeta = Model,
         engine_options: dict[str, t.Any] | None = None,
         add_models_to_shell: bool = True,
     ):
@@ -336,7 +336,9 @@ class SQLAlchemy:
 
             track_modifications._listen(self.session)
 
-    def _make_scoped_session(self, options: dict[str, t.Any]) -> sa.orm.scoped_session:
+    def _make_scoped_session(
+        self, options: dict[str, t.Any]
+    ) -> sa.orm.scoped_session[Session]:
         """Create a :class:`sqlalchemy.orm.scoping.scoped_session` around the factory
         from :meth:`_make_session_factory`. The result is available as :attr:`session`.
 
@@ -363,7 +365,7 @@ class SQLAlchemy:
 
     def _make_session_factory(
         self, options: dict[str, t.Any]
-    ) -> sa.orm.sessionmaker[Session]:  # type: ignore[type-var]
+    ) -> sa.orm.sessionmaker[Session]:
         """Create the SQLAlchemy :class:`sqlalchemy.orm.sessionmaker` used by
         :meth:`_make_scoped_session`.
 
@@ -438,7 +440,7 @@ class SQLAlchemy:
         self.metadatas[bind_key] = metadata
         return metadata
 
-    def _make_table_class(self) -> t.Type[sa.Table]:
+    def _make_table_class(self) -> type[_Table]:
         """Create a SQLAlchemy :class:`sqlalchemy.schema.Table` class that chooses a
         metadata automatically based on the ``bind_key``. The result is available as
         :attr:`Table`.
@@ -450,7 +452,7 @@ class SQLAlchemy:
         .. versionadded:: 3.0
         """
 
-        class Table(sa.Table):
+        class Table(_Table):
             def __new__(
                 cls, *args: t.Any, bind_key: str | None = None, **kwargs: t.Any
             ) -> Table:
@@ -475,13 +477,13 @@ class SQLAlchemy:
                     bind_key = kwargs["info"].get("bind_key")
 
                 metadata = self._make_metadata(bind_key)
-                return super().__new__(cls, args[0], metadata, *args[1:], **kwargs)
+                return super().__new__(cls, *[args[0], metadata, *args[1:]], **kwargs)
 
         return Table
 
     def _make_declarative_base(
-        self, model: t.Type[Model] | sa.orm.DeclarativeMeta
-    ) -> t.Type[t.Any]:
+        self, model: type[Model] | sa.orm.DeclarativeMeta
+    ) -> type[t.Any]:
         """Create a SQLAlchemy declarative model class. The result is available as
         :attr:`Model`.
 
@@ -728,7 +730,7 @@ class SQLAlchemy:
         }
 
     def get_or_404(
-        self, entity: t.Type[t.Any], ident: t.Any, *, description: str | None = None
+        self, entity: type[t.Any], ident: t.Any, *, description: str | None = None
     ) -> t.Any:
         """Like :meth:`session.get() <sqlalchemy.orm.Session.get>` but aborts with a
         ``404 Not Found`` error instead of returning ``None``.
@@ -747,7 +749,7 @@ class SQLAlchemy:
         return value
 
     def first_or_404(
-        self, statement: sa.sql.Select, *, description: str | None = None
+        self, statement: sa.sql.Select[t.Any], *, description: str | None = None
     ) -> t.Any:
         """Like :meth:`Result.scalar() <sqlalchemy.engine.Result.scalar>`, but aborts
         with a ``404 Not Found`` error instead of returning ``None``.
@@ -765,7 +767,7 @@ class SQLAlchemy:
         return value
 
     def one_or_404(
-        self, statement: sa.sql.Select, *, description: str | None = None
+        self, statement: sa.sql.Select[t.Any], *, description: str | None = None
     ) -> t.Any:
         """Like :meth:`Result.scalar_one() <sqlalchemy.engine.Result.scalar_one>`,
         but aborts with a ``404 Not Found`` error instead of raising ``NoResultFound``
@@ -783,7 +785,7 @@ class SQLAlchemy:
 
     def paginate(
         self,
-        select: sa.sql.Select,
+        select: sa.sql.Select[t.Any],
         *,
         page: int | None = None,
         per_page: int | None = None,
@@ -971,7 +973,8 @@ class SQLAlchemy:
         """
         # Deprecated, removed in SQLAlchemy 2.0. Accessed through ``__getattr__``.
         self._set_rel_query(kwargs)
-        return sa.orm.relation(*args, **kwargs)
+        f = sa.orm.relation  # type: ignore[attr-defined]
+        return f(*args, **kwargs)  # type: ignore[no-any-return]
 
     def __getattr__(self, name: str) -> t.Any:
         if name == "db":

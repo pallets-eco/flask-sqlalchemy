@@ -47,7 +47,7 @@ coverage = [
 mypy = [
     "mypy",
     "pytest",
-    "sqlalchemy[mypy]",
+    "sqlalchemy",
 ]
 docs = [
     "sphinx",

@@ -110,7 +110,7 @@ def test_mixin_attr(db: SQLAlchemy) -> None:
     """
 
     class Mixin:
-        @sa.orm.declared_attr
+        @sa.orm.declared_attr  # type: ignore[arg-type]
         def __tablename__(cls) -> str:  # noqa: B902
             return cls.__name__.upper()  # type: ignore[attr-defined,no-any-return]
 
@@ -210,7 +210,7 @@ def test_no_access_to_class_property(db: SQLAlchemy) -> None:
         def __init__(self, f: t.Callable[..., t.Any]) -> None:
             self.f = f
 
-        def __get__(self, instance: t.Any, owner: t.Type[t.Any]) -> t.Any:
+        def __get__(self, instance: t.Any, owner: type[t.Any]) -> t.Any:
             return self.f(owner)
 
     class Duck(db.Model):
@@ -221,7 +221,7 @@ def test_no_access_to_class_property(db: SQLAlchemy) -> None:
         floats = False
 
     class Witch(Duck):
-        @sa.orm.declared_attr
+        @sa.orm.declared_attr  # type: ignore[arg-type]
         def is_duck(self) -> None:
             # declared attrs will be accessed during mapper configuration,
             # but make sure they're not accessed before that
