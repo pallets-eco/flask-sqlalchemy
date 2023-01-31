@@ -5,7 +5,6 @@ import typing as t
 import pytest
 import sqlalchemy as sa
 from flask import Flask
-from sqlalchemy.orm import joinedload
 from werkzeug.exceptions import NotFound
 
 from flask_sqlalchemy import SQLAlchemy
@@ -28,11 +27,11 @@ def test_get_or_404_kwargs(app: Flask) -> None:
     db = SQLAlchemy(app)
 
     class User(db.Model):
-        id = sa.Column(db.Integer, primary_key=True)
+        id = sa.Column(db.Integer, primary_key=True)  # type: ignore[var-annotated]
 
     class Todo(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
-        user_id = sa.Column(sa.ForeignKey(User.id))
+        user_id = sa.Column(sa.ForeignKey(User.id))  # type: ignore[var-annotated]
         user = db.relationship(User)
 
     with app.app_context():
@@ -41,7 +40,7 @@ def test_get_or_404_kwargs(app: Flask) -> None:
         db.session.commit()
 
     with app.app_context():
-        item = db.get_or_404(Todo, 1, options=[joinedload(Todo.user)])
+        item = db.get_or_404(Todo, 1, options=[db.joinedload(Todo.user)])
         assert item.user.id == 1
         # one query with join, no second query when accessing relationship
         assert len(get_recorded_queries()) == 1
