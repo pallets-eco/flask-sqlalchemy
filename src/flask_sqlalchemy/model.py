@@ -18,7 +18,7 @@ class _QueryProperty:
     :meta private:
     """
 
-    def __get__(self, obj: Model | None, cls: t.Type[Model]) -> Query:
+    def __get__(self, obj: Model | None, cls: type[Model]) -> Query:
         return cls.query_class(
             cls, session=cls.__fsa__.session()  # type: ignore[arg-type]
         )
@@ -39,7 +39,7 @@ class Model:
     :meta private:
     """
 
-    query_class: t.ClassVar[t.Type[Query]] = Query
+    query_class: t.ClassVar[type[Query]] = Query
     """Query class used by :attr:`query`. Defaults to :attr:`.SQLAlchemy.Query`, which
     defaults to :class:`.Query`.
     """
@@ -55,6 +55,7 @@ class Model:
 
     def __repr__(self) -> str:
         state = sa.inspect(self)
+        assert state is not None
 
         if state.transient:
             pk = f"(transient {id(self)})"

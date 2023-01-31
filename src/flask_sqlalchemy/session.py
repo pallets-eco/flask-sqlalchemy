@@ -28,7 +28,7 @@ class Session(sa.orm.Session):
         self._db = db
         self._model_changes: dict[object, tuple[t.Any, str]] = {}
 
-    def get_bind(  # type: ignore[override]
+    def get_bind(
         self,
         mapper: t.Any | None = None,
         clause: t.Any | None = None,
@@ -37,6 +37,9 @@ class Session(sa.orm.Session):
     ) -> sa.engine.Engine | sa.engine.Connection:
         """Select an engine based on the ``bind_key`` of the metadata associated with
         the model or table being queried. If no bind key is set, uses the default bind.
+
+        .. versionchanged:: 3.0.3
+            Fix finding the bind for a joined inheritance model.
 
         .. versionchanged:: 3.0
             The implementation more closely matches the base SQLAlchemy implementation.
@@ -47,6 +50,8 @@ class Session(sa.orm.Session):
         if bind is not None:
             return bind
 
+        engines = self._db.engines
+
         if mapper is not None:
             try:
                 mapper = sa.inspect(mapper)
@@ -56,24 +61,40 @@ class Session(sa.orm.Session):
 
                 raise
 
-            clause = mapper.persist_selectable
+            engine = _clause_to_engine(mapper.local_table, engines)
 
-        engines = self._db.engines
+            if engine is not None:
+                return engine
 
-        if isinstance(clause, sa.Table) and "bind_key" in clause.metadata.info:
-            key = clause.metadata.info["bind_key"]
+        if clause is not None:
+            engine = _clause_to_engine(clause, engines)
 
-            if key not in engines:
-                raise sa.exc.UnboundExecutionError(
-                    f"Bind key '{key}' is not in 'SQLALCHEMY_BINDS' config."
-                )
-
-            return engines[key]
+            if engine is not None:
+                return engine
 
         if None in engines:
             return engines[None]
 
         return super().get_bind(mapper=mapper, clause=clause, bind=bind, **kwargs)
+
+
+def _clause_to_engine(
+    clause: t.Any | None, engines: t.Mapping[str | None, sa.engine.Engine]
+) -> sa.engine.Engine | None:
+    """If the clause is a table, return the engine associated with the table's
+    metadata's bind key.
+    """
+    if isinstance(clause, sa.Table) and "bind_key" in clause.metadata.info:
+        key = clause.metadata.info["bind_key"]
+
+        if key not in engines:
+            raise sa.exc.UnboundExecutionError(
+                f"Bind key '{key}' is not in 'SQLALCHEMY_BINDS' config."
+            )
+
+        return engines[key]
+
+    return None
 
 
 def _app_ctx_id() -> int:
