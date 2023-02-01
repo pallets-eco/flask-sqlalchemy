@@ -15,7 +15,7 @@ jobs:
           python-version: '3.x'
           cache: 'pip'
           cache-dependency-path: 'pdm.lock'
-      - uses: actions/cache@58c146cc91c5b9e778e71775dfe9bf1442ad9a12
+      - uses: actions/cache@627f0f41f6904a5b1efbaed9f96d9eb58e92e920
         with:
           path: ~/.cache/pdm
           key: ${{ matrix.python }}-pdm-${{ hashFiles('pdm.lock') }}
