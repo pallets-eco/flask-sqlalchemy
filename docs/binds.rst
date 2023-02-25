@@ -88,10 +88,10 @@ application context.
     db.create_all()
 
     # create tables for the default and "auth" binds
-    db.create_all(bind=[None, "auth"])
+    db.create_all(bind_key=[None, "auth"])
 
     # create tables for the "meta" bind
-    db.create_all(bind="meta")
+    db.create_all(bind_key="meta")
 
     # drop tables for the default bind
-    db.drop_all(bind=None)
+    db.drop_all(bind_key=None)
