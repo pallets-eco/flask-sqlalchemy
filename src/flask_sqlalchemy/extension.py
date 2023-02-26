@@ -640,7 +640,7 @@ class SQLAlchemy:
 
         return value
 
-    def first_or_404(
+    def scalar_or_404(
         self, statement: sa.sql.Select[t.Any], *, description: str | None = None
     ) -> t.Any:
         """Like :meth:`Result.scalar() <sqlalchemy.engine.Result.scalar>`, but aborts
@@ -648,6 +648,9 @@ class SQLAlchemy:
 
         :param statement: The ``select`` statement to execute.
         :param description: A custom message to show on the error page.
+
+        .. versionchanged:: 3.1
+            Renamed from ``first_or_404()`` to ``scalar_or_404()``.
 
         .. versionadded:: 3.0
         """
@@ -658,7 +661,9 @@ class SQLAlchemy:
 
         return value
 
-    def one_or_404(
+    first_or_404 = scalar_or_404
+
+    def scalar_one_or_404(
         self, statement: sa.sql.Select[t.Any], *, description: str | None = None
     ) -> t.Any:
         """Like :meth:`Result.scalar_one() <sqlalchemy.engine.Result.scalar_one>`,
@@ -668,12 +673,17 @@ class SQLAlchemy:
         :param statement: The ``select`` statement to execute.
         :param description: A custom message to show on the error page.
 
+        .. versionchanged:: 3.1
+            Renamed from ``one_or_404()`` to ``scalar_one_or_404()``.
+
         .. versionadded:: 3.0
         """
         try:
             return self.session.execute(statement).scalar_one()
         except (sa.exc.NoResultFound, sa.exc.MultipleResultsFound):
             abort(404, description=description)
+
+    one_or_404 = scalar_one_or_404
 
     def paginate(
         self,
