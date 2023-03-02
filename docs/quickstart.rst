@@ -198,3 +198,9 @@ instance creates, configures, and gives access to the following things:
 -   :meth:`.SQLAlchemy.create_all` creates all tables.
 -   You must be in an active Flask application context to execute queries and to access
     the session and engine.
+-   Engine-related configurations (e.g. ``SQLALCHEMY_DATABASE_URI``) are not rewriteable
+    since the engine is created when you instantiate the :class:`SQLAlchemy` object or
+    call :attr:`.SQLAlchemy.init_app`. If you want to use different configurations in the
+    tests, use an `application factory`_ to create the app and pass the config name with it.
+
+.. _application factory: https://flask.palletsprojects.com/patterns/appfactories/
