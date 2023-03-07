@@ -21,7 +21,7 @@ joined-table inheritance.
 
 .. code-block:: python
 
-    from flask_sqlalchemy.model import model
+    from flask_sqlalchemy.model import Model
     import sqlalchemy as sa
     import sqlalchemy.orm
 
