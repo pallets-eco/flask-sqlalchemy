@@ -112,4 +112,3 @@ to the new context and disconnected when the context is popped.
 
     # Now commit `user`
     db.session.commit()
-
