@@ -88,3 +88,28 @@ a context for a specific test.
         user = User()
         db.session.add(user)
         db.session.commit()
+
+
+Using Multiple Sessions
+-----------------------
+
+If you need to have two separate database sessions in the same request you can push
+an additional application context. By pushing a new context the session will be scoped
+to the new context and disconnected when the context is popped.
+
+.. code-block:: python
+
+    from flask import current_app
+
+    # Create a new user within a transaction but don't commit it
+    user = User()
+    db.session.add(user)
+
+    with current_app.app_context():
+        another_user = User()
+        db.session.add(another_user)
+        db.session.commit()  # another_user will be committed but user will not
+
+    # Now commit `user`
+    db.session.commit()
+
