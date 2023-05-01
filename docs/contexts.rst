@@ -78,13 +78,13 @@ a context for a specific test.
 
     import pytest
 
-    @pytest.mark.fixture
+    @pytest.fixture
     def app_ctx(app):
         with app.app_context():
             yield
 
     @pytest.mark.usefixtures("app_ctx")
-    def test_user_model(app):
+    def test_user_model():
         user = User()
         db.session.add(user)
         db.session.commit()
