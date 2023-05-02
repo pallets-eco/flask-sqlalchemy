@@ -145,7 +145,7 @@ class _PaginateCallable:
 @pytest.fixture
 def paginate(app: Flask, db: SQLAlchemy, Todo: t.Any) -> _PaginateCallable:
     with app.app_context():
-        for i in range(1, 101):
+        for i in range(1, 251):
             db.session.add(Todo(title=f"task {i}"))
 
         db.session.commit()
@@ -158,8 +158,8 @@ def test_paginate(paginate: _PaginateCallable) -> None:
     assert p.page == 1
     assert p.per_page == 20
     assert len(p.items) == 20
-    assert p.total == 100
-    assert p.pages == 5
+    assert p.total == 250
+    assert p.pages == 13
 
 
 def test_paginate_qs(paginate: _PaginateCallable) -> None:
@@ -171,6 +171,16 @@ def test_paginate_qs(paginate: _PaginateCallable) -> None:
 def test_paginate_max(paginate: _PaginateCallable) -> None:
     p = paginate(per_page=100, max_per_page=50)
     assert p.per_page == 50
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_paginate_max2(paginate: _PaginateCallable) -> None:
+    p = paginate(per_page=110, max_per_page=250)
+    assert p.page == 1
+    assert p.per_page == 110
+    p = p.next()
+    assert p.page == 2
+    assert p.per_page == 110
 
 
 def test_no_count(paginate: _PaginateCallable) -> None:
