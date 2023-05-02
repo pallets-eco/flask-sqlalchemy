@@ -174,7 +174,7 @@ def test_paginate_max(paginate: _PaginateCallable) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_paginate_max2(paginate: _PaginateCallable) -> None:
+def test_next_page_size(paginate: _PaginateCallable) -> None:
     p = paginate(per_page=110, max_per_page=250)
     assert p.page == 1
     assert p.per_page == 110
