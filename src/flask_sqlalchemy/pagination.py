@@ -67,7 +67,7 @@ class Pagination:
         """The maximum number of items on a page."""
 
         self.max_per_page: int | None = max_per_page
-        """The maximum allowed value for `per_page`"""
+        """The maximum allowed value for ``per_page``."""
 
         items = self._query_items()
 
