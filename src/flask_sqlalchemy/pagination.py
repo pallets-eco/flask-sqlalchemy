@@ -47,7 +47,7 @@ class Pagination:
         self,
         page: int | None = None,
         per_page: int | None = None,
-        max_per_page: int | None = 100,
+        max_per_page: int | None = 10000,
         error_out: bool = True,
         count: bool = True,
         **kwargs: t.Any,
