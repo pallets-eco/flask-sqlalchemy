@@ -11,7 +11,7 @@ if t.TYPE_CHECKING:
     from .extension import SQLAlchemy
 
 
-class Session(sa.orm.Session):
+class Session(sqlalchemy.orm.Session):
     """A SQLAlchemy :class:`~sqlalchemy.orm.Session` class that chooses what engine to
     use based on the bind key associated with the metadata associated with the thing
     being queried.
@@ -55,9 +55,9 @@ class Session(sa.orm.Session):
         if mapper is not None:
             try:
                 mapper = sa.inspect(mapper)
-            except sa.exc.NoInspectionAvailable as e:
+            except sqlalchemy.exc.NoInspectionAvailable as e:
                 if isinstance(mapper, type):
-                    raise sa.orm.exc.UnmappedClassError(mapper) from e
+                    raise sqlalchemy.orm.exc.UnmappedClassError(mapper) from e
 
                 raise
 
@@ -88,7 +88,7 @@ def _clause_to_engine(
         key = clause.metadata.info["bind_key"]
 
         if key not in engines:
-            raise sa.exc.UnboundExecutionError(
+            raise sqlalchemy.exc.UnboundExecutionError(
                 f"Bind key '{key}' is not in 'SQLALCHEMY_BINDS' config."
             )
 

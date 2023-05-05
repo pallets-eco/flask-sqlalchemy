@@ -110,7 +110,7 @@ def test_mixin_attr(db: SQLAlchemy) -> None:
     """
 
     class Mixin:
-        @sa.orm.declared_attr  # type: ignore[arg-type]
+        @sqlalchemy.orm.declared_attr  # type: ignore[arg-type]
         def __tablename__(cls) -> str:  # noqa: B902
             return cls.__name__.upper()  # type: ignore[attr-defined,no-any-return]
 
@@ -153,7 +153,7 @@ def test_complex_inheritance(db: SQLAlchemy) -> None:
         id = sa.Column(sa.Integer, primary_key=True)
 
     class IdMixin:
-        @sa.orm.declared_attr
+        @sqlalchemy.orm.declared_attr
         def id(cls):  # type: ignore[no-untyped-def]  # noqa: B902
             return sa.Column(sa.Integer, sa.ForeignKey(Duck.id), primary_key=True)
 
@@ -221,7 +221,7 @@ def test_no_access_to_class_property(db: SQLAlchemy) -> None:
         floats = False
 
     class Witch(Duck):
-        @sa.orm.declared_attr  # type: ignore[arg-type]
+        @sqlalchemy.orm.declared_attr  # type: ignore[arg-type]
         def is_duck(self) -> None:
             # declared attrs will be accessed during mapper configuration,
             # but make sure they're not accessed before that
@@ -247,7 +247,7 @@ def test_metadata_has_table(db: SQLAlchemy) -> None:
 
 
 def test_correct_error_for_no_primary_key(db: SQLAlchemy) -> None:
-    with pytest.raises(sa.exc.ArgumentError) as info:
+    with pytest.raises(sqlalchemy.exc.ArgumentError) as info:
 
         class User(db.Model):
             pass

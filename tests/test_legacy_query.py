@@ -15,9 +15,9 @@ from flask_sqlalchemy.query import Query
 
 @pytest.fixture(autouse=True)
 def ignore_query_warning() -> t.Generator[None, None, None]:
-    if hasattr(sa.exc, "LegacyAPIWarning"):
+    if hasattr(sqlalchemy.exc, "LegacyAPIWarning"):
         with warnings.catch_warnings():
-            exc = sa.exc.LegacyAPIWarning
+            exc = sqlalchemy.exc.LegacyAPIWarning
             warnings.simplefilter("ignore", exc)
             yield
     else:

@@ -96,8 +96,8 @@ class _QueryInfo:
 
 
 def _listen(engine: sa.engine.Engine) -> None:
-    sa.event.listen(engine, "before_cursor_execute", _record_start, named=True)
-    sa.event.listen(engine, "after_cursor_execute", _record_end, named=True)
+    sqlalchemy.event.listen(engine, "before_cursor_execute", _record_start, named=True)
+    sqlalchemy.event.listen(engine, "after_cursor_execute", _record_end, named=True)
 
 
 def _record_start(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:

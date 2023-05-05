@@ -34,7 +34,9 @@ def test_custom_declarative_class(app: Flask, base: t.Any) -> None:
     class CustomMeta(DefaultMeta):
         pass
 
-    CustomModel = sa.orm.declarative_base(cls=base, name="Model", metaclass=CustomMeta)
+    CustomModel = sqlalchemy.orm.declarative_base(
+        cls=base, name="Model", metaclass=CustomMeta
+    )
     db = SQLAlchemy(app, model_class=CustomModel)
     assert db.Model is CustomModel
     assert db.Model.query_class is db.Query

@@ -29,12 +29,12 @@ commit takes place.
 """
 
 
-def _listen(session: sa.orm.scoped_session[Session]) -> None:
-    sa.event.listen(session, "before_flush", _record_ops, named=True)
-    sa.event.listen(session, "before_commit", _record_ops, named=True)
-    sa.event.listen(session, "before_commit", _before_commit)
-    sa.event.listen(session, "after_commit", _after_commit)
-    sa.event.listen(session, "after_rollback", _after_rollback)
+def _listen(session: sqlalchemy.orm.scoped_session[Session]) -> None:
+    sqlalchemy.event.listen(session, "before_flush", _record_ops, named=True)
+    sqlalchemy.event.listen(session, "before_commit", _record_ops, named=True)
+    sqlalchemy.event.listen(session, "before_commit", _before_commit)
+    sqlalchemy.event.listen(session, "after_commit", _after_commit)
+    sqlalchemy.event.listen(session, "after_rollback", _after_rollback)
 
 
 def _record_ops(session: Session, **kwargs: t.Any) -> None:

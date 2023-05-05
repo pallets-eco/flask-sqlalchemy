@@ -26,7 +26,7 @@ def test_custom_metadata() -> None:
 
 
 def test_metadata_from_custom_model() -> None:
-    base = sa.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
+    base = sqlalchemy.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
     metadata = base.metadata
     db = SQLAlchemy(model_class=base)
     assert db.Model.metadata is metadata
@@ -34,7 +34,7 @@ def test_metadata_from_custom_model() -> None:
 
 
 def test_custom_metadata_overrides_custom_model() -> None:
-    base = sa.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
+    base = sqlalchemy.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
     metadata = sa.MetaData()
     db = SQLAlchemy(model_class=base, metadata=metadata)
     assert db.Model.metadata is metadata
@@ -69,10 +69,10 @@ def test_create_drop_all(app: Flask) -> None:
         __bind_key__ = "a"
         id = sa.Column(sa.Integer, primary_key=True)
 
-    with pytest.raises(sa.exc.OperationalError):
+    with pytest.raises(sqlalchemy.exc.OperationalError):
         db.session.execute(sa.select(User)).scalars()
 
-    with pytest.raises(sa.exc.OperationalError):
+    with pytest.raises(sqlalchemy.exc.OperationalError):
         db.session.execute(sa.select(Post)).scalars()
 
     db.create_all()
@@ -80,10 +80,10 @@ def test_create_drop_all(app: Flask) -> None:
     db.session.execute(sa.select(Post)).scalars()
     db.drop_all()
 
-    with pytest.raises(sa.exc.OperationalError):
+    with pytest.raises(sqlalchemy.exc.OperationalError):
         db.session.execute(sa.select(User)).scalars()
 
-    with pytest.raises(sa.exc.OperationalError):
+    with pytest.raises(sqlalchemy.exc.OperationalError):
         db.session.execute(sa.select(Post)).scalars()
 
 
@@ -103,7 +103,7 @@ def test_create_key_spec(app: Flask, bind_key: str | list[str | None]) -> None:
     db.create_all(bind_key=bind_key)
     db.session.execute(sa.select(Post)).scalars()
 
-    with pytest.raises(sa.exc.OperationalError):
+    with pytest.raises(sqlalchemy.exc.OperationalError):
         db.session.execute(sa.select(User)).scalars()
 
 
