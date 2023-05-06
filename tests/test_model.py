@@ -4,7 +4,7 @@ import typing as t
 
 import pytest
 import sqlalchemy as sa
-import sqlalchemy.orm
+import sqlalchemy.orm as sa_orm
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy
@@ -34,9 +34,7 @@ def test_custom_declarative_class(app: Flask, base: t.Any) -> None:
     class CustomMeta(DefaultMeta):
         pass
 
-    CustomModel = sqlalchemy.orm.declarative_base(
-        cls=base, name="Model", metaclass=CustomMeta
-    )
+    CustomModel = sa_orm.declarative_base(cls=base, name="Model", metaclass=CustomMeta)
     db = SQLAlchemy(app, model_class=CustomModel)
     assert db.Model is CustomModel
     assert db.Model.query_class is db.Query

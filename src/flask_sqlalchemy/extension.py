@@ -5,9 +5,9 @@ import typing as t
 from weakref import WeakKeyDictionary
 
 import sqlalchemy as sa
-import sqlalchemy.event
-import sqlalchemy.exc
-import sqlalchemy.orm
+import sqlalchemy.event as sa_event
+import sqlalchemy.exc as sa_exc
+import sqlalchemy.orm as sa_orm
 from flask import abort
 from flask import current_app
 from flask import Flask
@@ -127,7 +127,7 @@ class SQLAlchemy:
         metadata: sa.MetaData | None = None,
         session_options: dict[str, t.Any] | None = None,
         query_class: type[Query] = Query,
-        model_class: type[Model] | sqlalchemy.orm.DeclarativeMeta = Model,
+        model_class: type[Model] | sa_orm.DeclarativeMeta = Model,
         engine_options: dict[str, t.Any] | None = None,
         add_models_to_shell: bool = True,
     ):
@@ -338,7 +338,7 @@ class SQLAlchemy:
 
     def _make_scoped_session(
         self, options: dict[str, t.Any]
-    ) -> sqlalchemy.orm.scoped_session[Session]:
+    ) -> sa_orm.scoped_session[Session]:
         """Create a :class:`sqlalchemy.orm.scoping.scoped_session` around the factory
         from :meth:`_make_session_factory`. The result is available as :attr:`session`.
 
@@ -361,11 +361,11 @@ class SQLAlchemy:
         """
         scope = options.pop("scopefunc", _app_ctx_id)
         factory = self._make_session_factory(options)
-        return sqlalchemy.orm.scoped_session(factory, scope)
+        return sa_orm.scoped_session(factory, scope)
 
     def _make_session_factory(
         self, options: dict[str, t.Any]
-    ) -> sqlalchemy.orm.sessionmaker[Session]:
+    ) -> sa_orm.sessionmaker[Session]:
         """Create the SQLAlchemy :class:`sqlalchemy.orm.sessionmaker` used by
         :meth:`_make_scoped_session`.
 
@@ -388,7 +388,7 @@ class SQLAlchemy:
         """
         options.setdefault("class_", Session)
         options.setdefault("query_cls", self.Query)
-        return sqlalchemy.orm.sessionmaker(db=self, **options)
+        return sa_orm.sessionmaker(db=self, **options)
 
     def _teardown_commit(self, exc: BaseException | None) -> None:
         """Commit the session at the end of the request if there was not an unhandled
@@ -482,7 +482,7 @@ class SQLAlchemy:
         return Table
 
     def _make_declarative_base(
-        self, model: type[Model] | sqlalchemy.orm.DeclarativeMeta
+        self, model: type[Model] | sa_orm.DeclarativeMeta
     ) -> type[t.Any]:
         """Create a SQLAlchemy declarative model class. The result is available as
         :attr:`Model`.
@@ -503,9 +503,9 @@ class SQLAlchemy:
         .. versionchanged:: 2.3
             ``model`` can be an already created declarative model class.
         """
-        if not isinstance(model, sqlalchemy.orm.DeclarativeMeta):
+        if not isinstance(model, sa_orm.DeclarativeMeta):
             metadata = self._make_metadata(None)
-            model = sqlalchemy.orm.declarative_base(
+            model = sa_orm.declarative_base(
                 metadata=metadata, cls=model, name="Model", metaclass=DefaultMeta
             )
 
@@ -780,7 +780,7 @@ class SQLAlchemy:
         """
         try:
             return self.session.execute(statement).scalar_one()
-        except (sqlalchemy.exc.NoResultFound, sqlalchemy.exc.MultipleResultsFound):
+        except (sa_exc.NoResultFound, sa_exc.MultipleResultsFound):
             abort(404, description=description)
 
     def paginate(
@@ -859,7 +859,7 @@ class SQLAlchemy:
                 if key is None:
                     message = f"'SQLALCHEMY_DATABASE_URI' config is not set. {message}"
 
-                raise sqlalchemy.exc.UnboundExecutionError(message) from None
+                raise sa_exc.UnboundExecutionError(message) from None
 
             metadata = self.metadatas[key]
             getattr(metadata, op_name)(bind=engine)
@@ -936,7 +936,7 @@ class SQLAlchemy:
 
     def relationship(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> sqlalchemy.orm.RelationshipProperty[t.Any]:
+    ) -> sa_orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
@@ -944,11 +944,11 @@ class SQLAlchemy:
             The :attr:`Query` class is set on ``backref``.
         """
         self._set_rel_query(kwargs)
-        return sqlalchemy.orm.relationship(*args, **kwargs)
+        return sa_orm.relationship(*args, **kwargs)
 
     def dynamic_loader(
         self, argument: t.Any, **kwargs: t.Any
-    ) -> sqlalchemy.orm.RelationshipProperty[t.Any]:
+    ) -> sa_orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.dynamic_loader` that applies this extension's
         :attr:`Query` class for relationships and backrefs.
 
@@ -956,11 +956,11 @@ class SQLAlchemy:
             The :attr:`Query` class is set on ``backref``.
         """
         self._set_rel_query(kwargs)
-        return sqlalchemy.orm.dynamic_loader(argument, **kwargs)
+        return sa_orm.dynamic_loader(argument, **kwargs)
 
     def _relation(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> sqlalchemy.orm.RelationshipProperty[t.Any]:
+    ) -> sa_orm.RelationshipProperty[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
@@ -973,8 +973,8 @@ class SQLAlchemy:
         """
         # Deprecated, removed in SQLAlchemy 2.0. Accessed through ``__getattr__``.
         self._set_rel_query(kwargs)
-        f = sqlalchemy.orm.relation  # type: ignore[attr-defined]
-        return f(*args, **kwargs)  # type: ignore[no-any-return]
+        f = sa_orm.relationship
+        return f(*args, **kwargs)
 
     def __getattr__(self, name: str) -> t.Any:
         if name == "db":
@@ -993,12 +993,12 @@ class SQLAlchemy:
             return self._relation
 
         if name == "event":
-            return sqlalchemy.event
+            return sa_event
 
         if name.startswith("_"):
             raise AttributeError(name)
 
-        for mod in (sa, sqlalchemy.orm):
+        for mod in (sa, sa_orm):
             if hasattr(mod, name):
                 return getattr(mod, name)
 

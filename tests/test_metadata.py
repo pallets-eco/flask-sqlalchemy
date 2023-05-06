@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 import sqlalchemy as sa
-import sqlalchemy.exc
-import sqlalchemy.orm
+import sqlalchemy.exc as sa_exc
+import sqlalchemy.orm as sa_orm
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy
@@ -26,7 +26,7 @@ def test_custom_metadata() -> None:
 
 
 def test_metadata_from_custom_model() -> None:
-    base = sqlalchemy.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
+    base = sa_orm.declarative_base(cls=Model, metaclass=DefaultMeta)
     metadata = base.metadata
     db = SQLAlchemy(model_class=base)
     assert db.Model.metadata is metadata
@@ -34,7 +34,7 @@ def test_metadata_from_custom_model() -> None:
 
 
 def test_custom_metadata_overrides_custom_model() -> None:
-    base = sqlalchemy.orm.declarative_base(cls=Model, metaclass=DefaultMeta)
+    base = sa_orm.declarative_base(cls=Model, metaclass=DefaultMeta)
     metadata = sa.MetaData()
     db = SQLAlchemy(model_class=base, metadata=metadata)
     assert db.Model.metadata is metadata
@@ -69,10 +69,10 @@ def test_create_drop_all(app: Flask) -> None:
         __bind_key__ = "a"
         id = sa.Column(sa.Integer, primary_key=True)
 
-    with pytest.raises(sqlalchemy.exc.OperationalError):
+    with pytest.raises(sa_exc.OperationalError):
         db.session.execute(sa.select(User)).scalars()
 
-    with pytest.raises(sqlalchemy.exc.OperationalError):
+    with pytest.raises(sa_exc.OperationalError):
         db.session.execute(sa.select(Post)).scalars()
 
     db.create_all()
@@ -80,10 +80,10 @@ def test_create_drop_all(app: Flask) -> None:
     db.session.execute(sa.select(Post)).scalars()
     db.drop_all()
 
-    with pytest.raises(sqlalchemy.exc.OperationalError):
+    with pytest.raises(sa_exc.OperationalError):
         db.session.execute(sa.select(User)).scalars()
 
-    with pytest.raises(sqlalchemy.exc.OperationalError):
+    with pytest.raises(sa_exc.OperationalError):
         db.session.execute(sa.select(Post)).scalars()
 
 
@@ -103,7 +103,7 @@ def test_create_key_spec(app: Flask, bind_key: str | list[str | None]) -> None:
     db.create_all(bind_key=bind_key)
     db.session.execute(sa.select(Post)).scalars()
 
-    with pytest.raises(sqlalchemy.exc.OperationalError):
+    with pytest.raises(sa_exc.OperationalError):
         db.session.execute(sa.select(User)).scalars()
 
 
