@@ -23,6 +23,8 @@ from .session import _app_ctx_id
 from .session import Session
 from .table import _Table
 
+_O = t.TypeVar("_O", bound=object)
+
 
 class SQLAlchemy:
     """Integrates SQLAlchemy with Flask. This handles setting up one or more engines,
@@ -730,8 +732,8 @@ class SQLAlchemy:
         }
 
     def get_or_404(
-        self, entity: type[t.Any], ident: t.Any, *, description: str | None = None
-    ) -> t.Any:
+        self, entity: type[_O], ident: t.Any, *, description: str | None = None
+    ) -> t.Optional[_O]:
         """Like :meth:`session.get() <sqlalchemy.orm.Session.get>` but aborts with a
         ``404 Not Found`` error instead of returning ``None``.
 
