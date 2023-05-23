@@ -73,7 +73,7 @@ def test_view_get_or_404_typed(db: SQLAlchemy, app: Flask) -> None:
     item: Quiz = Quiz()
     db.session.add(item)
     db.session.commit()
-    result: Quiz = db.get_or_404(Quiz, 1)
+    result: t.Optional[Quiz] = db.get_or_404(Quiz, 1)
     assert result is item
     with pytest.raises(NotFound):
         assert db.get_or_404(Quiz, 2)
