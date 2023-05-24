@@ -174,7 +174,8 @@ def should_set_tablename(cls: type) -> bool:
     joined-table inheritance. If no primary key is found, the name will be unset.
     """
     if cls.__dict__.get("__abstract__", False) or not any(
-        isinstance(b, sa_orm.DeclarativeMeta) for b in cls.__mro__[1:]
+        (isinstance(b, sa_orm.DeclarativeMeta) or b is sa_orm.DeclarativeBase)
+        for b in cls.__mro__[1:]
     ):
         return False
 
@@ -188,7 +189,10 @@ def should_set_tablename(cls: type) -> bool:
         return not (
             base is cls
             or base.__dict__.get("__abstract__", False)
-            or not isinstance(base, sa_orm.DeclarativeMeta)
+            or not (
+                isinstance(base, sa_orm.DeclarativeMeta)
+                or base is sa_orm.DeclarativeBase
+            )
         )
 
     return True
@@ -204,3 +208,99 @@ class DefaultMeta(BindMetaMixin, NameMetaMixin, sa_orm.DeclarativeMeta):
     """SQLAlchemy declarative metaclass that provides ``__bind_key__`` and
     ``__tablename__`` support.
     """
+
+
+class DefaultMixin:
+    """A mixin that provides Flask-SQLAlchemy default functionality:
+    * sets a model's ``__tablename__`` by converting the
+    ``CamelCase`` class name to ``snake_case``. A name is set for non-abstract models
+    that do not otherwise define ``__tablename__``. If a model does not define a primary
+    key, it will not generate a name or ``__table__``, for single-table inheritance.
+    * sets a model's ``metadata`` based on its ``__bind_key__``.
+    If the model sets ``metadata`` or ``__table__`` directly, ``__bind_key__`` is
+    ignored. If the ``metadata`` is the same as the parent model, it will not be set
+    directly on the child model.
+    * Provides a default repr based on the model's primary key.
+    """
+
+    __fsa__: SQLAlchemy
+    metadata: sa.MetaData
+    __tablename__: str
+    __table__: sa.Table
+
+    def __init_subclass__(cls, **kwargs):
+        if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
+            bind_key = getattr(cls, "__bind_key__", None)
+            parent_metadata = getattr(cls, "metadata", None)
+            metadata = cls.__fsa__._make_metadata(bind_key)
+
+            if metadata is not parent_metadata:
+                cls.metadata = metadata
+
+        if should_set_tablename(cls):
+            cls.__tablename__ = camel_to_snake_case(cls.__name__)
+
+        super().__init_subclass__(**kwargs)
+
+        # __table_cls__ has run. If no table was created, use the parent table.
+        if (
+            "__tablename__" not in cls.__dict__
+            and "__table__" in cls.__dict__
+            and cls.__dict__["__table__"] is None
+        ):
+            del cls.__table__
+
+    @classmethod
+    def __table_cls__(cls, *args: t.Any, **kwargs: t.Any) -> sa.Table | None:
+        """This is called by SQLAlchemy during mapper setup. It determines the final
+        table object that the model will use.
+
+        If no primary key is found, that indicates single-table inheritance, so no table
+        will be created and ``__tablename__`` will be unset.
+        """
+        schema = kwargs.get("schema")
+
+        if schema is None:
+            key = args[0]
+        else:
+            key = f"{schema}.{args[0]}"
+
+        # Check if a table with this name already exists. Allows reflected tables to be
+        # applied to models by name.
+        if key in cls.metadata.tables:
+            return sa.Table(*args, **kwargs)
+
+        # If a primary key is found, create a table for joined-table inheritance.
+        for arg in args:
+            if (isinstance(arg, sa.Column) and arg.primary_key) or isinstance(
+                arg, sa.PrimaryKeyConstraint
+            ):
+                return sa.Table(*args, **kwargs)
+
+        # If no base classes define a table, return one that's missing a primary key
+        # so SQLAlchemy shows the correct error.
+        for base in cls.__mro__[1:-1]:
+            if "__table__" in base.__dict__:
+                break
+        else:
+            return sa.Table(*args, **kwargs)
+
+        # Single-table inheritance, use the parent table name. __init__ will unset
+        # __table__ based on this.
+        if "__tablename__" in cls.__dict__:
+            del cls.__tablename__
+
+        return None
+
+    def __repr__(self) -> str:
+        state = sa.inspect(self)
+        assert state is not None
+
+        if state.transient:
+            pk = f"(transient {id(self)})"
+        elif state.pending:
+            pk = f"(pending {id(self)})"
+        else:
+            pk = ", ".join(map(str, state.identity))
+
+        return f"<{type(self).__name__} {pk}>"

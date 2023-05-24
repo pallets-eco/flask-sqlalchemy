@@ -6,9 +6,13 @@ import pytest
 import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
 from flask import Flask
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.model import DefaultMeta
+from flask_sqlalchemy.model import DefaultMixin
 from flask_sqlalchemy.model import Model
 
 
@@ -26,6 +30,45 @@ def test_custom_model_class(app: Flask) -> None:
     db = SQLAlchemy(app, model_class=CustomModel)
     assert issubclass(db.Model, CustomModel)
     assert isinstance(db.Model, DefaultMeta)
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_custom_model_sqlalchemy20_class(app: Flask) -> None:
+    from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
+
+    class Base(DeclarativeBase):
+        pass
+
+    db = SQLAlchemy(app, model_class=Base)
+
+    # Check the model class is instantiated with the correct metaclass
+    assert issubclass(db.Model, Base)
+    assert isinstance(db.Model, type)
+    assert isinstance(db.Model, DeclarativeAttributeIntercept)
+    # Check that additional attributes are added to the model class
+    assert db.Model.query_class is db.Query
+
+    # Now create a model that inherits from that declarative base
+    class Quiz(DefaultMixin, db.Model):
+        id: Mapped[int] = mapped_column(
+            db.Integer, primary_key=True, autoincrement=True
+        )
+        title: Mapped[str] = mapped_column(db.String(255), nullable=False)
+
+    assert Quiz.__tablename__ == "quiz"
+    assert isinstance(Quiz, DeclarativeAttributeIntercept)
+
+    db.create_all()
+    quiz = Quiz(title="Python trivia")
+    db.session.add(quiz)
+    db.session.commit()
+
+    # Check column types are correct
+    quiz_id: int = quiz.id
+    quiz_title: str = quiz.title
+    assert quiz_id == 1
+    assert quiz_title == "Python trivia"
+    assert repr(quiz) == f"<Quiz {quiz.id}>"
 
 
 @pytest.mark.usefixtures("app_ctx")

@@ -460,7 +460,11 @@ class SQLAlchemy:
         .. versionchanged:: 2.3
             ``model`` can be an already created declarative model class.
         """
-        if not isinstance(model, sa_orm.DeclarativeMeta):
+        if (
+            not isinstance(model, sa_orm.DeclarativeMeta)
+            and not issubclass(model, sa_orm.DeclarativeBase)
+            and not issubclass(model, sa_orm.DeclarativeBaseNoMeta)
+        ):
             metadata = self._make_metadata(None)
             model = sa_orm.declarative_base(
                 metadata=metadata, cls=model, name="Model", metaclass=DefaultMeta
