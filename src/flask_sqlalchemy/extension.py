@@ -23,7 +23,7 @@ from .session import _app_ctx_id
 from .session import Session
 from .table import _Table
 
-_O = t.TypeVar("_O", bound=object)
+_O = t.TypeVar("_O", bound=t.Any)
 
 
 class SQLAlchemy:
