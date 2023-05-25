@@ -280,11 +280,17 @@ def should_set_tablename(cls: type) -> bool:
     Later, ``__table_cls__`` will determine if the model looks like single or
     joined-table inheritance. If no primary key is found, the name will be unset.
     """
-
-    # TODO: or not any(isinstance(b, sa.orm.DeclarativeMeta) for b in cls.__mro__[1:]) \
-    if cls.__dict__.get("__abstract__", False) or any(
-        (b is sa_orm.DeclarativeBase or b is sa_orm.DeclarativeBaseNoMeta)
-        for b in cls.__bases__
+    uses_2pt0 = issubclass(cls, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta))
+    if (
+        cls.__dict__.get("__abstract__", False)
+        or (
+            not uses_2pt0
+            and not any(isinstance(b, sa_orm.DeclarativeMeta) for b in cls.__mro__[1:])
+        )
+        or any(
+            (b is sa_orm.DeclarativeBase or b is sa_orm.DeclarativeBaseNoMeta)
+            for b in cls.__bases__
+        )
     ):
         return False
 

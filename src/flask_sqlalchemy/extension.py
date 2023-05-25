@@ -443,7 +443,7 @@ class SQLAlchemy:
         return Table
 
     def _make_declarative_base(
-        self, model: type[Model] | sa_orm.DeclarativeMeta | sa_orm.DeclarativeBase
+        self, model: type[Model] | sa_orm.DeclarativeMeta
     ) -> type[t.Any]:
         """Create a SQLAlchemy declarative model class. The result is available as
         :attr:`Model`.
