@@ -464,19 +464,26 @@ class SQLAlchemy:
         .. versionchanged:: 2.3
             ``model`` can be an already created declarative model class.
         """
-        if model is sa_orm.DeclarativeBase:
+        declarative_bases = [
+            b
+            for b in model.__bases__
+            if issubclass(b, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta))
+        ]
+        if len(declarative_bases) > 1:
+            # raise error if more than one declarative base is found
+            raise ValueError(
+                "Only one declarative base can be passed to SQLAlchemy."
+                " Got: {}".format(model.__bases__)
+            )
+        elif len(declarative_bases) == 1:
             body = {"__fsa__": self}
             model = types.new_class(
                 "Base",
-                (BindMixin, NameMixin, ReprMixin, sa_orm.DeclarativeBase),
-                {"metaclass": type(sa_orm.DeclarativeBase)},
+                (BindMixin, NameMixin, ReprMixin, *model.__bases__),
+                {"metaclass": type(declarative_bases[0])},
                 lambda ns: ns.update(body),
             )
-        elif (
-            not isinstance(model, sa_orm.DeclarativeMeta)
-            and not issubclass(model, sa_orm.DeclarativeBase)
-            and not issubclass(model, sa_orm.DeclarativeBaseNoMeta)
-        ):
+        elif not isinstance(model, sa_orm.DeclarativeMeta):
             metadata = self._make_metadata(None)
             model = sa_orm.declarative_base(
                 metadata=metadata, cls=model, name="Model", metaclass=DefaultMeta

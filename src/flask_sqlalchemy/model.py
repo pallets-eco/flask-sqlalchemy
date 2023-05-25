@@ -283,7 +283,8 @@ def should_set_tablename(cls: type) -> bool:
 
     # TODO: or not any(isinstance(b, sa.orm.DeclarativeMeta) for b in cls.__mro__[1:]) \
     if cls.__dict__.get("__abstract__", False) or any(
-        b is sa_orm.DeclarativeBase for b in cls.__bases__
+        (b is sa_orm.DeclarativeBase or b is sa_orm.DeclarativeBaseNoMeta)
+        for b in cls.__bases__
     ):
         return False
 
