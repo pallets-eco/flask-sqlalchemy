@@ -67,6 +67,21 @@ class Model:
         return f"<{type(self).__name__} {pk}>"
 
 
+class ReprMixin:
+    def __repr__(self) -> str:
+        state = sa.inspect(self)
+        assert state is not None
+
+        if state.transient:
+            pk = f"(transient {id(self)})"
+        elif state.pending:
+            pk = f"(pending {id(self)})"
+        else:
+            pk = ", ".join(map(str, state.identity))
+
+        return f"<{type(self).__name__} {pk}>"
+
+
 class BindMetaMixin(type):
     """Metaclass mixin that sets a model's ``metadata`` based on its ``__bind_key__``.
 
@@ -90,6 +105,29 @@ class BindMetaMixin(type):
                 cls.metadata = metadata
 
         super().__init__(name, bases, d, **kwargs)
+
+
+class BindMixin:
+    """DeclarativeBase mixin to set a model's ``metadata`` based on ``__bind_key__``.
+
+    If the model sets ``metadata`` or ``__table__`` directly, ``__bind_key__`` is
+    ignored. If the ``metadata`` is the same as the parent model, it will not be set
+    directly on the child model.
+    """
+
+    __fsa__: SQLAlchemy
+    metadata: sa.MetaData
+
+    def __init_subclass__(cls, **kwargs):
+        if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
+            bind_key = getattr(cls, "__bind_key__", None)
+            parent_metadata = getattr(cls, "metadata", None)
+            metadata = cls.__fsa__._make_metadata(bind_key)
+
+            if metadata is not parent_metadata:
+                cls.metadata = metadata
+
+        super().__init_subclass__(**kwargs)
 
 
 class NameMetaMixin(type):
@@ -161,82 +199,19 @@ class NameMetaMixin(type):
         return None
 
 
-def should_set_tablename(cls: type) -> bool:
-    """Determine whether ``__tablename__`` should be generated for a model.
-
-    -   If no class in the MRO sets a name, one should be generated.
-    -   If a declared attr is found, it should be used instead.
-    -   If a name is found, it should be used if the class is a mixin, otherwise one
-        should be generated.
-    -   Abstract models should not have one generated.
-
-    Later, ``__table_cls__`` will determine if the model looks like single or
-    joined-table inheritance. If no primary key is found, the name will be unset.
-    """
-    if cls.__dict__.get("__abstract__", False) or not any(
-        (isinstance(b, sa_orm.DeclarativeMeta) or b is sa_orm.DeclarativeBase)
-        for b in cls.__mro__[1:]
-    ):
-        return False
-
-    for base in cls.__mro__:
-        if "__tablename__" not in base.__dict__:
-            continue
-
-        if isinstance(base.__dict__["__tablename__"], sa_orm.declared_attr):
-            return False
-
-        return not (
-            base is cls
-            or base.__dict__.get("__abstract__", False)
-            or not (
-                isinstance(base, sa_orm.DeclarativeMeta)
-                or base is sa_orm.DeclarativeBase
-            )
-        )
-
-    return True
-
-
-def camel_to_snake_case(name: str) -> str:
-    """Convert a ``CamelCase`` name to ``snake_case``."""
-    name = re.sub(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))", r"_\1", name)
-    return name.lower().lstrip("_")
-
-
-class DefaultMeta(BindMetaMixin, NameMetaMixin, sa_orm.DeclarativeMeta):
-    """SQLAlchemy declarative metaclass that provides ``__bind_key__`` and
-    ``__tablename__`` support.
-    """
-
-
-class DefaultMixin:
-    """A mixin that provides Flask-SQLAlchemy default functionality:
-    * sets a model's ``__tablename__`` by converting the
+class NameMixin:
+    """DeclarativeBase mixin that sets a model's ``__tablename__`` by converting the
     ``CamelCase`` class name to ``snake_case``. A name is set for non-abstract models
     that do not otherwise define ``__tablename__``. If a model does not define a primary
     key, it will not generate a name or ``__table__``, for single-table inheritance.
-    * sets a model's ``metadata`` based on its ``__bind_key__``.
-    If the model sets ``metadata`` or ``__table__`` directly, ``__bind_key__`` is
-    ignored. If the ``metadata`` is the same as the parent model, it will not be set
-    directly on the child model.
-    * Provides a default repr based on the model's primary key.
     """
 
-    __fsa__: SQLAlchemy
     metadata: sa.MetaData
     __tablename__: str
     __table__: sa.Table
 
+    @classmethod
     def __init_subclass__(cls, **kwargs):
-        if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
-            bind_key = getattr(cls, "__bind_key__", None)
-            parent_metadata = getattr(cls, "metadata", None)
-            metadata = cls.__fsa__._make_metadata(bind_key)
-
-            if metadata is not parent_metadata:
-                cls.metadata = metadata
-
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
@@ -292,15 +267,52 @@ class DefaultMixin:
 
         return None
 
-    def __repr__(self) -> str:
-        state = sa.inspect(self)
-        assert state is not None
 
-        if state.transient:
-            pk = f"(transient {id(self)})"
-        elif state.pending:
-            pk = f"(pending {id(self)})"
-        else:
-            pk = ", ".join(map(str, state.identity))
+def should_set_tablename(cls: type) -> bool:
+    """Determine whether ``__tablename__`` should be generated for a model.
 
-        return f"<{type(self).__name__} {pk}>"
+    -   If no class in the MRO sets a name, one should be generated.
+    -   If a declared attr is found, it should be used instead.
+    -   If a name is found, it should be used if the class is a mixin, otherwise one
+        should be generated.
+    -   Abstract models should not have one generated.
+
+    Later, ``__table_cls__`` will determine if the model looks like single or
+    joined-table inheritance. If no primary key is found, the name will be unset.
+    """
+
+    # TODO: or not any(isinstance(b, sa.orm.DeclarativeMeta) for b in cls.__mro__[1:]) \
+    if cls.__dict__.get("__abstract__", False) or any(
+        b is sa_orm.DeclarativeBase for b in cls.__bases__
+    ):
+        return False
+
+    for base in cls.__mro__:
+        if "__tablename__" not in base.__dict__:
+            continue
+
+        if isinstance(base.__dict__["__tablename__"], sa_orm.declared_attr):
+            return False
+
+        return not (
+            base is cls
+            or base.__dict__.get("__abstract__", False)
+            or not (
+                isinstance(base, sa_orm.DeclarativeMeta)
+                or isinstance(base, sa_orm.decl_api.DeclarativeAttributeIntercept)
+            )
+        )
+
+    return True
+
+
+def camel_to_snake_case(name: str) -> str:
+    """Convert a ``CamelCase`` name to ``snake_case``."""
+    name = re.sub(r"((?<=[a-z0-9])[A-Z]|(?!^)[A-Z](?=[a-z]))", r"_\1", name)
+    return name.lower().lstrip("_")
+
+
+class DefaultMeta(BindMetaMixin, NameMetaMixin, sa_orm.DeclarativeMeta):
+    """SQLAlchemy declarative metaclass that provides ``__bind_key__`` and
+    ``__tablename__`` support.
+    """

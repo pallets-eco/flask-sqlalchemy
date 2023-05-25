@@ -12,7 +12,6 @@ from sqlalchemy.orm import mapped_column
 
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.model import DefaultMeta
-from flask_sqlalchemy.model import DefaultMixin
 from flask_sqlalchemy.model import Model
 
 
@@ -36,26 +35,26 @@ def test_custom_model_class(app: Flask) -> None:
 def test_custom_model_sqlalchemy20_class(app: Flask) -> None:
     from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 
-    class Base(DeclarativeBase):
-        pass
-
-    db = SQLAlchemy(app, model_class=Base)
+    app.config["SQLALCHEMY_BINDS"] = {"other": "sqlite://"}
+    db = SQLAlchemy(app, model_class=DeclarativeBase)
 
     # Check the model class is instantiated with the correct metaclass
-    assert issubclass(db.Model, Base)
+    assert issubclass(db.Model, DeclarativeBase)
     assert isinstance(db.Model, type)
     assert isinstance(db.Model, DeclarativeAttributeIntercept)
     # Check that additional attributes are added to the model class
     assert db.Model.query_class is db.Query
 
     # Now create a model that inherits from that declarative base
-    class Quiz(DefaultMixin, db.Model):
+    class Quiz(db.Model):
+        __bind_key__ = "other"
         id: Mapped[int] = mapped_column(
             db.Integer, primary_key=True, autoincrement=True
         )
         title: Mapped[str] = mapped_column(db.String(255), nullable=False)
 
     assert Quiz.__tablename__ == "quiz"
+    assert Quiz.metadata is db.metadatas["other"]
     assert isinstance(Quiz, DeclarativeAttributeIntercept)
 
     db.create_all()
