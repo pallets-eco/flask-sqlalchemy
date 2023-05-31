@@ -18,7 +18,9 @@ from flask_sqlalchemy.model import DefaultMeta
 from flask_sqlalchemy.model import Model
 
 
-def test_default_model_class(db: SQLAlchemy) -> None:
+def test_default_model_class(app: Flask) -> None:
+    db = SQLAlchemy(app)
+
     assert db.Model.query_class is db.Query
     assert db.Model.metadata is db.metadata
     assert issubclass(db.Model, Model)
@@ -130,8 +132,12 @@ def test_model_repr(db: SQLAlchemy) -> None:
 
     db.create_all()
     user = User()
-    assert repr(user) == f"<User (transient {id(user)})>"
-    db.session.add(user)
-    assert repr(user) == f"<User (pending {id(user)})>"
-    db.session.flush()
-    assert repr(user) == f"<User {user.id}>"
+
+    if issubclass(db.Model, MappedAsDataclass):
+        assert repr(user) == "test_model_repr.<locals>.User()"
+    else:
+        assert repr(user) == f"<User (transient {id(user)})>"
+        db.session.add(user)
+        assert repr(user) == f"<User (pending {id(user)})>"
+        db.session.flush()
+        assert repr(user) == f"<User {user.id}>"

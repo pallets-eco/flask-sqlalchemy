@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import types
 import typing as t
 from pathlib import Path
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.orm as sa_orm
 from flask import Flask
 from flask.ctx import AppContext
+from sqlalchemy.orm import Mapped
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -25,16 +28,67 @@ def app_ctx(app: Flask) -> t.Generator[AppContext, None, None]:
         yield ctx
 
 
-@pytest.fixture
-def db(app: Flask) -> SQLAlchemy:
-    return SQLAlchemy(app)
+test_classes = [
+    None,
+    types.new_class(
+        "BaseDeclarativeBase",
+        (sa_orm.DeclarativeBase,),
+        {"metaclass": type(sa_orm.DeclarativeBase)},
+    ),
+    types.new_class(
+        "BaseDataclassDeclarativeBase",
+        (sa_orm.MappedAsDataclass, sa_orm.DeclarativeBase),
+        {"metaclass": type(sa_orm.DeclarativeBase)},
+    ),
+    types.new_class(
+        "BaseDeclarativeBaseNoMeta",
+        (sa_orm.DeclarativeBaseNoMeta,),
+        {"metaclass": type(sa_orm.DeclarativeBaseNoMeta)},
+    ),
+    types.new_class(
+        "BaseDataclassDeclarativeBaseNoMeta",
+        (
+            sa_orm.MappedAsDataclass,
+            sa_orm.DeclarativeBaseNoMeta,
+        ),
+        {"metaclass": type(sa_orm.DeclarativeBaseNoMeta)},
+    ),
+]
+
+
+@pytest.fixture(params=test_classes)
+def db(app: Flask, request: pytest.FixtureRequest) -> SQLAlchemy:
+    if request.param is not None:
+        return SQLAlchemy(app, model_class=request.param)
+    else:
+        return SQLAlchemy(app)
 
 
 @pytest.fixture
 def Todo(app: Flask, db: SQLAlchemy) -> t.Generator[t.Any, None, None]:
-    class Todo(db.Model):
-        id = sa.Column(sa.Integer, primary_key=True)
-        title = sa.Column(sa.String)
+    if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
+
+        class Todo(db.Model):
+            id: Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, init=False, primary_key=True
+            )
+            title: Mapped[str] = sa_orm.mapped_column(
+                sa.String, nullable=True, default=None
+            )
+
+    elif issubclass(
+        db.Model, (sa_orm.DeclarativeBaseNoMeta, sa_orm.DeclarativeBaseNoMeta)
+    ):
+
+        class Todo(db.Model):
+            id: Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            title: Mapped[str] = sa_orm.mapped_column(sa.String, nullable=True)
+
+    else:
+
+        class Todo(db.Model):
+            id: sa.Column = sa.Column(sa.Integer, primary_key=True)
+            title: sa.Column = sa.Column(sa.String)
 
     with app.app_context():
         db.create_all()

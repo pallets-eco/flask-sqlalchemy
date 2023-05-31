@@ -19,7 +19,6 @@ from .model import BindMixin
 from .model import DefaultMeta
 from .model import Model
 from .model import NameMixin
-from .model import ReprMixin
 from .pagination import Pagination
 from .pagination import SelectPagination
 from .query import Query
@@ -478,8 +477,8 @@ class SQLAlchemy:
         elif len(declarative_bases) == 1:
             body = {"__fsa__": self}
             model = types.new_class(
-                "Base",
-                (BindMixin, NameMixin, ReprMixin, *model.__bases__),
+                "FlaskSQLAlchemyBase",
+                (BindMixin, NameMixin, Model, *model.__bases__),
                 {"metaclass": type(declarative_bases[0])},
                 lambda ns: ns.update(body),
             )

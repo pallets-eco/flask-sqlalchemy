@@ -67,21 +67,6 @@ class Model:
         return f"<{type(self).__name__} {pk}>"
 
 
-class ReprMixin:
-    def __repr__(self) -> str:
-        state = sa.inspect(self)
-        assert state is not None
-
-        if state.transient:
-            pk = f"(transient {id(self)})"
-        elif state.pending:
-            pk = f"(pending {id(self)})"
-        else:
-            pk = ", ".join(map(str, state.identity))
-
-        return f"<{type(self).__name__} {pk}>"
-
-
 class BindMetaMixin(type):
     """Metaclass mixin that sets a model's ``metadata`` based on its ``__bind_key__``.
 
@@ -118,6 +103,7 @@ class BindMixin:
     __fsa__: SQLAlchemy
     metadata: sa.MetaData
 
+    @classmethod
     def __init_subclass__(cls, **kwargs):
         if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
             bind_key = getattr(cls, "__bind_key__", None)
@@ -307,6 +293,7 @@ def should_set_tablename(cls: type) -> bool:
             or not (
                 isinstance(base, sa_orm.DeclarativeMeta)
                 or isinstance(base, sa_orm.decl_api.DeclarativeAttributeIntercept)
+                or issubclass(base, sa_orm.DeclarativeBaseNoMeta)
             )
         )
 
