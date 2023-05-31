@@ -40,9 +40,46 @@ For example, to install or update the latest version using pip:
 .. _PyPI: https://pypi.org/project/Flask-SQLAlchemy/
 
 
+Initialize the Extension
+------------------------
+
+First create the ``db`` object using the ``SQLAlchemy`` constructor.
+
+.. code-block:: python
+
+    from flask import Flask
+    from flask_sqlalchemy import SQLAlchemy
+    from sqlalchemy.orm import DeclarativeBase
+
+    db = SQLAlchemy()
+
+
+By default, this extension assumes that you are using the SQLAlchemy 1.x API for defining models.
+
+To use the new SQLAlchemy 2.x API, pass a subclass of either ``DeclarativeBase`` or ``DeclarativeBaseNoMeta``
+to the constructor.
+
+.. code-block:: python
+
+    from flask import Flask
+    from flask_sqlalchemy import SQLAlchemy
+    from sqlalchemy.orm import DeclarativeBase
+
+    class Base(DeclarativeBase):
+      pass
+
+    db = SQLAlchemy(model_class=Base)
+
+Once constructed, the ``db`` object gives you access to the :attr:`db.Model <.SQLAlchemy.Model>` class to
+define models, and the :attr:`db.session <.SQLAlchemy.session>` to execute queries.
+
+The :class:`SQLAlchemy` object also takes additional arguments to customize the
+objects it manages.
+
 Configure the Extension
 -----------------------
 
+The next step is to connect the extension to your Flask app.
 The only required Flask app config is the :data:`.SQLALCHEMY_DATABASE_URI` key. That
 is a connection string that tells SQLAlchemy what database to connect to.
 
@@ -53,11 +90,6 @@ which is stored in the app's instance folder.
 
 .. code-block:: python
 
-    from flask import Flask
-    from flask_sqlalchemy import SQLAlchemy
-
-    # create the extension
-    db = SQLAlchemy()
     # create the app
     app = Flask(__name__)
     # configure the SQLite database, relative to the app instance folder
@@ -65,12 +97,8 @@ which is stored in the app's instance folder.
     # initialize the app with the extension
     db.init_app(app)
 
-The ``db`` object gives you access to the :attr:`db.Model <.SQLAlchemy.Model>` class to
-define models, and the :attr:`db.session <.SQLAlchemy.session>` to execute queries.
-
 See :doc:`config` for an explanation of connections strings and what other configuration
-keys are used. The :class:`SQLAlchemy` object also takes some arguments to customize the
-objects it manages.
+keys are used.
 
 
 Define Models
@@ -81,6 +109,8 @@ Subclass ``db.Model`` to define a model class. The ``db`` object makes the names
 The model will generate a table name by converting the ``CamelCase`` class name to
 ``snake_case``.
 
+This example uses the SQLAlchemy 1.x style of defining models:
+
 .. code-block:: python
 
     class User(db.Model):
@@ -89,6 +119,20 @@ The model will generate a table name by converting the ``CamelCase`` class name 
         email = db.Column(db.String)
 
 The table name ``"user"`` will automatically be assigned to the model's table.
+
+It's also possible to use the SQLAlchemy 2.x style of defining models,
+as long as you initialized the extension with an appropriate 2.x model base class
+as described above.
+
+.. code-block:: python
+
+    from sqlalchemy.orm import Mapped, mapped_column
+
+    class User(db.Model):
+        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
+        username: Mapped[str] = mapped_column(db.String, unique=True, nullable=False)
+        email: Mapped[str] = mapped_column(db.String)
+
 
 See :doc:`models` for more information about defining and creating models and tables.
 

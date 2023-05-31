@@ -202,9 +202,15 @@ class SQLAlchemy:
         database engine. Otherwise, it will use the default :attr:`metadata` and
         :attr:`engine`. This is ignored if the model sets ``metadata`` or ``__table__``.
 
-        Customize this by subclassing :class:`.Model` and passing the ``model_class``
-        parameter to the extension. A fully created declarative model class can be
+        For code using the SQLAlchemy 1.x API, customize this model by subclassing
+        :class:`.Model` and passing the ``model_class`` parameter to the extension.
+        A fully created declarative model class can be
         passed as well, to use a custom metaclass.
+
+        For code using the SQLAlchemy 2.x API, customize this model by subclassing
+        :class:`sqlalchemy.orm.DeclarativeBase` or
+        :class:`sqlalchemy.orm.DeclarativeBaseNoMeta`
+        and passing the ``model_class`` parameter to the extension.
         """
 
         if engine_options is None:

@@ -9,7 +9,6 @@ import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
 from flask import Flask
 from flask.ctx import AppContext
-from sqlalchemy.orm import Mapped
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -69,10 +68,10 @@ def Todo(app: Flask, db: SQLAlchemy) -> t.Generator[t.Any, None, None]:
     if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
 
         class Todo(db.Model):
-            id: Mapped[int] = sa_orm.mapped_column(
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
                 sa.Integer, init=False, primary_key=True
             )
-            title: Mapped[str] = sa_orm.mapped_column(
+            title: sa_orm.Mapped[str] = sa_orm.mapped_column(
                 sa.String, nullable=True, default=None
             )
 
@@ -81,8 +80,8 @@ def Todo(app: Flask, db: SQLAlchemy) -> t.Generator[t.Any, None, None]:
     ):
 
         class Todo(db.Model):
-            id: Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
-            title: Mapped[str] = sa_orm.mapped_column(sa.String, nullable=True)
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            title: sa_orm.Mapped[str] = sa_orm.mapped_column(sa.String, nullable=True)
 
     else:
 

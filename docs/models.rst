@@ -30,6 +30,19 @@ For convenience, the extension object provides access to names in the ``sqlalche
 ``sqlalchemy.orm`` modules. So you can use ``db.Column`` instead of importing and using
 ``sqlalchemy.Column``, although the two are equivalent.
 
+It's also possible to use the SQLAlchemy 2.x style of defining models,
+as long as you initialized the extension with an appropriate 2.x model base class
+(as described in the quickstart).
+
+.. code-block:: python
+
+    from sqlalchemy.orm import Mapped, mapped_column
+
+    class User(db.Model):
+        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
+        username: Mapped[str] = mapped_column(db.String, unique=True, nullable=False)
+        email: Mapped[str] = mapped_column(db.String)
+
 Defining a model does not create it in the database. Use :meth:`~.SQLAlchemy.create_all`
 to create the models and tables after defining them. If you define models in submodules,
 you must import them so that SQLAlchemy knows about them before calling ``create_all``.
