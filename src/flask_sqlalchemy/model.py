@@ -98,13 +98,15 @@ class BindMixin:
     If the model sets ``metadata`` or ``__table__`` directly, ``__bind_key__`` is
     ignored. If the ``metadata`` is the same as the parent model, it will not be set
     directly on the child model.
+
+    .. versionchanged:: 3.0.4
     """
 
     __fsa__: SQLAlchemy
     metadata: sa.MetaData
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls: t.Type[BindMixin], **kwargs: t.Dict[str, t.Any]) -> None:
         if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
             bind_key = getattr(cls, "__bind_key__", None)
             parent_metadata = getattr(cls, "metadata", None)
@@ -190,6 +192,8 @@ class NameMixin:
     ``CamelCase`` class name to ``snake_case``. A name is set for non-abstract models
     that do not otherwise define ``__tablename__``. If a model does not define a primary
     key, it will not generate a name or ``__table__``, for single-table inheritance.
+
+    .. versionchanged:: 3.0.4
     """
 
     metadata: sa.MetaData
@@ -197,7 +201,7 @@ class NameMixin:
     __table__: sa.Table
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls: t.Type[NameMixin], **kwargs: t.Dict[str, t.Any]) -> None:
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 

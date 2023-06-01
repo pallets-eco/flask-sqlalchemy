@@ -29,6 +29,23 @@ from .table import _Table
 _O = t.TypeVar("_O", bound=object)  # Based on sqlalchemy.orm._typing.py
 
 
+# Type accepted for model_class argument
+FSA_MC = t.TypeVar(
+    "FSA_MC",
+    bound=t.Union[
+        Model,
+        sa_orm.DeclarativeMeta,
+        sa_orm.DeclarativeBase,
+        sa_orm.DeclarativeBaseNoMeta,
+    ],
+)
+
+
+# Type returned by make_declarative_base
+class FSAModel(Model):
+    metadata: sa.MetaData
+
+
 class SQLAlchemy:
     """Integrates SQLAlchemy with Flask. This handles setting up one or more engines,
     associating tables and models with specific engines, and cleaning up connections and
@@ -127,7 +144,7 @@ class SQLAlchemy:
         metadata: sa.MetaData | None = None,
         session_options: dict[str, t.Any] | None = None,
         query_class: type[Query] = Query,
-        model_class: type[Model] | sa_orm.DeclarativeMeta = Model,
+        model_class: t.Type[FSA_MC] = Model,  # type: ignore[assignment]
         engine_options: dict[str, t.Any] | None = None,
         add_models_to_shell: bool = True,
     ):
@@ -448,8 +465,9 @@ class SQLAlchemy:
         return Table
 
     def _make_declarative_base(
-        self, model: type[Model] | sa_orm.DeclarativeMeta
-    ) -> type[t.Any]:
+        self,
+        model_class: t.Type[FSA_MC],
+    ) -> t.Type[FSAModel]:
         """Create a SQLAlchemy declarative model class. The result is available as
         :attr:`Model`.
 
@@ -461,7 +479,11 @@ class SQLAlchemy:
 
         :meta private:
 
-        :param model: A model base class, or an already created declarative model class.
+        :param model_class: A model base class, or an already created declarative model
+        class.
+
+        .. versionchanged:: 3.0.4
+            Added support for passing SQLAlchemy 2.x base class as model class.
 
         .. versionchanged:: 3.0
             Renamed with a leading underscore, this method is internal.
@@ -469,41 +491,44 @@ class SQLAlchemy:
         .. versionchanged:: 2.3
             ``model`` can be an already created declarative model class.
         """
+        model: t.Type[FSAModel]
         declarative_bases = [
             b
-            for b in model.__bases__
+            for b in model_class.__bases__
             if issubclass(b, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta))
         ]
         if len(declarative_bases) > 1:
             # raise error if more than one declarative base is found
             raise ValueError(
                 "Only one declarative base can be passed to SQLAlchemy."
-                " Got: {}".format(model.__bases__)
+                " Got: {}".format(model_class.__bases__)
             )
         elif len(declarative_bases) == 1:
             body = {"__fsa__": self}
             model = types.new_class(
                 "FlaskSQLAlchemyBase",
-                (BindMixin, NameMixin, Model, *model.__bases__),
+                (BindMixin, NameMixin, Model, *model_class.__bases__),
                 {"metaclass": type(declarative_bases[0])},
                 lambda ns: ns.update(body),
             )
-        elif not isinstance(model, sa_orm.DeclarativeMeta):
+        elif not isinstance(model_class, sa.orm.DeclarativeMeta):
             metadata = self._make_metadata(None)
             model = sa_orm.declarative_base(
-                metadata=metadata, cls=model, name="Model", metaclass=DefaultMeta
+                metadata=metadata, cls=model_class, name="Model", metaclass=DefaultMeta
             )
+        else:
+            model = model_class
 
         if None not in self.metadatas:
             # Use the model's metadata as the default metadata.
-            model.metadata.info["bind_key"] = None  # type: ignore[union-attr]
-            self.metadatas[None] = model.metadata  # type: ignore[union-attr]
+            model.metadata.info["bind_key"] = None
+            self.metadatas[None] = model.metadata
         else:
             # Use the passed in default metadata as the model's metadata.
-            model.metadata = self.metadatas[None]  # type: ignore[union-attr]
+            model.metadata = self.metadatas[None]
 
         model.query_class = self.Query
-        model.query = _QueryProperty()
+        model.query = _QueryProperty()  # type: ignore[assignment]
         model.__fsa__ = self
         return model
 

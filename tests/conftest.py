@@ -79,15 +79,15 @@ def Todo(app: Flask, db: SQLAlchemy) -> t.Generator[t.Any, None, None]:
         db.Model, (sa_orm.DeclarativeBaseNoMeta, sa_orm.DeclarativeBaseNoMeta)
     ):
 
-        class Todo(db.Model):
+        class Todo(db.Model):  # type: ignore[no-redef]
             id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
             title: sa_orm.Mapped[str] = sa_orm.mapped_column(sa.String, nullable=True)
 
     else:
 
-        class Todo(db.Model):
-            id: sa.Column = sa.Column(sa.Integer, primary_key=True)
-            title: sa.Column = sa.Column(sa.String)
+        class Todo(db.Model):  # type: ignore[no-redef]
+            id = sa.Column(sa.Integer, primary_key=True)
+            title = sa.Column(sa.String)
 
     with app.app_context():
         db.create_all()

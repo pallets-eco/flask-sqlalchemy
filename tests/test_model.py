@@ -59,3 +59,12 @@ def test_model_repr(db: SQLAlchemy) -> None:
         assert repr(user) == f"<User (pending {id(user)})>"
         db.session.flush()
         assert repr(user) == f"<User {user.id}>"
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_too_many_bases(app: Flask) -> None:
+    class Base(sa.orm.DeclarativeBase, sa.orm.DeclarativeBaseNoMeta):  # type: ignore[misc]
+        pass
+
+    with pytest.raises(ValueError):
+        SQLAlchemy(app, model_class=Base)
