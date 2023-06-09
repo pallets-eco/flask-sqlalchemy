@@ -1,0 +1,8 @@
+-r tests.in
+-r mypy.in
+-r docs.in
+pip-compile-multi
+pre-commit
+tox
+pytest-cov
+coverage[toml]

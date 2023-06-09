@@ -14,16 +14,11 @@ jobs:
         with:
           python-version: '3.x'
           cache: 'pip'
-          cache-dependency-path: 'pdm.lock'
-      - uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
-        with:
-          path: ~/.cache/pdm
-          key: ${{ matrix.python }}-pdm-${{ hashFiles('pdm.lock') }}
-          restore-keys: ${{ matrix.python }}-pdm-
-      - run: pip install pdm
+          cache-dependency-path: 'requirements/*.txt'
+      - run: pip install build
       # Use the commit date instead of the current date during the build.
       - run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
-      - run: pdm build
+      - run: python -m build
       # Generate hashes used for provenance.
       - name: generate hash
         id: hash
@@ -63,15 +58,15 @@ jobs:
     # files in the draft release.
     environment: 'publish'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a
       # Try uploading to Test PyPI first, in case something fails.
       - uses: pypa/gh-action-pypi-publish@a56da0b891b3dc519c7ee3284aff1fad93cc8598
         with:
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
-          packages_dir: artifact/
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: artifact/
       - uses: pypa/gh-action-pypi-publish@a56da0b891b3dc519c7ee3284aff1fad93cc8598
         with:
-          password: ${{ secrets.PYPI_TOKEN }}
-          packages_dir: artifact/
+          packages-dir: artifact/
