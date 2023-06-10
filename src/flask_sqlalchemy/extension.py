@@ -23,7 +23,7 @@ from .session import _app_ctx_id
 from .session import Session
 from .table import _Table
 
-_O = t.TypeVar("_O", bound=t.Any)
+_O = t.TypeVar("_O", bound=object)  # Based on sqlalchemy.orm._typing.py
 
 
 class SQLAlchemy:
