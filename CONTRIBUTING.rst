@@ -61,7 +61,6 @@ Include the following in your patch:
 -   Use `Black`_ to format your code. This and other tools will run
     automatically if you install `pre-commit`_ using the instructions
     below.
--   All code and docs should be wrapped at 88 characters.
 -   Include tests if your patch adds or changes code. Make sure the test
     fails without your patch.
 -   Update any relevant docs pages and docstrings.
@@ -87,35 +86,39 @@ First time setup
 -   Make sure you have a `GitHub account`_.
 -   Fork Flask-SQLAlchemy to your GitHub account by clicking the `Fork`_
     button.
--   `Clone`_ the main repository locally.
+-   `Clone`_ the main repository locally, replacing ``{username}`` with your GitHub
+    username.
 
     .. code-block:: text
 
-        $ git clone https://github.com/pallets-eco/flask-sqlalchemy
+        $ git clone https://github.com/{username}/flask-sqlalchemy
         $ cd flask-sqlalchemy
 
--   Add your fork as a remote to push your work to. Replace
-    ``{username}`` with your username. This names the remote "fork", the
-    default Pallets remote is "origin".
+-   Create a virtualenv.
 
     .. code-block:: text
 
-        git remote add fork https://github.com/{username}/flask-sqlalchemy
+        $ python3 -m venv .venv
+        $ . .venv/bin/activate
 
--   `Install PDM`_, the tool we use to manage the development environment.
-
--   Use PDM to set up the development environment. This automatically creates a
-    virtualenv, installs development tools, and installs the project in editable mode.
+    On Windows, activating is different.
 
     .. code-block:: text
 
-        $ pdm sync
+        > .venv\Scripts\activate
+
+-   Install the development dependencies, then install Flask-SQLAlchemy
+    in editable mode.
+
+    .. code-block:: text
+
+        $ pip install -r requirements/dev.txt && pip install -e .
 
 -   Install the pre-commit hooks.
 
     .. code-block:: text
 
-        $ pdm run pre-commit install
+        $ pre-commit install
 
 .. _latest version of git: https://git-scm.com/downloads
 .. _username: https://docs.github.com/en/github/using-git/setting-your-username-in-git
@@ -123,7 +126,6 @@ First time setup
 .. _GitHub account: https://github.com/join
 .. _Fork: https://github.com/pallets-eco/flask-sqlalchemy/fork
 .. _Clone: https://docs.github.com/en/github/getting-started-with-github/fork-a-repo#step-2-create-a-local-clone-of-your-fork
-.. _Install PDM: https://pdm.fming.dev/latest/#installation
 
 
 Start coding
@@ -169,7 +171,7 @@ Run the basic test suite with pytest.
 
 .. code-block:: text
 
-    $ pdm run pytest
+    $ pytest
 
 This runs the tests for the current environment, which is usually sufficient. CI will
 run the full suite when you submit your pull request. You can run the full test suite in
@@ -177,7 +179,7 @@ parallel with tox if you don't want to wait.
 
 .. code-block:: text
 
-    $ pdm run tox -p
+    $ tox p
 
 
 Running test coverage
@@ -188,8 +190,9 @@ contributing. Collect coverage from the tests and generate a report.
 
 .. code-block:: text
 
-    $ pdm run pytest --cov
-    $ pdm run coverage html
+    $ pip install "coverage[toml]"
+    $ coverage run -m pytest
+    $ coverage html
 
 Open ``htmlcov/index.html`` in your browser to explore the report.
 
