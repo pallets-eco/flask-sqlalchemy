@@ -30,8 +30,8 @@ _O = t.TypeVar("_O", bound=object)  # Based on sqlalchemy.orm._typing.py
 
 
 # Type accepted for model_class argument
-FSA_MC = t.TypeVar(
-    "FSA_MC",
+_FSA_MC = t.TypeVar(
+    "_FSA_MC",
     bound=t.Union[
         Model,
         sa_orm.DeclarativeMeta,
@@ -42,7 +42,7 @@ FSA_MC = t.TypeVar(
 
 
 # Type returned by make_declarative_base
-class FSAModel(Model):
+class _FSAModel(Model):
     metadata: sa.MetaData
 
 
@@ -144,7 +144,7 @@ class SQLAlchemy:
         metadata: sa.MetaData | None = None,
         session_options: dict[str, t.Any] | None = None,
         query_class: type[Query] = Query,
-        model_class: t.Type[FSA_MC] = Model,  # type: ignore[assignment]
+        model_class: t.Type[_FSA_MC] = Model,  # type: ignore[assignment]
         engine_options: dict[str, t.Any] | None = None,
         add_models_to_shell: bool = True,
     ):
@@ -466,8 +466,8 @@ class SQLAlchemy:
 
     def _make_declarative_base(
         self,
-        model_class: t.Type[FSA_MC],
-    ) -> t.Type[FSAModel]:
+        model_class: t.Type[_FSA_MC],
+    ) -> t.Type[_FSAModel]:
         """Create a SQLAlchemy declarative model class. The result is available as
         :attr:`Model`.
 
@@ -491,7 +491,7 @@ class SQLAlchemy:
         .. versionchanged:: 2.3
             ``model`` can be an already created declarative model class.
         """
-        model: t.Type[FSAModel]
+        model: t.Type[_FSAModel]
         declarative_bases = [
             b
             for b in model_class.__bases__
