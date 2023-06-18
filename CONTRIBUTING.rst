@@ -212,3 +212,86 @@ Build the docs in the ``docs`` directory using Sphinx.
 Open ``_build/html/index.html`` in your browser to view the docs.
 
 Read more about `Sphinx <https://www.sphinx-doc.org/en/stable/>`__.
+
+
+Publishing a Release
+--------------------
+
+As a maintainer, once you decide it's time to publish a new release, follow these
+instructions.
+
+1.  You'll manage the release through a PR on GitHub. Create a branch like
+    "release-A.B.C". For a fix release, branch off the corresponding release branch. For
+    a feature release, branch off of main.
+
+    ```
+    $ git switch -c release-A.B.C A.B.x
+    ```
+
+2.  Review the ``CHANGES.rst`` file and ensure each code change has a corresponding
+    entry. Only code changes need entries, not docs or non-published code and files. Use
+    your judgement on what users would want to know.
+
+3.  Update the ``CHANGES.rst`` file to replace "Unreleased" with "Released YYYY-MM-DD".
+
+4.  Update ``__version__`` in ``__init__.py`` to remove the ".dev" suffix. Ensure that
+    the version number matches what you think you're releasing.
+
+5.  Commit with a standard message:
+
+    ```
+    $ git commit -am 'release version A.B.C'
+    ```
+
+6.  Push the branch and open a PR. The title should be the same as the commit message
+    (if there was only one commit). No need to add a description. Assign it to the
+    corresponding vesion milestone, like "3.0.4". If there's no milestone, it's because
+    this is a newly adapted project that isn't using our full organization scheme yet,
+    no problem.
+
+7.  Don't merge the PR until the end. Observe that all workflows and checks pass for the
+    PR.
+
+8.  Create and push an annotated tag with a standard message. You'll see the new
+    "build" workflow status get added to the PR checks.
+
+    ```
+    $ git tag -am 'release version A.B.C' A.B.C
+    $ git push origin A.B.C
+    ```
+
+9.  Wait for the "build", "provenance", and "create-release" workflows to succeed. Go
+    into the created draft release and check that the expected files (with the correct
+    version numbers) are part of it. Add a quick message about the release, such as
+    "This is a fix release for the 3.0.x release branch." along with a link to the
+    changelog section and closed milestone. See an existing release in Flask for an
+    example. Save the draft (don't publish it yet, it's not on PyPI yet.)
+
+10. The "publish-pypi" workflow will have a yellow paused icon. A maintainer with
+    publish permissions must approve it. Once they do, the release files will be
+    uploaded to PyPI. If you don't have publish permission yet, ping the maintainers
+    channel.
+
+11. After seeing that the "publish-pypi" workflow succeeds, merge the PR. Then publish
+    the draft release, and close the milestone.
+
+12. If this was a fix release, merge it into main now that the PR is merged.
+
+    ```
+    $ git switch A.B.x
+    $ git pull
+    $ git switch main
+    $ git merge A.B.x
+    ```
+
+12. If this was a feature release, make a new branch for fix releases.
+
+    ```
+    $ git switch main
+    $ git pull
+    $ git switch -c A.B.x
+    $ git push
+    ```
+
+13. If this was a feature release, ask a maintainer with docs access to update Read the
+    Docs to use the new branch as the primary.
