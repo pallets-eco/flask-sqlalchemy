@@ -282,6 +282,7 @@ instructions.
     $ git pull
     $ git switch main
     $ git merge A.B.x
+    $ git push
     ```
 
 12. If this was a feature release, make a new branch for fix releases.
