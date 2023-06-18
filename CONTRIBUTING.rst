@@ -224,9 +224,9 @@ instructions.
     "release-A.B.C". For a fix release, branch off the corresponding release branch. For
     a feature release, branch off of main.
 
-    ```
-    $ git switch -c release-A.B.C A.B.x
-    ```
+    .. code-block:: text
+
+        $ git switch -c release-A.B.C A.B.x
 
 2.  Review the ``CHANGES.rst`` file and ensure each code change has a corresponding
     entry. Only code changes need entries, not docs or non-published code and files. Use
@@ -239,9 +239,9 @@ instructions.
 
 5.  Commit with a standard message:
 
-    ```
-    $ git commit -am 'release version A.B.C'
-    ```
+    .. code-block:: text
+
+        $ git commit -am 'release version A.B.C'
 
 6.  Push the branch and open a PR. The title should be the same as the commit message
     (if there was only one commit). No need to add a description. Assign it to the
@@ -255,10 +255,10 @@ instructions.
 8.  Create and push an annotated tag with a standard message. You'll see the new
     "build" workflow status get added to the PR checks.
 
-    ```
-    $ git tag -am 'release version A.B.C' A.B.C
-    $ git push origin A.B.C
-    ```
+    .. code-block:: text
+
+        $ git tag -am 'release version A.B.C' A.B.C
+        $ git push origin A.B.C
 
 9.  Wait for the "build", "provenance", and "create-release" workflows to succeed. Go
     into the created draft release and check that the expected files (with the correct
@@ -277,22 +277,22 @@ instructions.
 
 12. If this was a fix release, merge it into main now that the PR is merged.
 
-    ```
-    $ git switch A.B.x
-    $ git pull
-    $ git switch main
-    $ git merge A.B.x
-    $ git push
-    ```
+    .. code-block:: text
+
+        $ git switch A.B.x
+        $ git pull
+        $ git switch main
+        $ git merge A.B.x
+        $ git push
 
 12. If this was a feature release, make a new branch for fix releases.
 
-    ```
-    $ git switch main
-    $ git pull
-    $ git switch -c A.B.x
-    $ git push
-    ```
+    .. code-block:: text
+
+        $ git switch main
+        $ git pull
+        $ git switch -c A.B.x
+        $ git push
 
 13. If this was a feature release, ask a maintainer with docs access to update Read the
     Docs to use the new branch as the primary.
