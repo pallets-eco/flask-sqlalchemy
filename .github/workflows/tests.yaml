@@ -25,7 +25,7 @@ jobs:
       matrix:
         include:
           - {name: '3.11', python: '3.11', tox: py311}
-          - {name: 'Lowest', python: '3.11', tox: py311-lowest}
+          - {name: 'Lowest', python: '3.11', tox: py311-min}
           - {name: '3.10', python: '3.10', tox: py310}
           - {name: '3.9', python: '3.9', tox: py39}
           - {name: '3.8', python: '3.8', tox: py38}
@@ -37,20 +37,12 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: 'pip'
-          cache-dependency-path: 'pdm.lock'
-      - uses: actions/cache@58c146cc91c5b9e778e71775dfe9bf1442ad9a12
-        with:
-          path: ~/.cache/pdm
-          key: ${{ matrix.python }}-pdm-${{ hashFiles('pdm.lock') }}
-          restore-keys: ${{ matrix.python }}-pdm-
+          cache-dependency-path: 'requirements/*.txt'
       - name: cache mypy
         uses: actions/cache@58c146cc91c5b9e778e71775dfe9bf1442ad9a12
         with:
           path: ./.mypy_cache
-          key: mypy|${{ matrix.python }}|${{ hashFiles('pyproject.toml') }}
+          key: mypy|${{ matrix.python }}|${{ hashFiles('requirements/mypy.txt') }}
         if: matrix.tox == 'typing'
-      - run: |
-          pip install pdm
-          pdm config install.cache true
-          pdm sync -dG tox
-      - run: pdm run tox -e ${{ matrix.tox }}
+      - run: pip install tox
+      - run: tox r -e ${{ matrix.tox }}

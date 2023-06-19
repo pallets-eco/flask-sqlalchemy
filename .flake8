@@ -15,8 +15,7 @@ extend-ignore =
     E722
     # zip with strict=, requires python >= 3.10
     B905
-    # string formatting opinion, B028 renamed to B907
-    B028
+    # string formatting opinion
     B907
 # up to 88 allowed by bugbear B950
 max-line-length = 80

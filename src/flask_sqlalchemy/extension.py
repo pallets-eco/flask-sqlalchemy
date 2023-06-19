@@ -269,6 +269,7 @@ class SQLAlchemy:
                 "'SQLALCHEMY_COMMIT_ON_TEARDOWN' is deprecated and will be removed in"
                 " Flask-SQAlchemy 3.1. Call 'db.session.commit()'` directly instead.",
                 DeprecationWarning,
+                stacklevel=2,
             )
             app.teardown_appcontext(self._teardown_commit)
         else:

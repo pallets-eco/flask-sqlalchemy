@@ -2,8 +2,7 @@
 name = "Flask-SQLAlchemy"
 description = "Add SQLAlchemy support to your Flask application."
 readme = "README.rst"
-license = { text = "BSD-3-Clause" }
-authors = [{name = "Armin Ronacher", email = "armin.ronacher@active-4.com"},]
+license = { file = "LICENSE.rst" }
 maintainers = [{name = "Pallets", email = "contact@palletsprojects.com"},]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -14,66 +13,38 @@ classifiers = [
     "Programming Language :: Python",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
-dynamic = ["version"]
 requires-python = ">=3.7"
-dependencies = ["Flask>=2.2", "SQLAlchemy>=1.4.18"]
+dependencies = [
+    "flask>=2.2.5",
+    "sqlalchemy>=1.4.18",
+]
+dynamic = ["version"]
 
 [project.urls]
 Donate = "https://palletsprojects.com/donate"
-Documentation = "https://flask-sqlalchemy.palletsprojects.com/"
+Documentation = "https://flask-sqlalchemy.palletsprojects.com"
 Changes = "https://flask-sqlalchemy.palletsprojects.com/changes/"
 "Source Code" = "https://github.com/pallets-eco/flask-sqlalchemy/"
 "Issue Tracker" = "https://github.com/pallets-eco/flask-sqlalchemy/issues/"
-Twitter = "https://twitter.com/PalletsTeam"
 Chat = "https://discord.gg/pallets"
 
-[project.optional-dependencies]
 [build-system]
-requires = ["pdm-pep517>=1.0.0"]
-build-backend = "pdm.pep517.api"
+requires = ["flit_core<4"]
+build-backend = "flit_core.buildapi"
 
-[tool.pdm]
-version = { source = "file", path = "src/flask_sqlalchemy/__init__.py" }
+[tool.flit.module]
+name = "flask_sqlalchemy"
 
-[tool.pdm.dev-dependencies]
-tests = [
-    "pytest",
-    "blinker",
-]
-coverage = [
-    "pytest-cov",
-    "coverage[toml]",
-]
-mypy = [
-    "mypy",
-    "pytest",
-    "sqlalchemy",
-]
-docs = [
-    "sphinx",
-    "pallets-sphinx-themes",
-    "sphinx-issues",
-    "sphinxcontrib-log-cabinet",
-]
-pre-commit = [
-    "pre-commit",
-]
-tox = [
-    "tox",
-    "tox-pdm",
-]
-
-[tool.pdm.build]
-source-includes = [
+[tool.flit.sdist]
+include = [
     "docs/",
-    "examples/",
+    "requirements/",
     "tests/",
     "CHANGES.rst",
-    "pdm.lock",
     "tox.ini",
 ]
-excludes = [
-    "docs/_build",
+exclude = [
+    "docs/_build/",
 ]
 
 [tool.pytest.ini_options]
