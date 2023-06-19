@@ -1,3 +1,11 @@
+Version 3.0.4
+-------------
+
+Unreleased
+
+-   Fix type hint for ``get_or_404`` return value. :pr:`1208`
+
+
 Version 3.0.3
 -------------
 
