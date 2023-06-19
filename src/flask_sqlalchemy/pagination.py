@@ -4,7 +4,7 @@ import typing as t
 from math import ceil
 
 import sqlalchemy as sa
-import sqlalchemy.orm
+import sqlalchemy.orm as sa_orm
 from flask import abort
 from flask import request
 
@@ -336,7 +336,7 @@ class SelectPagination(Pagination):
 
     def _query_count(self) -> int:
         select = self._query_args["select"]
-        sub = select.options(sa.orm.lazyload("*")).order_by(None).subquery()
+        sub = select.options(sa_orm.lazyload("*")).order_by(None).subquery()
         session = self._query_args["session"]
         out = session.execute(sa.select(sa.func.count()).select_from(sub)).scalar()
         return out  # type: ignore[no-any-return]

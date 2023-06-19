@@ -6,7 +6,7 @@ import typing as t
 from time import perf_counter
 
 import sqlalchemy as sa
-import sqlalchemy.event
+import sqlalchemy.event as sa_event
 from flask import current_app
 from flask import g
 from flask import has_app_context
@@ -96,8 +96,8 @@ class _QueryInfo:
 
 
 def _listen(engine: sa.engine.Engine) -> None:
-    sa.event.listen(engine, "before_cursor_execute", _record_start, named=True)
-    sa.event.listen(engine, "after_cursor_execute", _record_end, named=True)
+    sa_event.listen(engine, "before_cursor_execute", _record_start, named=True)
+    sa_event.listen(engine, "after_cursor_execute", _record_end, named=True)
 
 
 def _record_start(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:

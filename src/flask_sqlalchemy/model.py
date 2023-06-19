@@ -4,7 +4,7 @@ import re
 import typing as t
 
 import sqlalchemy as sa
-import sqlalchemy.orm
+import sqlalchemy.orm as sa_orm
 
 from .query import Query
 
@@ -182,7 +182,7 @@ def should_set_tablename(cls: type) -> bool:
     joined-table inheritance. If no primary key is found, the name will be unset.
     """
     if cls.__dict__.get("__abstract__", False) or not any(
-        isinstance(b, sa.orm.DeclarativeMeta) for b in cls.__mro__[1:]
+        isinstance(b, sa_orm.DeclarativeMeta) for b in cls.__mro__[1:]
     ):
         return False
 
@@ -190,13 +190,13 @@ def should_set_tablename(cls: type) -> bool:
         if "__tablename__" not in base.__dict__:
             continue
 
-        if isinstance(base.__dict__["__tablename__"], sa.orm.declared_attr):
+        if isinstance(base.__dict__["__tablename__"], sa_orm.declared_attr):
             return False
 
         return not (
             base is cls
             or base.__dict__.get("__abstract__", False)
-            or not isinstance(base, sa.orm.DeclarativeMeta)
+            or not isinstance(base, sa_orm.DeclarativeMeta)
         )
 
     return True
@@ -208,7 +208,7 @@ def camel_to_snake_case(name: str) -> str:
     return name.lower().lstrip("_")
 
 
-class DefaultMeta(BindMetaMixin, NameMetaMixin, sa.orm.DeclarativeMeta):
+class DefaultMeta(BindMetaMixin, NameMetaMixin, sa_orm.DeclarativeMeta):
     """SQLAlchemy declarative metaclass that provides ``__bind_key__`` and
     ``__tablename__`` support.
     """

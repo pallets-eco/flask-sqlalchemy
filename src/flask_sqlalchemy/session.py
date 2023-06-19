@@ -3,15 +3,15 @@ from __future__ import annotations
 import typing as t
 
 import sqlalchemy as sa
-import sqlalchemy.exc
-import sqlalchemy.orm
+import sqlalchemy.exc as sa_exc
+import sqlalchemy.orm as sa_orm
 from flask.globals import app_ctx
 
 if t.TYPE_CHECKING:
     from .extension import SQLAlchemy
 
 
-class Session(sa.orm.Session):
+class Session(sa_orm.Session):
     """A SQLAlchemy :class:`~sqlalchemy.orm.Session` class that chooses what engine to
     use based on the bind key associated with the metadata associated with the thing
     being queried.
@@ -55,9 +55,9 @@ class Session(sa.orm.Session):
         if mapper is not None:
             try:
                 mapper = sa.inspect(mapper)
-            except sa.exc.NoInspectionAvailable as e:
+            except sa_exc.NoInspectionAvailable as e:
                 if isinstance(mapper, type):
-                    raise sa.orm.exc.UnmappedClassError(mapper) from e
+                    raise sa_orm.exc.UnmappedClassError(mapper) from e
 
                 raise
 
@@ -88,7 +88,7 @@ def _clause_to_engine(
         key = clause.metadata.info["bind_key"]
 
         if key not in engines:
-            raise sa.exc.UnboundExecutionError(
+            raise sa_exc.UnboundExecutionError(
                 f"Bind key '{key}' is not in 'SQLALCHEMY_BINDS' config."
             )
 

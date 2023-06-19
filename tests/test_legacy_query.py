@@ -5,7 +5,7 @@ import warnings
 
 import pytest
 import sqlalchemy as sa
-import sqlalchemy.exc
+import sqlalchemy.exc as sa_exc
 from flask import Flask
 from werkzeug.exceptions import NotFound
 
@@ -15,9 +15,9 @@ from flask_sqlalchemy.query import Query
 
 @pytest.fixture(autouse=True)
 def ignore_query_warning() -> t.Generator[None, None, None]:
-    if hasattr(sa.exc, "LegacyAPIWarning"):
+    if hasattr(sa_exc, "LegacyAPIWarning"):
         with warnings.catch_warnings():
-            exc = sa.exc.LegacyAPIWarning
+            exc = sa_exc.LegacyAPIWarning
             warnings.simplefilter("ignore", exc)
             yield
     else:
