@@ -1,9 +1,10 @@
 Version 3.0.4
 -------------
 
-Unreleased
+Released 2023-06-19
 
 -   Fix type hint for ``get_or_404`` return value. :pr:`1208`
+-   Fix type hints for pyright (used by VS Code Pylance extension). :issue:`1205`
 
 
 Version 3.0.3
