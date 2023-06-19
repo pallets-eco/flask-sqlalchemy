@@ -10,7 +10,7 @@ from .pagination import Pagination
 from .pagination import QueryPagination
 
 
-class Query(sa_orm.Query[t.Any]):
+class Query(sa_orm.Query): # type: ignore[type-arg]
     """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with some extra methods
     useful for querying in a web application.
 
