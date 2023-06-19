@@ -7,6 +7,15 @@ Unreleased
 -   Pass extra keyword arguments from ``get_or_404`` to ``session.get``. :issue:`1149`
 
 
+Version 3.0.4
+-------------
+
+Released 2023-06-19
+
+-   Fix type hint for ``get_or_404`` return value. :pr:`1208`
+-   Fix type hints for pyright (used by VS Code Pylance extension). :issue:`1205`
+
+
 Version 3.0.3
 -------------
 

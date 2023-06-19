@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import pytest
 import sqlalchemy as sa
 from flask import Flask
@@ -24,5 +26,5 @@ def test_query_info(app: Flask) -> None:
     assert "FROM example" in info.statement
     assert info.parameters[0][0] == 5
     assert info.duration == info.end_time - info.start_time
-    assert "tests/test_record_queries.py:" in info.location
+    assert os.path.join("tests", "test_record_queries.py:") in info.location
     assert "(test_query_info)" in info.location
