@@ -110,7 +110,7 @@ def test_mixin_attr(db: SQLAlchemy) -> None:
     """
 
     class Mixin:
-        @sa_orm.declared_attr.directive
+        @sa_orm.declared_attr  # type: ignore[arg-type]
         def __tablename__(cls) -> str:  # noqa: B902
             return cls.__name__.upper()  # type: ignore[attr-defined,no-any-return]
 
