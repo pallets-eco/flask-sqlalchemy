@@ -31,7 +31,7 @@ def db(app: Flask) -> SQLAlchemy:
 
 
 @pytest.fixture
-def Todo(app: Flask, db: SQLAlchemy) -> t.Any:
+def Todo(app: Flask, db: SQLAlchemy) -> t.Generator[t.Any, None, None]:
     class Todo(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
         title = sa.Column(sa.String)
