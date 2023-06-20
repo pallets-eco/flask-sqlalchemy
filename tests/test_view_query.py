@@ -70,11 +70,11 @@ def test_view_get_or_404_typed(db: SQLAlchemy, app: Flask) -> None:
 
     db.create_all()
 
-    item: Quiz = Quiz()
+    item: Quiz = Quiz(topic="Python")
     db.session.add(item)
     db.session.commit()
     result = db.get_or_404(Quiz, 1)
-    assert result.topic == ""
+    assert result.topic == "Python"
     assert result is item
     if hasattr(t, "assert_type"):
         t.assert_type(result, Quiz)
