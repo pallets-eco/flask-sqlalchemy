@@ -275,7 +275,7 @@ instructions.
 11. After seeing that the "publish-pypi" workflow succeeds, merge the PR. Then publish
     the draft release, and close the milestone.
 
-12. If this was a fix release, merge it into main now that the PR is merged.
+12. If this was a fix release, merge the release branch (A.B.x) into main.
 
     .. code-block:: text
 
@@ -284,6 +284,11 @@ instructions.
         $ git switch main
         $ git merge A.B.x
         $ git push
+
+    Here's how to handle the expected merge conflicts:
+
+    * ``CHANGES.rst`` : Keep both changes, ensuring the next feature version is on top.
+    * ``__init__.py`` : Keep the version in main (the next feature version).
 
 12. If this was a feature release, make a new branch for fix releases.
 
