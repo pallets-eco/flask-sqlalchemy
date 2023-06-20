@@ -1,3 +1,11 @@
+Version 3.0.5
+-------------
+
+Unreleased
+
+-   Improve type hint for ``get_or_404`` return value to be non-optional. :pr:`120?`
+
+
 Version 3.0.4
 -------------
 

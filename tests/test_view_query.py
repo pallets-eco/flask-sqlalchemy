@@ -74,6 +74,7 @@ def test_view_get_or_404_typed(db: SQLAlchemy, app: Flask) -> None:
     db.session.add(item)
     db.session.commit()
     result = db.get_or_404(Quiz, 1)
+    assert result.topic == ""
     assert result is item
     if hasattr(t, "assert_type"):
         t.assert_type(result, Quiz)
