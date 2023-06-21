@@ -734,7 +734,7 @@ class SQLAlchemy:
 
     def get_or_404(
         self, entity: type[_O], ident: t.Any, *, description: str | None = None
-    ) -> t.Optional[_O]:
+    ) -> _O:
         """Like :meth:`session.get() <sqlalchemy.orm.Session.get>` but aborts with a
         ``404 Not Found`` error instead of returning ``None``.
 
