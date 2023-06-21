@@ -621,7 +621,7 @@ class SQLAlchemy:
         *,
         description: str | None = None,
         **kwargs: t.Any,
-    ) -> t.Optional[_O]:
+    ) -> _O:
         """Like :meth:`session.get() <sqlalchemy.orm.Session.get>` but aborts with a
         ``404 Not Found`` error instead of returning ``None``.
 
