@@ -1,7 +1,7 @@
 Version 3.0.5
 -------------
 
-Unreleased
+Released 2023-06-21
 
 -   ``Pagination.next()`` enforces ``max_per_page``. :issue:`1201`
 -   Improve type hint for ``get_or_404`` return value to be non-optional. :pr:`1226`
