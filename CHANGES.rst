@@ -1,3 +1,11 @@
+Version 3.0.5
+-------------
+
+Unreleased
+
+-   ``Pagination.next()`` enforces ``max_per_page``. :issue:`1201`
+
+
 Version 3.0.4
 -------------
 
