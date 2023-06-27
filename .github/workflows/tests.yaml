@@ -24,13 +24,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - {name: '3.12-dev', python: '3.12-dev', tox: py312}
           - {name: '3.11', python: '3.11', tox: py311}
           - {name: 'Lowest', python: '3.11', tox: py311-min}
           - {name: '3.10', python: '3.10', tox: py310}
           - {name: '3.9', python: '3.9', tox: py39}
           - {name: '3.8', python: '3.8', tox: py38}
           - {name: '3.7', python: '3.7', tox: py37}
-          - {name: 'Typing', python: '3.11', os: ubuntu-latest, tox: typing}
+          - {name: 'Typing', python: '3.11', tox: typing}
     steps:
       - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
       - uses: actions/setup-python@5ccb29d8773c3f3f653e1705f474dfaa8a06a912
