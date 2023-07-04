@@ -75,9 +75,7 @@ def Todo(app: Flask, db: SQLAlchemy) -> t.Generator[t.Any, None, None]:
                 sa.String, nullable=True, default=None
             )
 
-    elif issubclass(
-        db.Model, (sa_orm.DeclarativeBaseNoMeta, sa_orm.DeclarativeBaseNoMeta)
-    ):
+    elif issubclass(db.Model, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta)):
 
         class Todo(db.Model):  # type: ignore[no-redef]
             id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)

@@ -63,7 +63,7 @@ def test_model_repr(db: SQLAlchemy) -> None:
 
 @pytest.mark.usefixtures("app_ctx")
 def test_too_many_bases(app: Flask) -> None:
-    class Base(sa.orm.DeclarativeBase, sa.orm.DeclarativeBaseNoMeta):  # type: ignore[misc]
+    class Base(sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta):  # type: ignore[misc]
         pass
 
     with pytest.raises(ValueError):

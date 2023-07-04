@@ -511,7 +511,7 @@ class SQLAlchemy:
                 {"metaclass": type(declarative_bases[0])},
                 lambda ns: ns.update(body),
             )
-        elif not isinstance(model_class, sa.orm.DeclarativeMeta):
+        elif not isinstance(model_class, sa_orm.DeclarativeMeta):
             metadata = self._make_metadata(None)
             model = sa_orm.declarative_base(
                 metadata=metadata, cls=model_class, name="Model", metaclass=DefaultMeta
