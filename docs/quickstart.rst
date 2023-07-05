@@ -44,6 +44,15 @@ Initialize the Extension
 ------------------------
 
 First create the ``db`` object using the ``SQLAlchemy`` constructor.
+The initialization step depends on which version of ``SQLAlchemy`` you're using.
+This extension supports both SQLAlchemy 1 and 2, but defaults to SQLAlchemy 1.
+
+.. _sqlalchemy1-initialization:
+
+Using the SQLAlchemy 1 API
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To use the SQLAlchemy 1.x API, you do not need to pass any arguments to the ``SQLAlchemy`` constructor.
 
 .. code-block:: python
 
@@ -53,10 +62,12 @@ First create the ``db`` object using the ``SQLAlchemy`` constructor.
 
     db = SQLAlchemy()
 
+.. _sqlalchemy2-initialization:
 
-By default, this extension assumes that you are using the SQLAlchemy 1.x API for defining models.
+Using the SQLAlchemy 2 API
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To use the new SQLAlchemy 2.x API, pass a subclass of either ``DeclarativeBase`` or ``DeclarativeBaseNoMeta``
+To use the new SQLAlchemy 2.x API, pass a subclass of either `DeclarativeBase`_ or `DeclarativeBaseNoMeta`_
 to the constructor.
 
 .. code-block:: python
@@ -69,6 +80,25 @@ to the constructor.
       pass
 
     db = SQLAlchemy(model_class=Base)
+
+If desired, you can enable `SQLAlchemy's native support for data classes`_
+by adding `MappedAsDataclass` as an additional parent class.
+
+.. code-block:: python
+
+    from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
+
+    class Base(DeclarativeBase, MappedAsDataclass):
+      pass
+
+    db = SQLAlchemy(model_class=Base)
+
+.. _DeclarativeBase: https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.DeclarativeBase
+.. _DeclarativeBaseNoMeta: https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.DeclarativeBaseNoMeta
+.. _SQLAlchemy's native support for data classes: https://docs.sqlalchemy.org/en/20/changelog/whatsnew_20.html#native-support-for-dataclasses-mapped-as-orm-models
+
+About the ``SQLAlchemy`` object
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Once constructed, the ``db`` object gives you access to the :attr:`db.Model <.SQLAlchemy.Model>` class to
 define models, and the :attr:`db.session <.SQLAlchemy.session>` to execute queries.
@@ -122,7 +152,7 @@ The table name ``"user"`` will automatically be assigned to the model's table.
 
 It's also possible to use the SQLAlchemy 2.x style of defining models,
 as long as you initialized the extension with an appropriate 2.x model base class
-as described above.
+as described in :ref:`sqlalchemy2-initialization`.
 
 .. code-block:: python
 
