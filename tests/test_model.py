@@ -4,6 +4,7 @@ import typing as t
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.exc as sa_exc
 import sqlalchemy.orm as sa_orm
 from flask import Flask
 
@@ -68,3 +69,26 @@ def test_too_many_bases(app: Flask) -> None:
 
     with pytest.raises(ValueError):
         SQLAlchemy(app, model_class=Base)
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_disable_autonaming_true_sql1(app: Flask) -> None:
+    db = SQLAlchemy(app, disable_autonaming=True)
+
+    with pytest.raises(sa_exc.InvalidRequestError):
+
+        class User(db.Model):
+            id = sa.Column(sa.Integer, primary_key=True)
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_disable_autonaming_true_sql2(app: Flask) -> None:
+    class Base(sa_orm.DeclarativeBase):
+        pass
+
+    db = SQLAlchemy(app, model_class=Base, disable_autonaming=True)
+
+    with pytest.raises(sa_exc.InvalidRequestError):
+
+        class User(db.Model):
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)

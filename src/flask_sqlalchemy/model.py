@@ -314,3 +314,9 @@ class DefaultMeta(BindMetaMixin, NameMetaMixin, sa_orm.DeclarativeMeta):
     """SQLAlchemy declarative metaclass that provides ``__bind_key__`` and
     ``__tablename__`` support.
     """
+
+
+class DefaultMetaNoName(BindMetaMixin, sa_orm.DeclarativeMeta):
+    """SQLAlchemy declarative metaclass that provides ``__bind_key__`` and
+    ``__tablename__`` support.
+    """

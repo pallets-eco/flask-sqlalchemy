@@ -17,6 +17,7 @@ from flask import has_app_context
 from .model import _QueryProperty
 from .model import BindMixin
 from .model import DefaultMeta
+from .model import DefaultMetaNoName
 from .model import Model
 from .model import NameMixin
 from .pagination import Pagination
@@ -86,6 +87,10 @@ class SQLAlchemy:
     :param add_models_to_shell: Add the ``db`` instance and all model classes to
         ``flask shell``.
 
+    .. versionchanged:: 3.1.0
+        Added the ``disable_autonaming`` parameter and changed ``model_class`` parameter
+        to accept a SQLAlchemy 2.0-style declarative base subclass.
+
     .. versionchanged:: 3.0
         An active Flask application context is always required to access ``session`` and
         ``engine``.
@@ -147,6 +152,7 @@ class SQLAlchemy:
         model_class: t.Type[_FSA_MC] = Model,  # type: ignore[assignment]
         engine_options: dict[str, t.Any] | None = None,
         add_models_to_shell: bool = True,
+        disable_autonaming: bool = False,
     ):
         if session_options is None:
             session_options = {}
@@ -207,7 +213,9 @@ class SQLAlchemy:
             This is a subclass of SQLAlchemy's ``Table`` rather than a function.
         """
 
-        self.Model = self._make_declarative_base(model_class)
+        self.Model = self._make_declarative_base(
+            model_class, disable_autonaming=disable_autonaming
+        )
         """A SQLAlchemy declarative model class. Subclass this to define database
         models.
 
@@ -467,6 +475,7 @@ class SQLAlchemy:
     def _make_declarative_base(
         self,
         model_class: t.Type[_FSA_MC],
+        disable_autonaming: bool = False,
     ) -> t.Type[_FSAModel]:
         """Create a SQLAlchemy declarative model class. The result is available as
         :attr:`Model`.
@@ -482,8 +491,11 @@ class SQLAlchemy:
         :param model_class: A model base class, or an already created declarative model
         class.
 
-        .. versionchanged:: 3.0.4
+        :param disable_autonaming: Turns off automatic tablename generation in models.
+
+        .. versionchanged:: 3.1.0
             Added support for passing SQLAlchemy 2.x base class as model class.
+            Added optional ``disable_autonaming`` parameter.
 
         .. versionchanged:: 3.0
             Renamed with a leading underscore, this method is internal.
@@ -505,16 +517,20 @@ class SQLAlchemy:
             )
         elif len(declarative_bases) == 1:
             body = {"__fsa__": self}
+            mixin_classes = [BindMixin, NameMixin, Model]
+            if disable_autonaming:
+                mixin_classes.remove(NameMixin)
             model = types.new_class(
                 "FlaskSQLAlchemyBase",
-                (BindMixin, NameMixin, Model, *model_class.__bases__),
+                (*mixin_classes, *model_class.__bases__),
                 {"metaclass": type(declarative_bases[0])},
                 lambda ns: ns.update(body),
             )
         elif not isinstance(model_class, sa_orm.DeclarativeMeta):
             metadata = self._make_metadata(None)
+            metaclass = DefaultMetaNoName if disable_autonaming else DefaultMeta
             model = sa_orm.declarative_base(
-                metadata=metadata, cls=model_class, name="Model", metaclass=DefaultMeta
+                metadata=metadata, cls=model_class, name="Model", metaclass=metaclass
             )
         else:
             model = model_class

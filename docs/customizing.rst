@@ -160,71 +160,25 @@ To customize only ``session.query``, pass the ``query_cls`` key to the
     db = SQLAlchemy(session_options={"query_cls": GetOrQuery})
 
 
-Model Metaclass
----------------
-
-.. warning::
-    Metaclasses are an advanced topic, and you probably don't need to customize them to
-    achieve what you want. It is mainly documented here to show how to disable table
-    name generation.
-
-The model metaclass is responsible for setting up the SQLAlchemy internals when defining
-model subclasses. Flask-SQLAlchemy adds some extra behaviors through mixins; its default
-metaclass, :class:`~.DefaultMeta`, inherits them all.
-
--   :class:`.BindMetaMixin`: ``__bind_key__`` sets the bind to use for the model.
--   :class:`.NameMetaMixin`: If the model does not specify a ``__tablename__`` but does
-    specify a primary key, a name is automatically generated.
-
-You can add your own behaviors by defining your own metaclass and creating the
-declarative base yourself. Be sure to still inherit from the mixins you want (or just
-inherit from the default metaclass).
-
-Passing a declarative base class instead of a simple model base class to ``model_class``
-will cause Flask-SQLAlchemy to use this base instead of constructing one with the
-default metaclass.
-
-.. code-block:: python
-
-    from sqlalchemy.orm import declarative_base
-    from flask_sqlalchemy import SQLAlchemy
-    from flask_sqlalchemy.model import DefaultMeta, Model
-
-    class CustomMeta(DefaultMeta):
-        def __init__(cls, name, bases, d):
-            # custom class setup could go here
-
-            # be sure to call super
-            super(CustomMeta, cls).__init__(name, bases, d)
-
-        # custom class-only methods could go here
-
-    CustomModel = declarative_base(cls=Model, metaclass=CustomMeta, name="Model")
-    db = SQLAlchemy(model_class=CustomModel)
-
-You can also pass whatever other arguments you want to
-:func:`~sqlalchemy.orm.declarative_base` to customize the base class.
-
-
 Disabling Table Name Generation
-```````````````````````````````
+-------------------------------
 
 Some projects prefer to set each model's ``__tablename__`` manually rather than relying
 on Flask-SQLAlchemy's detection and generation. The simple way to achieve that is to
 set each ``__tablename__`` and not modify the base class. However, the table name
-generation can be disabled by defining a custom metaclass with only the
-``BindMetaMixin`` and not the ``NameMetaMixin``.
+generation can be disabled by setting `disable_autonaming=True` in the `SQLAlchemy` constructor.
+
+Example code using the SQLAlchemy 1.x (legacy) API:
 
 .. code-block:: python
 
-    from sqlalchemy.orm import DeclarativeMeta, declarative_base
-    from flask_sqlalchemy.model import BindMetaMixin, Model
+    db = SQLAlchemy(app, disable_autonaming=True)
 
-    class NoNameMeta(BindMetaMixin, DeclarativeMeta):
+Example code using the SQLAlchemy 2.x declarative base:
+
+.. code-block:: python
+
+    class Base(sa_orm.DeclarativeBase):
         pass
 
-    CustomModel = declarative_base(cls=Model, metaclass=NoNameMeta, name="Model")
-    db = SQLAlchemy(model_class=CustomModel)
-
-This creates a base that still supports the ``__bind_key__`` feature but does not
-generate table names.
+    db = SQLAlchemy(app, model_class=Base, disable_autonaming=True)
