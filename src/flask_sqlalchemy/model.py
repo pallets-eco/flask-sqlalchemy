@@ -99,7 +99,7 @@ class BindMixin:
     ignored. If the ``metadata`` is the same as the parent model, it will not be set
     directly on the child model.
 
-    .. versionchanged:: 3.0.4
+    .. versionchanged:: 3.1.0
     """
 
     __fsa__: SQLAlchemy
@@ -193,7 +193,7 @@ class NameMixin:
     that do not otherwise define ``__tablename__``. If a model does not define a primary
     key, it will not generate a name or ``__table__``, for single-table inheritance.
 
-    .. versionchanged:: 3.0.4
+    .. versionchanged:: 3.1.0
     """
 
     metadata: sa.MetaData
