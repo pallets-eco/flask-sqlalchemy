@@ -55,7 +55,7 @@ def test_custom_metadata_2x() -> None:
 
 
 def test_metadata_from_custom_model(model_class: t.Any) -> None:
-    if model_class is not None:
+    if model_class is not Model:
         # In 2.x, SQLAlchemy creates the metadata attribute
         base = model_class
     else:
@@ -77,17 +77,14 @@ def test_custom_metadata_overrides_custom_model_legacy() -> None:
 
 def test_metadata_per_bind(app: Flask, model_class: t.Any) -> None:
     app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
-    if model_class is not None:
-        db = SQLAlchemy(app, model_class=model_class)
-    else:
-        db = SQLAlchemy(app)
+    db = SQLAlchemy(app, model_class=model_class)
     assert db.metadatas["a"] is not db.metadata
     assert db.metadatas["a"].info["bind_key"] == "a"
 
 
 def test_copy_naming_convention(app: Flask, model_class: t.Any) -> None:
     app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
-    if model_class is not None:
+    if model_class is not Model:
         model_class.metadata = sa.MetaData(
             naming_convention={"pk": "spk_%(table_name)s"}
         )

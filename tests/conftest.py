@@ -11,6 +11,7 @@ from flask import Flask
 from flask.ctx import AppContext
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.model import Model
 
 
 @pytest.fixture
@@ -34,7 +35,7 @@ def app_ctx(app: Flask) -> t.Generator[AppContext, None, None]:
 # We defer creation of those classes until the fixture,
 # so that each test gets a fresh class with its own metadata.
 test_classes = [
-    None,
+    Model,
     (
         "BaseDeclarativeBase",
         (sa_orm.DeclarativeBase,),
@@ -63,7 +64,7 @@ test_classes = [
 
 @pytest.fixture(params=test_classes)
 def db(app: Flask, request: pytest.FixtureRequest) -> SQLAlchemy:
-    if request.param is not None:
+    if request.param is not Model:
         return SQLAlchemy(app, model_class=types.new_class(*request.param))
     else:
         return SQLAlchemy(app)
@@ -71,10 +72,10 @@ def db(app: Flask, request: pytest.FixtureRequest) -> SQLAlchemy:
 
 @pytest.fixture(params=test_classes)
 def model_class(request: pytest.FixtureRequest) -> t.Any:
-    if request.param is not None:
+    if request.param is not Model:
         return types.new_class(*request.param)
     else:
-        return None
+        return request.param
 
 
 @pytest.fixture
