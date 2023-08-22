@@ -59,25 +59,28 @@ they are created or updated.
 
     class TimestampModel(db.Model):
         __abstract__ = True
-        created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-        updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
+        created: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, default=datetime.utcnow)
+        updated: Mapped[datetime] = mapped_column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     class Author(db.Model):
-        ...
+        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
+        username: Mapped[str] = mapped_column(db.String, unique=True, nullable=False)
 
     class Post(TimestampModel):
-        ...
+        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
+        title: Mapped[str] = mapped_column(db.String, nullable=False)
 
 This can also be done with a mixin class, inheriting from ``db.Model`` separately.
 
 .. code-block:: python
 
-    class TimestampMixin:
-        created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-        updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    class TimestampModel:
+        created: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, default=datetime.utcnow)
+        updated: Mapped[datetime] = mapped_column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    class Post(TimestampMixin, db.Model):
-        ...
+    class Post2(TimestampModel, db.Model):
+        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
+        title: Mapped[str] = mapped_column(db.String, nullable=False)
 
 
 Session Class
@@ -167,14 +170,6 @@ Some projects prefer to set each model's ``__tablename__`` manually rather than 
 on Flask-SQLAlchemy's detection and generation. The simple way to achieve that is to
 set each ``__tablename__`` and not modify the base class. However, the table name
 generation can be disabled by setting `disable_autonaming=True` in the `SQLAlchemy` constructor.
-
-Example code using the SQLAlchemy 1.x (legacy) API:
-
-.. code-block:: python
-
-    db = SQLAlchemy(app, disable_autonaming=True)
-
-Example code using the SQLAlchemy 2.x declarative base:
 
 .. code-block:: python
 
