@@ -4,6 +4,7 @@ import typing as t
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.orm as sa_orm
 from flask import Flask
 from werkzeug.exceptions import NotFound
 
@@ -22,17 +23,45 @@ def test_get_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
         db.get_or_404(Todo, 2)
 
 
-def test_get_or_404_kwargs(app: Flask) -> None:
+def test_get_or_404_kwargs(app: Flask, model_class: t.Any) -> None:
     app.config["SQLALCHEMY_RECORD_QUERIES"] = True
-    db = SQLAlchemy(app)
+    db = SQLAlchemy(app, model_class=model_class)
 
-    class User(db.Model):
-        id = sa.Column(db.Integer, primary_key=True)  # type: ignore[var-annotated]
+    if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
 
-    class Todo(db.Model):
-        id = sa.Column(sa.Integer, primary_key=True)
-        user_id = sa.Column(sa.ForeignKey(User.id))  # type: ignore[var-annotated]
-        user = db.relationship(User)
+        class User(db.Model):  # type: ignore[no-redef]
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, primary_key=True, init=False
+            )
+
+        class Todo(db.Model):  # type: ignore[no-redef]
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, primary_key=True, init=False
+            )
+            user_id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.ForeignKey(User.id), init=False
+            )
+            user: sa_orm.Mapped[User] = sa_orm.relationship(User)
+
+    elif issubclass(db.Model, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta)):
+
+        class User(db.Model):  # type: ignore[no-redef]
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+
+        class Todo(db.Model):  # type: ignore[no-redef]
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            user_id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.ForeignKey(User.id))
+            user: sa_orm.Mapped[User] = sa_orm.relationship(User)
+
+    else:
+
+        class User(db.Model):  # type: ignore[no-redef]
+            id = sa.Column(db.Integer, primary_key=True)  # type: ignore[var-annotated]
+
+        class Todo(db.Model):  # type: ignore[no-redef]
+            id = sa.Column(sa.Integer, primary_key=True)
+            user_id = sa.Column(sa.ForeignKey(User.id))  # type: ignore[var-annotated]
+            user = db.relationship(User)
 
     with app.app_context():
         db.create_all()

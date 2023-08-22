@@ -4,6 +4,7 @@ import typing as t
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.orm as sa_orm
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy
@@ -14,13 +15,32 @@ pytest.importorskip("blinker")
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_track_modifications(app: Flask) -> None:
+def test_track_modifications(app: Flask, model_class: t.Any) -> None:
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
-    db = SQLAlchemy(app)
+    db = SQLAlchemy(app, model_class=model_class)
 
-    class Example(db.Model):
-        id = sa.Column(sa.Integer, primary_key=True)
-        data = sa.Column(sa.String)
+    # Copied and pasted from conftest.py
+    if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
+
+        class Todo(db.Model):
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, init=False, primary_key=True
+            )
+            title: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String, nullable=True, default=None
+            )
+
+    elif issubclass(db.Model, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta)):
+
+        class Todo(db.Model):  # type: ignore[no-redef]
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            title: sa_orm.Mapped[str] = sa_orm.mapped_column(sa.String, nullable=True)
+
+    else:
+
+        class Todo(db.Model):  # type: ignore[no-redef]
+            id = sa.Column(sa.Integer, primary_key=True)
+            title = sa.Column(sa.String)
 
     db.create_all()
     before: list[tuple[t.Any, str]] = []
@@ -38,7 +58,7 @@ def test_track_modifications(app: Flask) -> None:
     connect_after = models_committed.connected_to(after_commit, app)
 
     with connect_before, connect_after:
-        item = Example()
+        item = Todo()
 
         db.session.add(item)
         assert not before
@@ -50,15 +70,15 @@ def test_track_modifications(app: Flask) -> None:
         assert before == after
 
         db.session.remove()
-        item = db.session.get(Example, 1)  # type: ignore[assignment]
-        item.data = "test"  # type: ignore[assignment]
+        item = db.session.get(Todo, 1)  # type: ignore[assignment]
+        item.title = "test"  # type: ignore[assignment]
         db.session.commit()
         assert len(before) == 1
         assert before[0] == (item, "update")
         assert before == after
 
         db.session.remove()
-        item = db.session.get(Example, 1)  # type: ignore[assignment]
+        item = db.session.get(Todo, 1)  # type: ignore[assignment]
         db.session.delete(item)
         db.session.commit()
         assert len(before) == 1

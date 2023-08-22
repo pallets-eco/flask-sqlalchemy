@@ -13,7 +13,7 @@ from flask_sqlalchemy.model import DefaultMeta
 from flask_sqlalchemy.model import Model
 
 
-def test_default_model_class(app: Flask) -> None:
+def test_default_model_class_1x(app: Flask) -> None:
     db = SQLAlchemy(app)
 
     assert db.Model.query_class is db.Query
@@ -22,7 +22,7 @@ def test_default_model_class(app: Flask) -> None:
     assert isinstance(db.Model, DefaultMeta)
 
 
-def test_custom_model_class(app: Flask) -> None:
+def test_custom_model_class_1x(app: Flask) -> None:
     class CustomModel(Model):
         pass
 
@@ -33,7 +33,7 @@ def test_custom_model_class(app: Flask) -> None:
 
 @pytest.mark.usefixtures("app_ctx")
 @pytest.mark.parametrize("base", [Model, object])
-def test_custom_declarative_class(app: Flask, base: t.Any) -> None:
+def test_custom_declarative_class_1x(app: Flask, base: t.Any) -> None:
     class CustomMeta(DefaultMeta):
         pass
 
@@ -42,6 +42,42 @@ def test_custom_declarative_class(app: Flask, base: t.Any) -> None:
     assert db.Model is CustomModel
     assert db.Model.query_class is db.Query
     assert "query" in db.Model.__dict__
+
+
+def test_declarativebase_2x(app: Flask) -> None:
+    class Base(sa_orm.DeclarativeBase):
+        pass
+
+    db = SQLAlchemy(app, model_class=Base)
+    assert issubclass(db.Model, sa_orm.DeclarativeBase)
+    assert isinstance(db.Model, sa_orm.decl_api.DeclarativeAttributeIntercept)
+
+
+def test_declarativebasenometa_2x(app: Flask) -> None:
+    class Base(sa_orm.DeclarativeBaseNoMeta):
+        pass
+
+    db = SQLAlchemy(app, model_class=Base)
+    assert issubclass(db.Model, sa_orm.DeclarativeBaseNoMeta)
+    assert not isinstance(db.Model, sa_orm.decl_api.DeclarativeAttributeIntercept)
+
+
+def test_declarativebasemapped_2x(app: Flask) -> None:
+    class Base(sa_orm.DeclarativeBase, sa_orm.MappedAsDataclass):
+        pass
+
+    db = SQLAlchemy(app, model_class=Base)
+    assert issubclass(db.Model, sa_orm.DeclarativeBase)
+    assert isinstance(db.Model, sa_orm.decl_api.DCTransformDeclarative)
+
+
+def test_declarativebasenometamapped_2x(app: Flask) -> None:
+    class Base(sa_orm.DeclarativeBaseNoMeta, sa_orm.MappedAsDataclass):
+        pass
+
+    db = SQLAlchemy(app, model_class=Base)
+    assert issubclass(db.Model, sa_orm.DeclarativeBaseNoMeta)
+    assert isinstance(db.Model, sa_orm.decl_api.DCTransformDeclarative)
 
 
 @pytest.mark.usefixtures("app_ctx")
