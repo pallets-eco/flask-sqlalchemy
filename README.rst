@@ -29,14 +29,19 @@ A Simple Example
 
     from flask import Flask
     from flask_sqlalchemy import SQLAlchemy
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///example.sqlite"
-    db = SQLAlchemy(app)
+
+    class Base(DeclarativeBase):
+      pass
+
+    db = SQLAlchemy(app, model_class=Base)
 
     class User(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        username = db.Column(db.String, unique=True, nullable=False)
+        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
+        username: Mapped[str] = mapped_column(db.String, unique=True, nullable=False)
 
     with app.app_context():
         db.create_all()
