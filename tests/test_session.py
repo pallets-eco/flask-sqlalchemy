@@ -108,13 +108,13 @@ def test_get_bind_inheritance(app: Flask, model_class: t.Any) -> None:
 
     elif issubclass(db.Model, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta)):
 
-        class User(db.Model):
+        class User(db.Model):  # type: ignore[no-redef]
             __bind_key__ = "a"
             id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
             type: sa_orm.Mapped[str] = sa_orm.mapped_column(sa.String, nullable=False)
             __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "user"}
 
-        class Admin(User):
+        class Admin(User):  # type: ignore[no-redef]
             id: sa_orm.Mapped[int] = sa_orm.mapped_column(
                 sa.ForeignKey(User.id), primary_key=True
             )
@@ -130,7 +130,7 @@ def test_get_bind_inheritance(app: Flask, model_class: t.Any) -> None:
             __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "user"}
 
         class Admin(User):  # type: ignore[no-redef]
-            id = sa.Column(sa.ForeignKey(User.id), primary_key=True)
+            id = sa.Column(sa.ForeignKey(User.id), primary_key=True)  # type: ignore[assignment]
             org = sa.Column(sa.String, nullable=False)
             __mapper_args__ = {"polymorphic_identity": "admin"}
 

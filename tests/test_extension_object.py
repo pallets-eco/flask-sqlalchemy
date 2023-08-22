@@ -29,12 +29,12 @@ def test_get_or_404_kwargs(app: Flask, model_class: t.Any) -> None:
 
     if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
 
-        class User(db.Model):  # type: ignore[no-redef]
+        class User(db.Model):
             id: sa_orm.Mapped[int] = sa_orm.mapped_column(
                 sa.Integer, primary_key=True, init=False
             )
 
-        class Todo(db.Model):  # type: ignore[no-redef]
+        class Todo(db.Model):
             id: sa_orm.Mapped[int] = sa_orm.mapped_column(
                 sa.Integer, primary_key=True, init=False
             )

@@ -48,7 +48,9 @@ class _FSAModel(Model):
     metadata: sa.MetaData
 
 
-def _get_2x_declarative_bases(model_class: t.Type[_FSA_MC]) -> list[t.Type]:
+def _get_2x_declarative_bases(
+    model_class: t.Type[_FSA_MC],
+) -> list[t.Type[t.Union[sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta]]]:
     return [
         b
         for b in model_class.__bases__
@@ -81,10 +83,6 @@ class SQLAlchemy:
     :param app: Call :meth:`init_app` on this Flask application now.
     :param metadata: Use this as the default :class:`sqlalchemy.schema.MetaData`. Useful
         for setting a naming convention.
-        .. deprecated:: 3.1.0
-            This parameter can still be used in conjunction with SQLAlchemy 1.x classes,
-            but is ignored when using SQLAlchemy 2.x style of declarative classes.
-            Instead, specify metadata on your Base class.
     :param session_options: Arguments used by :attr:`session` to create each session
         instance. A ``scopefunc`` key will be passed to the scoped session, not the
         session instance. See :class:`sqlalchemy.orm.sessionmaker` for a list of
@@ -101,8 +99,16 @@ class SQLAlchemy:
         ``flask shell``.
 
     .. versionchanged:: 3.1.0
-        Added the ``disable_autonaming`` parameter and changed ``model_class`` parameter
-        to accept a SQLAlchemy 2.0-style declarative base subclass.
+        The ``metadata`` parameter can still be used with SQLAlchemy 1.x classes,
+        but is ignored when using SQLAlchemy 2.x style of declarative classes.
+        Instead, specify metadata on your Base class.
+
+    .. versionchanged:: 3.1.0
+        Added the ``disable_autonaming`` parameter.
+
+    .. versionchanged:: 3.1.0
+        Changed ``model_class`` parameter to accepta SQLAlchemy 2.x
+        declarative base subclass.
 
     .. versionchanged:: 3.0
         An active Flask application context is always required to access ``session`` and
@@ -534,7 +540,10 @@ class SQLAlchemy:
                 " Got: {}".format(model_class.__bases__)
             )
         elif len(declarative_bases) == 1:
-            body = {"__fsa__": self, "metadata": model_class.metadata}
+            body = {
+                "__fsa__": self,
+                "metadata": model_class.metadata,  # type: ignore[attr-defined]
+            }
             mixin_classes = [BindMixin, NameMixin, Model]
             if disable_autonaming:
                 mixin_classes.remove(NameMixin)

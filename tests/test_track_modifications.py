@@ -71,7 +71,7 @@ def test_track_modifications(app: Flask, model_class: t.Any) -> None:
 
         db.session.remove()
         item = db.session.get(Todo, 1)  # type: ignore[assignment]
-        item.title = "test"  # type: ignore[assignment]
+        item.title = "test"
         db.session.commit()
         assert len(before) == 1
         assert before[0] == (item, "update")
