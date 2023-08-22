@@ -36,26 +36,13 @@ Metaclass mixins (SQLAlchemy 1.x)
 ---------------------------------
 
 If your code uses the SQLAlchemy 1.x API (the default for code that doesn't specify a ``model_class``),
-then these mixins are automatically applied to the ``Model`` class. They can also be used
-directly to create custom metaclasses. See :doc:`customizing` for more information.
+then these mixins are automatically applied to the ``Model`` class.
 
 .. autoclass:: DefaultMeta
 
 .. autoclass:: BindMetaMixin
 
 .. autoclass:: NameMetaMixin
-
-
-Base class mixins (SQLAlchemy 2.x)
-----------------------------------
-
-If your code uses the SQLAlchemy 2.x API by passing a subclass of ``DeclarativeBase``
-or ``DeclarativeBaseNoMeta`` as the ``model_class``, then the following classes
-are automatically added as additional base classes.
-
-.. autoclass:: BindMixin
-
-.. autoclass:: NameMixin
 
 
 Session

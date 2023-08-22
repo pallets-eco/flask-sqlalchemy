@@ -300,8 +300,11 @@ def should_set_tablename(cls: type) -> bool:
             base is cls
             or base.__dict__.get("__abstract__", False)
             or not (
+                # SQLAlchemy 1.x
                 isinstance(base, sa_orm.DeclarativeMeta)
+                # 2.x: DeclarativeBas uses this as metaclass
                 or isinstance(base, sa_orm.decl_api.DeclarativeAttributeIntercept)
+                # 2.x: DeclarativeBaseNoMeta doesn't use a metaclass
                 or issubclass(base, sa_orm.DeclarativeBaseNoMeta)
             )
         )
