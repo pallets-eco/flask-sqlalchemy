@@ -21,11 +21,14 @@ Flask-SQLAlchemy is a wrapper around SQLAlchemy. You should follow the
 `SQLAlchemy Tutorial`_ to learn about how to use it, and consult its documentation
 for detailed information about its features. These docs show how to set up
 Flask-SQLAlchemy itself, not how to use SQLAlchemy. Flask-SQLAlchemy sets up the
-engine, declarative model class, and scoped session automatically, so you can skip those
+engine and scoped session automatically, so you can skip those
 parts of the SQLAlchemy tutorial.
 
-.. _SQLAlchemy Tutorial: https://docs.sqlalchemy.org/tutorial/index.html
+.. _SQLAlchemy Tutorial: https://docs.sqlalchemy.org/en/20/tutorial/index.html
 
+This guide assumes you are using SQLAlchemy 2.x, which has a new API for defining models
+and better support for Python type hints and data classes. If you are using SQLAlchemy 1.x,
+see :doc:`legacy-quickstart`.
 
 Installation
 ------------
@@ -44,30 +47,8 @@ Initialize the Extension
 ------------------------
 
 First create the ``db`` object using the ``SQLAlchemy`` constructor.
-The initialization step depends on which version of ``SQLAlchemy`` you're using.
-This extension supports both SQLAlchemy 1 and 2, but defaults to SQLAlchemy 1.
 
-.. _sqlalchemy1-initialization:
-
-Using the SQLAlchemy 1 API
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To use the SQLAlchemy 1.x API, you do not need to pass any arguments to the ``SQLAlchemy`` constructor.
-
-.. code-block:: python
-
-    from flask import Flask
-    from flask_sqlalchemy import SQLAlchemy
-    from sqlalchemy.orm import DeclarativeBase
-
-    db = SQLAlchemy()
-
-.. _sqlalchemy2-initialization:
-
-Using the SQLAlchemy 2 API
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-To use the new SQLAlchemy 2.x API, pass a subclass of either `DeclarativeBase`_ or `DeclarativeBaseNoMeta`_
+Pass a subclass of either `DeclarativeBase`_ or `DeclarativeBaseNoMeta`_
 to the constructor.
 
 .. code-block:: python
@@ -81,21 +62,11 @@ to the constructor.
 
     db = SQLAlchemy(model_class=Base)
 
-If desired, you can enable `SQLAlchemy's native support for data classes`_
-by adding `MappedAsDataclass` as an additional parent class.
 
-.. code-block:: python
-
-    from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
-
-    class Base(DeclarativeBase, MappedAsDataclass):
-      pass
-
-    db = SQLAlchemy(model_class=Base)
+Learn more about customizing the base model class in :doc:`models`.
 
 .. _DeclarativeBase: https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.DeclarativeBase
 .. _DeclarativeBaseNoMeta: https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.DeclarativeBaseNoMeta
-.. _SQLAlchemy's native support for data classes: https://docs.sqlalchemy.org/en/20/changelog/whatsnew_20.html#native-support-for-dataclasses-mapped-as-orm-models
 
 About the ``SQLAlchemy`` object
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -134,34 +105,19 @@ keys are used.
 Define Models
 -------------
 
-Subclass ``db.Model`` to define a model class. The ``db`` object makes the names in
-``sqlalchemy`` and ``sqlalchemy.orm`` available for convenience, such as ``db.Column``.
+Subclass ``db.Model`` to define a model class.
 The model will generate a table name by converting the ``CamelCase`` class name to
 ``snake_case``.
 
-This example uses the SQLAlchemy 1.x style of defining models:
-
 .. code-block:: python
 
-    class User(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        username = db.Column(db.String, unique=True, nullable=False)
-        email = db.Column(db.String)
-
-The table name ``"user"`` will automatically be assigned to the model's table.
-
-It's also possible to use the SQLAlchemy 2.x style of defining models,
-as long as you initialized the extension with an appropriate 2.x model base class
-as described in :ref:`sqlalchemy2-initialization`.
-
-.. code-block:: python
-
+    from sqlalchemy import Integer, String
     from sqlalchemy.orm import Mapped, mapped_column
 
     class User(db.Model):
-        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
-        username: Mapped[str] = mapped_column(db.String, unique=True, nullable=False)
-        email: Mapped[str] = mapped_column(db.String)
+        id: Mapped[int] = mapped_column(Integer, primary_key=True)
+        username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+        email: Mapped[str] = mapped_column(String)
 
 
 See :doc:`models` for more information about defining and creating models and tables.

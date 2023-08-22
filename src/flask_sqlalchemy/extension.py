@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import types
 import typing as t
+import warnings
 from weakref import WeakKeyDictionary
 
 import sqlalchemy as sa
@@ -47,6 +48,14 @@ class _FSAModel(Model):
     metadata: sa.MetaData
 
 
+def _get_2x_declarative_bases(model_class: t.Type[_FSA_MC]) -> list[t.Type]:
+    return [
+        b
+        for b in model_class.__bases__
+        if issubclass(b, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta))
+    ]
+
+
 class SQLAlchemy:
     """Integrates SQLAlchemy with Flask. This handles setting up one or more engines,
     associating tables and models with specific engines, and cleaning up connections and
@@ -72,6 +81,10 @@ class SQLAlchemy:
     :param app: Call :meth:`init_app` on this Flask application now.
     :param metadata: Use this as the default :class:`sqlalchemy.schema.MetaData`. Useful
         for setting a naming convention.
+        .. deprecated:: 3.1.0
+            This parameter can still be used in conjunction with SQLAlchemy 1.x classes,
+            but is ignored when using SQLAlchemy 2.x style of declarative classes.
+            Instead, specify metadata on your Base class.
     :param session_options: Arguments used by :attr:`session` to create each session
         instance. A ``scopefunc`` key will be passed to the scoped session, not the
         session instance. See :class:`sqlalchemy.orm.sessionmaker` for a list of
@@ -194,8 +207,17 @@ class SQLAlchemy:
         """
 
         if metadata is not None:
-            metadata.info["bind_key"] = None
-            self.metadatas[None] = metadata
+            if len(_get_2x_declarative_bases(model_class)) > 0:
+                warnings.warn(
+                    "When using SQLAlchemy 2.x style of declarative classes,"
+                    " the `metadata` should be an attribute of the base class."
+                    "The metadata passed into SQLAlchemy() is ignored.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+            else:
+                metadata.info["bind_key"] = None
+                self.metadatas[None] = metadata
 
         self.Table = self._make_table_class()
         """A :class:`sqlalchemy.schema.Table` class that chooses a metadata
@@ -504,11 +526,7 @@ class SQLAlchemy:
             ``model`` can be an already created declarative model class.
         """
         model: t.Type[_FSAModel]
-        declarative_bases = [
-            b
-            for b in model_class.__bases__
-            if issubclass(b, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta))
-        ]
+        declarative_bases = _get_2x_declarative_bases(model_class)
         if len(declarative_bases) > 1:
             # raise error if more than one declarative base is found
             raise ValueError(
@@ -516,7 +534,7 @@ class SQLAlchemy:
                 " Got: {}".format(model_class.__bases__)
             )
         elif len(declarative_bases) == 1:
-            body = {"__fsa__": self}
+            body = {"__fsa__": self, "metadata": model_class.metadata}
             mixin_classes = [BindMixin, NameMixin, Model]
             if disable_autonaming:
                 mixin_classes.remove(NameMixin)

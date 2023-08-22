@@ -27,24 +27,30 @@ def app_ctx(app: Flask) -> t.Generator[AppContext, None, None]:
         yield ctx
 
 
+# Each test that uses the db or model_class fixture will be tested against
+# each of these possible base class setups.
+# The first one is None, which will trigger creation of a SQLAlchemy 1.x base.
+# The remaining four are used to create SQLAlchemy 2.x bases.
+# We defer creation of those classes until the fixture,
+# so that each test gets a fresh class with its own metadata.
 test_classes = [
     None,
-    types.new_class(
+    (
         "BaseDeclarativeBase",
         (sa_orm.DeclarativeBase,),
         {"metaclass": type(sa_orm.DeclarativeBase)},
     ),
-    types.new_class(
+    (
         "BaseDataclassDeclarativeBase",
         (sa_orm.MappedAsDataclass, sa_orm.DeclarativeBase),
         {"metaclass": type(sa_orm.DeclarativeBase)},
     ),
-    types.new_class(
+    (
         "BaseDeclarativeBaseNoMeta",
         (sa_orm.DeclarativeBaseNoMeta,),
         {"metaclass": type(sa_orm.DeclarativeBaseNoMeta)},
     ),
-    types.new_class(
+    (
         "BaseDataclassDeclarativeBaseNoMeta",
         (
             sa_orm.MappedAsDataclass,
@@ -58,9 +64,17 @@ test_classes = [
 @pytest.fixture(params=test_classes)
 def db(app: Flask, request: pytest.FixtureRequest) -> SQLAlchemy:
     if request.param is not None:
-        return SQLAlchemy(app, model_class=request.param)
+        return SQLAlchemy(app, model_class=types.new_class(*request.param))
     else:
         return SQLAlchemy(app)
+
+
+@pytest.fixture(params=test_classes)
+def model_class(request: pytest.FixtureRequest) -> t.Any:
+    if request.param is not None:
+        return types.new_class(*request.param)
+    else:
+        return None
 
 
 @pytest.fixture

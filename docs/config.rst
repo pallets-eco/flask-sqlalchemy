@@ -151,31 +151,6 @@ only need to use :data:`SQLALCHEMY_DATABASE_URI` and :data:`SQLALCHEMY_ENGINE_OP
     in that engine's options.
 
 
-Using custom MetaData and naming conventions
---------------------------------------------
-
-You can optionally construct the :class:`.SQLAlchemy` object with a custom
-:class:`~sqlalchemy.schema.MetaData` object. This allows you to specify a custom
-constraint `naming convention`_. This makes constraint names consistent and predictable,
-useful when using migrations, as described by `Alembic`_.
-
-.. code-block:: python
-
-    from sqlalchemy import MetaData
-    from flask_sqlalchemy import SQLAlchemy
-
-    db = SQLAlchemy(metadata=MetaData(naming_convention={
-        "ix": 'ix_%(column_0_label)s',
-        "uq": "uq_%(table_name)s_%(column_0_name)s",
-        "ck": "ck_%(table_name)s_%(constraint_name)s",
-        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-        "pk": "pk_%(table_name)s"
-    }))
-
-.. _naming convention: https://docs.sqlalchemy.org/core/constraints.html#constraint-naming-conventions
-.. _Alembic: https://alembic.sqlalchemy.org/en/latest/naming.html
-
-
 Timeouts
 --------
 

@@ -95,8 +95,12 @@ class BindMetaMixin(type):
 class BindMixin:
     """DeclarativeBase mixin to set a model's ``metadata`` based on ``__bind_key__``.
 
-    If the model sets ``metadata`` or ``__table__`` directly, ``__bind_key__`` is
-    ignored. If the ``metadata`` is the same as the parent model, it will not be set
+    If no ``__bind_key__`` is specified, the model will use the default metadata
+    provided by ``DeclarativeBase`` or ``DeclarativeBaseNoMeta``.
+    If the model doesn't set ``metadata`` or ``__table__`` directly
+    and does set ``__bind_key__``, the model will use the metadata
+    for the specified bind key.
+    If the ``metadata`` is the same as the parent model, it will not be set
     directly on the child model.
 
     .. versionchanged:: 3.1.0
@@ -107,7 +111,9 @@ class BindMixin:
 
     @classmethod
     def __init_subclass__(cls: t.Type[BindMixin], **kwargs: t.Dict[str, t.Any]) -> None:
-        if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
+        if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__) and hasattr(
+            cls, "__bind_key__"
+        ):
             bind_key = getattr(cls, "__bind_key__", None)
             parent_metadata = getattr(cls, "metadata", None)
             metadata = cls.__fsa__._make_metadata(bind_key)
@@ -270,11 +276,10 @@ def should_set_tablename(cls: type) -> bool:
     Later, ``__table_cls__`` will determine if the model looks like single or
     joined-table inheritance. If no primary key is found, the name will be unset.
     """
-    uses_2pt0 = issubclass(cls, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta))
     if (
         cls.__dict__.get("__abstract__", False)
         or (
-            not uses_2pt0
+            not issubclass(cls, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta))
             and not any(isinstance(b, sa_orm.DeclarativeMeta) for b in cls.__mro__[1:])
         )
         or any(
