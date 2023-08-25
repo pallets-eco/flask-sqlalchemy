@@ -540,10 +540,8 @@ class SQLAlchemy:
                 " Got: {}".format(model_class.__bases__)
             )
         elif len(declarative_bases) == 1:
-            body = {
-                "__fsa__": self,
-                "metadata": model_class.metadata,  # type: ignore[attr-defined]
-            }
+            body = dict(model_class.__dict__)  # type: ignore[arg-type]
+            body["__fsa__"] = self
             mixin_classes = [BindMixin, NameMixin, Model]
             if disable_autonaming:
                 mixin_classes.remove(NameMixin)

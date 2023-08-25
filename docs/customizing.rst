@@ -21,29 +21,26 @@ joined-table inheritance.
 
 .. code-block:: python
 
-    from flask_sqlalchemy.model import Model
-    import sqlalchemy as sa
-    import sqlalchemy.orm
+    from sqlalchemy import Integer, String, ForeignKey
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 
-    class IdModel(Model):
-        @sa.orm.declared_attr
+    class Base(DeclarativeBase):
+        @declared_attr.cascading
+        @classmethod
         def id(cls):
             for base in cls.__mro__[1:-1]:
                 if getattr(base, "__table__", None) is not None:
-                    type = sa.ForeignKey(base.id)
-                    break
-            else:
-                type = sa.Integer
+                        return mapped_column(ForeignKey(base.id), primary_key=True)
+                else:
+                    return mapped_column(Integer, primary_key=True)
 
-            return sa.Column(type, primary_key=True)
-
-    db = SQLAlchemy(model_class=IdModel)
+    db = SQLAlchemy(app, model_class=Base)
 
     class User(db.Model):
-        name = db.Column(db.String)
+        name: Mapped[str] = mapped_column(String)
 
     class Employee(User):
-        title = db.Column(db.String)
+        title: Mapped[str] = mapped_column(String)
 
 
 Abstract Models and Mixins
@@ -56,31 +53,49 @@ they are created or updated.
 .. code-block:: python
 
     from datetime import datetime
+    from sqlalchemy import DateTime, Integer, String
+    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
 
     class TimestampModel(db.Model):
         __abstract__ = True
-        created: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, default=datetime.utcnow)
-        updated: Mapped[datetime] = mapped_column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+        updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     class Author(db.Model):
-        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
-        username: Mapped[str] = mapped_column(db.String, unique=True, nullable=False)
+        id: Mapped[int] = mapped_column(Integer, primary_key=True)
+        username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     class Post(TimestampModel):
-        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
-        title: Mapped[str] = mapped_column(db.String, nullable=False)
+        id: Mapped[int] = mapped_column(Integer, primary_key=True)
+        title: Mapped[str] = mapped_column(String, nullable=False)
 
 This can also be done with a mixin class, inheriting from ``db.Model`` separately.
 
 .. code-block:: python
 
-    class TimestampModel:
-        created: Mapped[datetime] = mapped_column(db.DateTime, nullable=False, default=datetime.utcnow)
-        updated: Mapped[datetime] = mapped_column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    class TimestampMixin:
+        created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+        updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    class Post2(TimestampModel, db.Model):
-        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
-        title: Mapped[str] = mapped_column(db.String, nullable=False)
+    class Post(TimestampMixin, db.Model):
+        id: Mapped[int] = mapped_column(Integer, primary_key=True)
+        title: Mapped[str] = mapped_column(String, nullable=False)
+
+
+Disabling Table Name Generation
+-------------------------------
+
+Some projects prefer to set each model's ``__tablename__`` manually rather than relying
+on Flask-SQLAlchemy's detection and generation. The simple way to achieve that is to
+set each ``__tablename__`` and not modify the base class. However, the table name
+generation can be disabled by setting `disable_autonaming=True` in the `SQLAlchemy` constructor.
+
+.. code-block:: python
+
+    class Base(sa_orm.DeclarativeBase):
+        pass
+
+    db = SQLAlchemy(app, model_class=Base, disable_autonaming=True)
 
 
 Session Class
@@ -161,19 +176,3 @@ To customize only ``session.query``, pass the ``query_cls`` key to the
 .. code-block:: python
 
     db = SQLAlchemy(session_options={"query_cls": GetOrQuery})
-
-
-Disabling Table Name Generation
--------------------------------
-
-Some projects prefer to set each model's ``__tablename__`` manually rather than relying
-on Flask-SQLAlchemy's detection and generation. The simple way to achieve that is to
-set each ``__tablename__`` and not modify the base class. However, the table name
-generation can be disabled by setting `disable_autonaming=True` in the `SQLAlchemy` constructor.
-
-.. code-block:: python
-
-    class Base(sa_orm.DeclarativeBase):
-        pass
-
-    db = SQLAlchemy(app, model_class=Base, disable_autonaming=True)
