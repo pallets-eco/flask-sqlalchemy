@@ -32,13 +32,13 @@ _O = t.TypeVar("_O", bound=object)  # Based on sqlalchemy.orm._typing.py
 
 
 # Type accepted for model_class argument
-_FSA_MC = t.TypeVar(
-    "_FSA_MC",
+_FSA_MCT = t.TypeVar(
+    "_FSA_MCT",
     bound=t.Union[
-        Model,
+        type[Model],
         sa_orm.DeclarativeMeta,
-        sa_orm.DeclarativeBase,
-        sa_orm.DeclarativeBaseNoMeta,
+        type[sa_orm.DeclarativeBase],
+        type[sa_orm.DeclarativeBaseNoMeta],
     ],
 )
 
@@ -49,7 +49,7 @@ class _FSAModel(Model):
 
 
 def _get_2x_declarative_bases(
-    model_class: t.Type[_FSA_MC],
+    model_class: _FSA_MCT,
 ) -> list[t.Type[t.Union[sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta]]]:
     return [
         b
@@ -168,7 +168,7 @@ class SQLAlchemy:
         metadata: sa.MetaData | None = None,
         session_options: dict[str, t.Any] | None = None,
         query_class: type[Query] = Query,
-        model_class: t.Type[_FSA_MC] = Model,  # type: ignore[assignment]
+        model_class: _FSA_MCT = Model,  # type: ignore[assignment]
         engine_options: dict[str, t.Any] | None = None,
         add_models_to_shell: bool = True,
         disable_autonaming: bool = False,
@@ -502,7 +502,7 @@ class SQLAlchemy:
 
     def _make_declarative_base(
         self,
-        model_class: t.Type[_FSA_MC],
+        model_class: _FSA_MCT,
         disable_autonaming: bool = False,
     ) -> t.Type[_FSAModel]:
         """Create a SQLAlchemy declarative model class. The result is available as
@@ -540,7 +540,7 @@ class SQLAlchemy:
                 " Got: {}".format(model_class.__bases__)
             )
         elif len(declarative_bases) == 1:
-            body = dict(model_class.__dict__)  # type: ignore[arg-type]
+            body = dict(model_class.__dict__)
             body["__fsa__"] = self
             mixin_classes = [BindMixin, NameMixin, Model]
             if disable_autonaming:
@@ -558,7 +558,7 @@ class SQLAlchemy:
                 metadata=metadata, cls=model_class, name="Model", metaclass=metaclass
             )
         else:
-            model = model_class
+            model = model_class  # type: ignore[assignment]
 
         if None not in self.metadatas:
             # Use the model's metadata as the default metadata.
