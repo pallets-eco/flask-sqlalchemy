@@ -35,10 +35,10 @@ _O = t.TypeVar("_O", bound=object)  # Based on sqlalchemy.orm._typing.py
 _FSA_MCT = t.TypeVar(
     "_FSA_MCT",
     bound=t.Union[
-        type[Model],
+        t.Type[Model],
         sa_orm.DeclarativeMeta,
-        type[sa_orm.DeclarativeBase],
-        type[sa_orm.DeclarativeBaseNoMeta],
+        t.Type[sa_orm.DeclarativeBase],
+        t.Type[sa_orm.DeclarativeBaseNoMeta],
     ],
 )
 
