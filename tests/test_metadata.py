@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing as t
+
 import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exc
@@ -17,7 +19,7 @@ def test_default_metadata(db: SQLAlchemy) -> None:
     assert db.Model.metadata is db.metadata
 
 
-def test_custom_metadata() -> None:
+def test_custom_metadata_1x() -> None:
     metadata = sa.MetaData()
     db = SQLAlchemy(metadata=metadata)
     assert db.metadata is metadata
@@ -25,15 +27,47 @@ def test_custom_metadata() -> None:
     assert db.Model.metadata is db.metadata
 
 
-def test_metadata_from_custom_model() -> None:
-    base = sa_orm.declarative_base(cls=Model, metaclass=DefaultMeta)
+def test_custom_metadata_2x_wrongway() -> None:
+    custom_metadata = sa.MetaData()
+
+    class Base(sa_orm.DeclarativeBase):
+        pass
+
+    with pytest.deprecated_call():
+        db = SQLAlchemy(model_class=Base, metadata=custom_metadata)
+
+        assert db.metadata is Base.metadata
+        assert db.metadata.info["bind_key"] is None
+        assert db.Model.metadata is db.metadata
+
+
+def test_custom_metadata_2x() -> None:
+    custom_metadata = sa.MetaData()
+
+    class Base(sa_orm.DeclarativeBase):
+        metadata = custom_metadata
+
+    db = SQLAlchemy(model_class=Base)
+
+    assert db.metadata is custom_metadata
+    assert db.metadata.info["bind_key"] is None
+    assert db.Model.metadata is db.metadata
+
+
+def test_metadata_from_custom_model(model_class: t.Any) -> None:
+    if model_class is not Model:
+        # In 2.x, SQLAlchemy creates the metadata attribute
+        base = model_class
+    else:
+        # For 1.x, our extension creates the metadata attribute
+        base = sa_orm.declarative_base(cls=Model, metaclass=DefaultMeta)
     metadata = base.metadata
     db = SQLAlchemy(model_class=base)
     assert db.Model.metadata is metadata
     assert db.Model.metadata is db.metadata
 
 
-def test_custom_metadata_overrides_custom_model() -> None:
+def test_custom_metadata_overrides_custom_model_legacy() -> None:
     base = sa_orm.declarative_base(cls=Model, metaclass=DefaultMeta)
     metadata = sa.MetaData()
     db = SQLAlchemy(model_class=base, metadata=metadata)
@@ -41,18 +75,24 @@ def test_custom_metadata_overrides_custom_model() -> None:
     assert db.Model.metadata is db.metadata
 
 
-def test_metadata_per_bind(app: Flask) -> None:
+def test_metadata_per_bind(app: Flask, model_class: t.Any) -> None:
     app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
-    db = SQLAlchemy(app)
+    db = SQLAlchemy(app, model_class=model_class)
     assert db.metadatas["a"] is not db.metadata
     assert db.metadatas["a"].info["bind_key"] == "a"
 
 
-def test_copy_naming_convention(app: Flask) -> None:
+def test_copy_naming_convention(app: Flask, model_class: t.Any) -> None:
     app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
-    db = SQLAlchemy(
-        app, metadata=sa.MetaData(naming_convention={"pk": "spk_%(table_name)s"})
-    )
+    if model_class is not Model:
+        model_class.metadata = sa.MetaData(
+            naming_convention={"pk": "spk_%(table_name)s"}
+        )
+        db = SQLAlchemy(app, model_class=model_class)
+    else:
+        db = SQLAlchemy(
+            app, metadata=sa.MetaData(naming_convention={"pk": "spk_%(table_name)s"})
+        )
     assert db.metadata.naming_convention["pk"] == "spk_%(table_name)s"
     assert db.metadatas["a"].naming_convention == db.metadata.naming_convention
 

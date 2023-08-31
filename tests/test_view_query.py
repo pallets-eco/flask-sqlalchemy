@@ -4,6 +4,7 @@ import typing as t
 
 import pytest
 import sqlalchemy as sa
+import sqlalchemy.orm as sa_orm
 from flask import Flask
 from werkzeug.exceptions import NotFound
 
@@ -64,20 +65,40 @@ def test_paginate(db: SQLAlchemy, Todo: t.Any) -> None:
 # This test creates its own inline model so that it can use that as the type
 @pytest.mark.usefixtures("app_ctx")
 def test_view_get_or_404_typed(db: SQLAlchemy, app: Flask) -> None:
-    class Quiz(db.Model):
-        id = sa.Column(sa.Integer, primary_key=True)
-        topic = sa.Column(sa.String)
+    # Copied and pasted from conftest.py
+    if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
+
+        class Todo(db.Model):
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, init=False, primary_key=True
+            )
+            title: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String, nullable=True, default=None
+            )
+
+    elif issubclass(db.Model, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta)):
+
+        class Todo(db.Model):  # type: ignore[no-redef]
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            title: sa_orm.Mapped[str] = sa_orm.mapped_column(sa.String, nullable=True)
+
+    else:
+
+        class Todo(db.Model):  # type: ignore[no-redef]
+            id = sa.Column(sa.Integer, primary_key=True)
+            title = sa.Column(sa.String)
 
     db.create_all()
 
-    item: Quiz = Quiz(topic="Python")
-    db.session.add(item)
+    todo = Todo()
+    todo.title = "Python"
+    db.session.add(todo)
     db.session.commit()
-    result = db.get_or_404(Quiz, 1)
-    assert result.topic == "Python"
-    assert result is item
+    result = db.get_or_404(Todo, 1)
+    assert result.title == "Python"
+    assert result is todo
     if hasattr(t, "assert_type"):
-        t.assert_type(result, Quiz)
+        t.assert_type(result, Todo)
     with pytest.raises(NotFound):
-        assert db.get_or_404(Quiz, 2)
+        assert db.get_or_404(Todo, 2)
     db.drop_all()

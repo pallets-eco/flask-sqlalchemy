@@ -5,8 +5,6 @@
 #
 #    pip-compile-multi
 #
-greenlet==2.0.2
-    # via sqlalchemy
 iniconfig==2.0.0
     # via pytest
 mypy==1.4.1

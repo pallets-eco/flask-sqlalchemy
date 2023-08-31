@@ -32,6 +32,12 @@ Model
         If the ``__table__`` or ``__tablename__`` is set explicitly, that will be used
         instead.
 
+Metaclass mixins (SQLAlchemy 1.x)
+---------------------------------
+
+If your code uses the SQLAlchemy 1.x API (the default for code that doesn't specify a ``model_class``),
+then these mixins are automatically applied to the ``Model`` class.
+
 .. autoclass:: DefaultMeta
 
 .. autoclass:: BindMetaMixin

@@ -3,6 +3,8 @@ Version 3.1.0
 
 Unreleased
 
+-   Add support for the SQLAlchemy 2.x API via ``model_class`` parameter. :issue:`1140`
+-   Bump minimum version of SQLAlchemy to 2.0.16.
 -   Remove previously deprecated code.
 -   Pass extra keyword arguments from ``get_or_404`` to ``session.get``. :issue:`1149`
 
