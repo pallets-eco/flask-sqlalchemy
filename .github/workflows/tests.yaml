@@ -29,7 +29,6 @@ jobs:
           - {name: '3.10', python: '3.10', tox: py310}
           - {name: '3.9', python: '3.9', tox: py39}
           - {name: '3.8', python: '3.8', tox: py38}
-          - {name: '3.7', python: '3.7', tox: py37}
           - {name: 'Typing', python: '3.11', tox: typing}
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744
