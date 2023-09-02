@@ -12,7 +12,7 @@ Install
 
 **Be sure to use the same version of the code as the version of the docs
 you're reading.** You probably want the latest tagged version, but the
-default Git version is the master branch.
+default Git version is the main branch.
 
 .. code-block:: text
 
@@ -42,7 +42,7 @@ Install Flaskr:
 
     $ pip install -e .
 
-Or if you are using the master branch, install Flask-SQLAlchemy from
+Or if you are using the main branch, install Flask-SQLAlchemy from
 source before installing Flaskr:
 
 .. code-block:: text
@@ -79,7 +79,7 @@ Test
 .. code-block:: text
 
     $ pip install -e '.[test]'
-    $ pytest
+    $ python3 -m pytest
 
 Run with coverage report:
 

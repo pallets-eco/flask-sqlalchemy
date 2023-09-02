@@ -4,10 +4,16 @@ import click
 from flask import Flask
 from flask.cli import with_appcontext
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
 
-__version__ = (1, 0, 0, "dev")
+__version__ = (1, 1, 0, "dev")
 
-db = SQLAlchemy()
+
+class Base(DeclarativeBase):
+    pass
+
+
+db = SQLAlchemy(model_class=Base)
 
 
 def create_app(test_config=None):
