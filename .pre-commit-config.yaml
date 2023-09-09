@@ -6,18 +6,18 @@ repos:
     rev: v3.7.0
     hooks:
       - id: pyupgrade
-        args: ["--py37-plus"]
+        args: ["--py38-plus"]
   - repo: https://github.com/asottile/reorder-python-imports
     rev: v3.10.0
     hooks:
       - id: reorder-python-imports
         files: "^(?!examples/)"
-        args: ["--py37-plus", "--application-directories", "src"]
+        args: ["--py38-plus", "--application-directories", "src"]
   - repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:
       - id: black
-        args: ["--target-version", "py37"]
+        args: ["--target-version", "py38"]
   - repo: https://github.com/PyCQA/flake8
     rev: 6.0.0
     hooks:
