@@ -143,20 +143,54 @@ def test_get_bind_inheritance(app: Flask, model_class: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_session_multiple_dbs(app: Flask) -> None:
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///"
+def test_session_multiple_dbs(app: Flask, model_class: t.Any) -> None:
     app.config["SQLALCHEMY_BINDS"] = {"db1": "sqlite:///"}
+    db = SQLAlchemy(app, model_class=model_class)
 
-    db = SQLAlchemy(app)
+    if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
 
-    class User(db.Model):
-        id = sa.Column(sa.Integer, primary_key=True)
-        name = sa.Column(sa.String(50), nullable=False)
+        class User(db.Model):
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, primary_key=True, init=False
+            )
+            name: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String(50), nullable=False, init=False
+            )
 
-    class Product(db.Model):
-        __bind_key__ = "db1"
-        id = sa.Column(sa.Integer, primary_key=True)
-        name = sa.Column(sa.String(50), nullable=False)
+        class Product(db.Model):
+            __bind_key__ = "db1"
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, primary_key=True, init=False
+            )
+            name: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String(50), nullable=False, init=False
+            )
+
+    elif issubclass(db.Model, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta)):
+
+        class User(db.Model):  # type: ignore[no-redef]
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            name: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String(50), nullable=False
+            )
+
+        class Product(db.Model):  # type: ignore[no-redef]
+            __bind_key__ = "db1"
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            name: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String(50), nullable=False
+            )
+
+    else:
+
+        class User(db.Model):  # type: ignore[no-redef]
+            id = sa.Column(sa.Integer, primary_key=True)
+            name = sa.Column(sa.String(50), nullable=False)
+
+        class Product(db.Model):  # type: ignore[no-redef]
+            __bind_key__ = "db1"
+            id = sa.Column(sa.Integer, primary_key=True)
+            name = sa.Column(sa.String(50), nullable=False)
 
     db.create_all()
 
