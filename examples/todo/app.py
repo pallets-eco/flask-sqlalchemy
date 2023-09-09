@@ -8,23 +8,32 @@ from flask import render_template
 from flask import request
 from flask import url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import Mapped, mapped_column
+
 
 app = Flask(__name__)
 app.secret_key = "Achee6phIexoh8dagiQuew0ephuga4Ih"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///todo.sqlite"
-db = SQLAlchemy(app)
 
 
-def now_utc():
+class Base(DeclarativeBase):
+    pass
+
+
+db = SQLAlchemy(app, model_class=Base)
+
+
+def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
 class Todo(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String, nullable=False)
-    text = db.Column(db.String, nullable=False)
-    done = db.Column(db.Boolean, nullable=False, default=False)
-    pub_date = db.Column(db.DateTime, nullable=False, default=now_utc)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str]
+    text: Mapped[str]
+    done: Mapped[bool] = mapped_column(default=False)
+    pub_date: Mapped[datetime] = mapped_column(default=now_utc)
 
 
 with app.app_context():
