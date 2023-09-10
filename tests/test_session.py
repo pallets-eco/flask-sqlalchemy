@@ -140,3 +140,68 @@ def test_get_bind_inheritance(app: Flask, model_class: t.Any) -> None:
     admin = db.session.execute(db.select(Admin)).scalar_one()
     db.session.expire(admin)
     assert admin.org == "pallets"
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_session_multiple_dbs(app: Flask, model_class: t.Any) -> None:
+    app.config["SQLALCHEMY_BINDS"] = {"db1": "sqlite:///"}
+    db = SQLAlchemy(app, model_class=model_class)
+
+    if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
+
+        class User(db.Model):
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, primary_key=True, init=False
+            )
+            name: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String(50), nullable=False, init=False
+            )
+
+        class Product(db.Model):
+            __bind_key__ = "db1"
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(
+                sa.Integer, primary_key=True, init=False
+            )
+            name: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String(50), nullable=False, init=False
+            )
+
+    elif issubclass(db.Model, (sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta)):
+
+        class User(db.Model):  # type: ignore[no-redef]
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            name: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String(50), nullable=False
+            )
+
+        class Product(db.Model):  # type: ignore[no-redef]
+            __bind_key__ = "db1"
+            id: sa_orm.Mapped[int] = sa_orm.mapped_column(sa.Integer, primary_key=True)
+            name: sa_orm.Mapped[str] = sa_orm.mapped_column(
+                sa.String(50), nullable=False
+            )
+
+    else:
+
+        class User(db.Model):  # type: ignore[no-redef]
+            id = sa.Column(sa.Integer, primary_key=True)
+            name = sa.Column(sa.String(50), nullable=False)
+
+        class Product(db.Model):  # type: ignore[no-redef]
+            __bind_key__ = "db1"
+            id = sa.Column(sa.Integer, primary_key=True)
+            name = sa.Column(sa.String(50), nullable=False)
+
+    db.create_all()
+
+    db.session.execute(User.__table__.insert(), [{"name": "User1"}, {"name": "User2"}])
+    db.session.commit()
+    users = db.session.execute(db.select(User)).scalars().all()
+    assert len(users) == 2
+
+    db.session.execute(
+        Product.__table__.insert(), [{"name": "Product1"}, {"name": "Product2"}]
+    )
+    db.session.commit()
+    products = db.session.execute(db.select(Product)).scalars().all()
+    assert len(products) == 2

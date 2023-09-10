@@ -8,6 +8,7 @@ Unreleased
 -   Bump minimum version of SQLAlchemy to 2.0.16.
 -   Remove previously deprecated code.
 -   Pass extra keyword arguments from ``get_or_404`` to ``session.get``. :issue:`1149`
+-   Fix bug with finding right bind key for clause statements. :issue:`1211`
 
 
 Version 3.0.5

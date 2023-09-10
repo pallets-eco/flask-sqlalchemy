@@ -79,13 +79,22 @@ class Session(sa_orm.Session):
 
 
 def _clause_to_engine(
-    clause: t.Any | None, engines: t.Mapping[str | None, sa.engine.Engine]
+    clause: sa.ClauseElement | None,
+    engines: t.Mapping[str | None, sa.engine.Engine],
 ) -> sa.engine.Engine | None:
     """If the clause is a table, return the engine associated with the table's
     metadata's bind key.
     """
-    if isinstance(clause, sa.Table) and "bind_key" in clause.metadata.info:
-        key = clause.metadata.info["bind_key"]
+    table = None
+
+    if clause is not None:
+        if isinstance(clause, sa.Table):
+            table = clause
+        elif isinstance(clause, sa.UpdateBase) and isinstance(clause.table, sa.Table):
+            table = clause.table
+
+    if table is not None and "bind_key" in table.metadata.info:
+        key = table.metadata.info["bind_key"]
 
         if key not in engines:
             raise sa_exc.UnboundExecutionError(
