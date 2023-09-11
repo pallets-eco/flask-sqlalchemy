@@ -1,7 +1,16 @@
+Version 3.1.1
+-------------
+
+Unreleased
+
+-   Deprecate the ``__version__`` attribute. Use feature detection, or
+    ``importlib.metadata.version("flask-sqlalchemy")``, instead. :issue:`5230`
+
+
 Version 3.1.0
 -------------
 
-Released 2023-09-10
+Released 2023-09-11
 
 -   Drop support for Python 3.7.  :pr:`1251`
 -   Add support for the SQLAlchemy 2.x API via ``model_class`` parameter. :issue:`1140`
