@@ -1,3 +1,0 @@
-flask==2.2.5
-werkzeug<2.3
-sqlalchemy==2.0.16

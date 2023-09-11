@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: monthly
     groups:
-      GitHub Actions:
+      github-actions:
         patterns:
           - "*"
   - package-ecosystem: pip
@@ -13,6 +13,6 @@ updates:
     schedule:
       interval: monthly
     groups:
-      Python requirements:
+      python-requirements:
         patterns:
           - "*"
