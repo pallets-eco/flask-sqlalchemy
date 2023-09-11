@@ -708,6 +708,34 @@ class SQLAlchemy:
         """
         return self.engines[None]
 
+    def get_engine(
+        self, bind_key: str | None = None, **kwargs: t.Any
+    ) -> sa.engine.Engine:
+        """Get the engine for the given bind key for the current application.
+        This requires that a Flask application context is active.
+
+        :param bind_key: The name of the engine.
+
+        .. deprecated:: 3.0
+            Will be removed in Flask-SQLAlchemy 3.2. Use ``engines[key]`` instead.
+
+        .. versionchanged:: 3.0
+            Renamed the ``bind`` parameter to ``bind_key``. Removed the ``app``
+            parameter.
+        """
+        warnings.warn(
+            "'get_engine' is deprecated and will be removed in Flask-SQLAlchemy"
+            " 3.2. Use 'engine' or 'engines[key]' instead. If you're using"
+            " Flask-Migrate or Alembic, you'll need to update your 'env.py' file.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if "bind" in kwargs:
+            bind_key = kwargs.pop("bind")
+
+        return self.engines[bind_key]
+
     def get_or_404(
         self,
         entity: type[_O],

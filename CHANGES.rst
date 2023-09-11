@@ -1,7 +1,7 @@
 Version 3.1.0
 -------------
 
-Unreleased
+Released 2023-09-10
 
 -   Drop support for Python 3.7.  :pr:`1251`
 -   Add support for the SQLAlchemy 2.x API via ``model_class`` parameter. :issue:`1140`
