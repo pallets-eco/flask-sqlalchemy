@@ -1,8 +1,6 @@
 -r tests.in
 -r mypy.in
 -r docs.in
-pip-compile-multi
+pip-tools
 pre-commit
 tox
-pytest-cov
-coverage[toml]
