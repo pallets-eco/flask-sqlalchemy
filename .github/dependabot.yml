@@ -9,7 +9,7 @@ updates:
         patterns:
           - "*"
   - package-ecosystem: pip
-    directory: /
+    directory: /requirements/
     schedule:
       interval: monthly
     groups:
