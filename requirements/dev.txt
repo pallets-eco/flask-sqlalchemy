@@ -99,7 +99,7 @@ requests==2.31.0
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
-sphinx==7.2.5
+sphinx==7.2.6
     # via
     #   -r docs.in
     #   pallets-sphinx-themes
@@ -126,7 +126,7 @@ sphinxcontrib-qthelp==1.0.6
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.9
     # via sphinx
-sqlalchemy==2.0.20
+sqlalchemy==2.0.21
     # via -r mypy.in
 tox==4.11.3
     # via -r dev.in

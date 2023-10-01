@@ -18,7 +18,7 @@ pluggy==1.3.0
     # via pytest
 pytest==7.4.2
     # via -r mypy.in
-sqlalchemy==2.0.20
+sqlalchemy==2.0.21
     # via -r mypy.in
 typing-extensions==4.7.1
     # via
