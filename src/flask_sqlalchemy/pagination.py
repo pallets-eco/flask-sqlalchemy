@@ -14,7 +14,8 @@ class Pagination:
     items per page.
 
     Don't create pagination objects manually. They are created by
-    :meth:`.SQLAlchemy.paginate` and :meth:`.Query.paginate`.
+    :meth:`.SQLAlchemy.paginate`, :meth:`.SQLAlchemy.paginate_rows`, and
+    :meth:`.Query.paginate`.
 
     This is a base class, a subclass must implement :meth:`_query_items` and
     :meth:`_query_count`. Those methods will use arguments passed as ``kwargs`` to
@@ -337,6 +338,28 @@ class SelectPagination(Pagination):
         select = select.limit(self.per_page).offset(self._query_offset)
         session = self._query_args["session"]
         return list(session.execute(select).unique().scalars())
+
+    def _query_count(self) -> int:
+        select = self._query_args["select"]
+        sub = select.options(sa_orm.lazyload("*")).order_by(None).subquery()
+        session = self._query_args["session"]
+        out = session.execute(sa.select(sa.func.count()).select_from(sub)).scalar()
+        return out  # type: ignore[no-any-return]
+
+
+class RowPagination(Pagination):
+    """Returned by :meth:`.SQLAlchemy.paginate_rows`. Takes ``select`` and ``session``
+    arguments in addition to the :class:`Pagination` arguments.
+
+    .. versionadded:: 3.2
+    """
+
+    def _query_items(self) -> list[t.Any]:
+        # Like SelectPagination._query_items(), but without the `.scalars()`
+        select = self._query_args["select"]
+        select = select.limit(self.per_page).offset(self._query_offset)
+        session = self._query_args["session"]
+        return list(session.execute(select).unique())
 
     def _query_count(self) -> int:
         select = self._query_args["select"]
