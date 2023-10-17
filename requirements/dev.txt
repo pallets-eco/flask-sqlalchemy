@@ -134,7 +134,7 @@ typing-extensions==4.7.1
     # via
     #   mypy
     #   sqlalchemy
-urllib3==2.0.6
+urllib3==2.0.7
     # via requests
 virtualenv==20.24.5
     # via
