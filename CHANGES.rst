@@ -10,7 +10,7 @@ Version 3.1.1
 Released 2023-09-11
 
 -   Deprecate the ``__version__`` attribute. Use feature detection, or
-    ``importlib.metadata.version("flask-sqlalchemy")``, instead. :issue:`5230`
+    ``importlib.metadata.version("flask-sqlalchemy")``, instead. :pr:`1256`
 
 
 Version 3.1.0
