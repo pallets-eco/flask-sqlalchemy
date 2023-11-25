@@ -139,13 +139,18 @@ defining the full model.
 
 Call the :meth:`~.SQLAlchemy.reflect` method on the extension. It will reflect all the
 tables for each bind key. Each metadata's ``tables`` attribute will contain the detected
-table objects.
+table objects. See :doc:`binds` for more details on bind keys.
 
 .. code-block:: python
 
     with app.app_context():
         db.reflect()
 
+    # From the default bind key
+    class Book(db.Model):
+        __table__ = db.metadata.tables["book"]
+
+    # From an "auth" bind key
     class User(db.Model):
         __table__ = db.metadatas["auth"].tables["user"]
 
