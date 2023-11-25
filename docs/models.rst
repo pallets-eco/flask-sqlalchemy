@@ -146,7 +146,7 @@ table objects.
     with app.app_context():
         db.reflect()
 
-    class User:
+    class User(db.Model):
         __table__ = db.metadatas["auth"].tables["user"]
 
 In most cases, it will be more maintainable to define the model classes yourself. You

@@ -162,3 +162,10 @@ def test_reflect(app: Flask) -> None:
     db.reflect()
     assert "user" in db.metadata.tables
     assert "post" in db.metadatas["post"].tables
+
+    class User(db.Model):
+        __table__ = db.metadata.tables["user"]
+
+    db.session.add(User(id=1))
+    users = db.session.execute(sa.select(User)).scalars().all()
+    assert len(users) == 1
