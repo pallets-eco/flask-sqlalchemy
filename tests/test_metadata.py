@@ -160,5 +160,6 @@ def test_reflect(app: Flask) -> None:
     db = SQLAlchemy(app)
     assert not db.metadata.tables
     db.reflect()
+
     assert "user" in db.metadata.tables
     assert "post" in db.metadatas["post"].tables
