@@ -4,11 +4,12 @@
 #
 #    pip-compile tests.in
 #
-blinker==1.6.3
+blinker==1.7.0
     # via -r tests.in
 coverage[toml]==7.3.2
     # via
     #   -r tests.in
+    #   coverage
     #   pytest-cov
 iniconfig==2.0.0
     # via pytest
