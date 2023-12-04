@@ -8,7 +8,7 @@ alabaster==0.7.13
     # via sphinx
 babel==2.12.1
     # via sphinx
-blinker==1.6.3
+blinker==1.7.0
     # via -r tests.in
 build==1.0.3
     # via pip-tools
@@ -52,7 +52,7 @@ jinja2==3.1.2
     # via sphinx
 markupsafe==2.1.3
     # via jinja2
-mypy==1.6.1
+mypy==1.7.1
     # via -r mypy.in
 mypy-extensions==1.0.0
     # via mypy
@@ -126,9 +126,9 @@ sphinxcontrib-qthelp==1.0.6
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.9
     # via sphinx
-sqlalchemy==2.0.22
+sqlalchemy==2.0.23
     # via -r mypy.in
-tox==4.11.3
+tox==4.11.4
     # via -r dev.in
 typing-extensions==4.7.1
     # via
