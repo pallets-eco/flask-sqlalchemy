@@ -106,7 +106,7 @@ Define Models
 -------------
 
 Subclass ``db.Model`` to define a model class.
-The model will generate a table name by converting the ``CamelCase`` class name to
+The model will generate a table name by converting the ``PascalCase`` class name to
 ``snake_case``.
 
 .. code-block:: python
