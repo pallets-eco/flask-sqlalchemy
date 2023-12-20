@@ -167,7 +167,7 @@ class SQLAlchemy:
         *,
         metadata: sa.MetaData | None = None,
         session_options: dict[str, t.Any] | None = None,
-        query_class: type[Query] = Query,
+        query_class: type[Query[Model]] = Query,
         model_class: _FSA_MCT = Model,  # type: ignore[assignment]
         engine_options: dict[str, t.Any] | None = None,
         add_models_to_shell: bool = True,
@@ -808,7 +808,7 @@ class SQLAlchemy:
         max_per_page: int | None = None,
         error_out: bool = True,
         count: bool = True,
-    ) -> Pagination:
+    ) -> Pagination[t.Any]:
         """Apply an offset and limit to a select statment based on the current page and
         number of items per page, returning a :class:`.Pagination` object.
 

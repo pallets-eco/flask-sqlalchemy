@@ -13,6 +13,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.query import Query
 
 
+_T = t.TypeVar("_T")
+
+
 @pytest.fixture(autouse=True)
 def ignore_query_warning() -> t.Generator[None, None, None]:
     if hasattr(sa_exc, "LegacyAPIWarning"):
@@ -98,7 +101,7 @@ def test_default_query_class(db: SQLAlchemy) -> None:
 
 @pytest.mark.usefixtures("app_ctx")
 def test_custom_query_class(app: Flask) -> None:
-    class CustomQuery(Query):
+    class CustomQuery(Query[_T]):
         pass
 
     db = SQLAlchemy(app, query_class=CustomQuery)

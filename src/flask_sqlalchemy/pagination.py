@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing as t
+import typing_extensions as te
 from math import ceil
 
 import sqlalchemy as sa
@@ -9,7 +10,10 @@ from flask import abort
 from flask import request
 
 
-class Pagination:
+_T = t.TypeVar("_T")
+
+
+class Pagination(t.Generic[_T]):
     """Apply an offset and limit to the query based on the current page and number of
     items per page.
 
@@ -147,7 +151,7 @@ class Pagination:
         """
         return (self.page - 1) * self.per_page
 
-    def _query_items(self) -> list[t.Any]:
+    def _query_items(self) -> list[_T]:
         """Execute the query to get the items on the current page.
 
         Uses init arguments stored in :attr:`_query_args`.
@@ -212,7 +216,7 @@ class Pagination:
 
         return self.page - 1
 
-    def prev(self, *, error_out: bool = False) -> Pagination:
+    def prev(self, *, error_out: bool = False) -> te.Self:
         """Query the :class:`Pagination` object for the previous page.
 
         :param error_out: Abort with a ``404 Not Found`` error if no items are returned
@@ -242,7 +246,7 @@ class Pagination:
 
         return self.page + 1
 
-    def next(self, *, error_out: bool = False) -> Pagination:
+    def next(self, *, error_out: bool = False) -> te.Self:
         """Query the :class:`Pagination` object for the next page.
 
         :param error_out: Abort with a ``404 Not Found`` error if no items are returned
@@ -321,18 +325,18 @@ class Pagination:
 
         yield from range(right_start, pages_end)
 
-    def __iter__(self) -> t.Iterator[t.Any]:
+    def __iter__(self) -> t.Iterator[_T]:
         yield from self.items
 
 
-class SelectPagination(Pagination):
+class SelectPagination(Pagination[_T]):
     """Returned by :meth:`.SQLAlchemy.paginate`. Takes ``select`` and ``session``
     arguments in addition to the :class:`Pagination` arguments.
 
     .. versionadded:: 3.0
     """
 
-    def _query_items(self) -> list[t.Any]:
+    def _query_items(self) -> list[_T]:
         select = self._query_args["select"]
         select = select.limit(self.per_page).offset(self._query_offset)
         session = self._query_args["session"]
@@ -346,14 +350,14 @@ class SelectPagination(Pagination):
         return out  # type: ignore[no-any-return]
 
 
-class QueryPagination(Pagination):
+class QueryPagination(Pagination[_T]):
     """Returned by :meth:`.Query.paginate`. Takes a ``query`` argument in addition to
     the :class:`Pagination` arguments.
 
     .. versionadded:: 3.0
     """
 
-    def _query_items(self) -> list[t.Any]:
+    def _query_items(self) -> list[_T]:
         query = self._query_args["query"]
         out = query.limit(self.per_page).offset(self._query_offset).all()
         return out  # type: ignore[no-any-return]
