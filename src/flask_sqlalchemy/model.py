@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import re
 import typing as t
-import typing_extensions as te
 
 import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
+import typing_extensions as te
 
 from .query import Query
 
@@ -20,9 +20,7 @@ class _QueryProperty:
     """
 
     def __get__(self, obj: Model | None, cls: type[Model]) -> Query[Model]:
-        return cls.query_class(
-            cls, session=cls.__fsa__.session()
-        )
+        return cls.query_class(cls, session=cls.__fsa__.session())
 
 
 class Model:
@@ -40,7 +38,7 @@ class Model:
     :meta private:
     """
 
-    query_class: t.ClassVar[type[Query["Model"]]] = Query
+    query_class: t.ClassVar[type[Query[Model]]] = Query
     """Query class used by :attr:`query`. Defaults to :attr:`.SQLAlchemy.Query`, which
     defaults to :class:`.Query`.
     """

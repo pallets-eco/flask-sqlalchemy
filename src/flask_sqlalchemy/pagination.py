@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import typing as t
-import typing_extensions as te
 from math import ceil
 
 import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
+import typing_extensions as te
 from flask import abort
 from flask import request
 

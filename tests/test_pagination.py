@@ -10,7 +10,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.pagination import Pagination
 
 
-
 class RangePagination(Pagination[t.Any]):
     def __init__(
         self, total: int | None = 150, page: int = 1, per_page: int = 10
