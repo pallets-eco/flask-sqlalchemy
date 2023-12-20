@@ -10,7 +10,10 @@ from .pagination import Pagination
 from .pagination import QueryPagination
 
 
-class Query(sa_orm.Query):  # type: ignore[type-arg]
+_T = t.TypeVar("_T")
+
+
+class Query(sa_orm.Query[_T]):
     """SQLAlchemy :class:`~sqlalchemy.orm.query.Query` subclass with some extra methods
     useful for querying in a web application.
 
@@ -20,7 +23,7 @@ class Query(sa_orm.Query):  # type: ignore[type-arg]
         Renamed to ``Query`` from ``BaseQuery``.
     """
 
-    def get_or_404(self, ident: t.Any, description: str | None = None) -> t.Any:
+    def get_or_404(self, ident: t.Any, description: str | None = None) -> _T:
         """Like :meth:`~sqlalchemy.orm.Query.get` but aborts with a ``404 Not Found``
         error instead of returning ``None``.
 
@@ -32,9 +35,9 @@ class Query(sa_orm.Query):  # type: ignore[type-arg]
         if rv is None:
             abort(404, description=description)
 
-        return rv
+        return rv  # type: ignore
 
-    def first_or_404(self, description: str | None = None) -> t.Any:
+    def first_or_404(self, description: str | None = None) -> _T:
         """Like :meth:`~sqlalchemy.orm.Query.first` but aborts with a ``404 Not Found``
         error instead of returning ``None``.
 
@@ -47,7 +50,7 @@ class Query(sa_orm.Query):  # type: ignore[type-arg]
 
         return rv
 
-    def one_or_404(self, description: str | None = None) -> t.Any:
+    def one_or_404(self, description: str | None = None) -> _T:
         """Like :meth:`~sqlalchemy.orm.Query.one` but aborts with a ``404 Not Found``
         error instead of raising ``NoResultFound`` or ``MultipleResultsFound``.
 
@@ -68,7 +71,7 @@ class Query(sa_orm.Query):  # type: ignore[type-arg]
         max_per_page: int | None = None,
         error_out: bool = True,
         count: bool = True,
-    ) -> Pagination:
+    ) -> Pagination[_T]:
         """Apply an offset and limit to the query based on the current page and number
         of items per page, returning a :class:`.Pagination` object.
 

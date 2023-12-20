@@ -5,6 +5,7 @@ import typing as t
 
 import sqlalchemy as sa
 import sqlalchemy.orm as sa_orm
+import typing_extensions as te
 
 from .query import Query
 
@@ -18,10 +19,8 @@ class _QueryProperty:
     :meta private:
     """
 
-    def __get__(self, obj: Model | None, cls: type[Model]) -> Query:
-        return cls.query_class(
-            cls, session=cls.__fsa__.session()  # type: ignore[arg-type]
-        )
+    def __get__(self, obj: Model | None, cls: type[Model]) -> Query[Model]:
+        return cls.query_class(cls, session=cls.__fsa__.session())
 
 
 class Model:
@@ -39,12 +38,12 @@ class Model:
     :meta private:
     """
 
-    query_class: t.ClassVar[type[Query]] = Query
+    query_class: t.ClassVar[type[Query[Model]]] = Query
     """Query class used by :attr:`query`. Defaults to :attr:`.SQLAlchemy.Query`, which
     defaults to :class:`.Query`.
     """
 
-    query: t.ClassVar[Query] = _QueryProperty()  # type: ignore[assignment]
+    query: t.ClassVar[Query[te.Self]] = _QueryProperty()  # type: ignore[assignment]
     """A SQLAlchemy query for a model. Equivalent to ``db.session.query(Model)``. Can be
     customized per-model by overriding :attr:`query_class`.
 
