@@ -281,12 +281,14 @@ class SQLAlchemy:
         if not has_app_context():
             return f"<{type(self).__name__}>"
 
-        message = f"{type(self).__name__} {self.engine.url}"
+        num_default_engines = 1 if self.engines.get(None) else 0
+        engine_str = self.engine.url if num_default_engines else "(No default engine)"
 
-        if len(self.engines) > 1:
-            message = f"{message} +{len(self.engines) - 1}"
+        num_other_engines = len(self.engines) - num_default_engines
+        if num_other_engines >= 1:
+            engine_str = f"{engine_str} +{num_other_engines} engines"
 
-        return f"<{message}>"
+        return f"<{type(self).__name__} {engine_str}>"
 
     def init_app(self, app: Flask) -> None:
         """Initialize a Flask application for use with this extension instance. This
