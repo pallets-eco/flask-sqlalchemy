@@ -37,11 +37,5 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: 'pip'
           cache-dependency-path: 'requirements/*.txt'
-      - name: cache mypy
-        uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8
-        with:
-          path: ./.mypy_cache
-          key: mypy|${{ matrix.python }}|${{ hashFiles('requirements/mypy.txt') }}
-        if: matrix.tox == 'typing'
       - run: pip install tox
       - run: tox r -e ${{ matrix.tox }}
