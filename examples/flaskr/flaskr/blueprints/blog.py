@@ -1,24 +1,16 @@
-from flask import Blueprint
-from flask import flash
-from flask import g
-from flask import redirect
-from flask import render_template
-from flask import request
-from flask import url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, url_for
+from flaskr import db
+from flaskr.blueprints.auth import login_required
+from flaskr.models import Post
 from werkzeug.exceptions import abort
 
-from flaskr import db
-from flaskr.auth.views import login_required
-from flaskr.blog.models import Post
-
-bp = Blueprint("blog", __name__)
+blog = Blueprint("blog", __name__)
 
 
-@bp.route("/")
+@blog.route("/")
 def index():
     """Show all the posts, most recent first."""
-    select = db.select(Post).order_by(Post.created.desc())
-    posts = db.session.execute(select).scalars()
+    posts = db.session.scalars(db.select(Post).order_by(Post.created.desc()))
     return render_template("blog/index.html", posts=posts)
 
 
@@ -42,7 +34,7 @@ def get_post(id, check_author=True):
     return post
 
 
-@bp.route("/create", methods=("GET", "POST"))
+@blog.route("/create", methods=("GET", "POST"))
 @login_required
 def create():
     """Create a new post for the current user."""
@@ -64,7 +56,7 @@ def create():
     return render_template("blog/create.html")
 
 
-@bp.route("/<int:id>/update", methods=("GET", "POST"))
+@blog.route("/<int:id>/update", methods=("GET", "POST"))
 @login_required
 def update(id):
     """Update a post if the current user is the author."""
@@ -89,7 +81,7 @@ def update(id):
     return render_template("blog/update.html", post=post)
 
 
-@bp.route("/<int:id>/delete", methods=("POST",))
+@blog.route("/<int:id>/delete", methods=("POST",))
 @login_required
 def delete(id):
     """Delete a post.
