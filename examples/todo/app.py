@@ -1,27 +1,15 @@
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 
-from flask import flash
-from flask import Flask
-from flask import redirect
-from flask import render_template
-from flask import request
-from flask import url_for
+import sqlalchemy.orm as so
+from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped, mapped_column
-
 
 app = Flask(__name__)
 app.secret_key = "Achee6phIexoh8dagiQuew0ephuga4Ih"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///todo.sqlite"
 
 
-class Base(DeclarativeBase):
-    pass
-
-
-db = SQLAlchemy(app, model_class=Base)
+db = SQLAlchemy(app)
 
 
 def now_utc() -> datetime:
@@ -29,11 +17,11 @@ def now_utc() -> datetime:
 
 
 class Todo(db.Model):
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str]
-    text: Mapped[str]
-    done: Mapped[bool] = mapped_column(default=False)
-    pub_date: Mapped[datetime] = mapped_column(default=now_utc)
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    title: so.Mapped[str]
+    text: so.Mapped[str]
+    done: so.Mapped[bool] = so.mapped_column(default=False)
+    pub_date: so.Mapped[datetime] = so.mapped_column(default=now_utc)
 
 
 with app.app_context():
@@ -42,8 +30,7 @@ with app.app_context():
 
 @app.route("/")
 def show_all():
-    select = db.select(Todo).order_by(Todo.pub_date.desc())
-    todos = db.session.execute(select).scalars()
+    todos = db.session.scalars(db.select(Todo).order_by(Todo.pub_date.desc()))
     return render_template("show_all.html", todos=todos)
 
 
@@ -66,7 +53,7 @@ def new():
 
 @app.route("/update", methods=["POST"])
 def update_done():
-    for todo in db.session.execute(db.select(Todo)).scalars():
+    for todo in db.session.scalars(db.select(Todo)):
         todo.done = f"done.{todo.id}" in request.form
 
     flash("Updated status")
