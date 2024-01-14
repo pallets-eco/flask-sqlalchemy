@@ -115,9 +115,9 @@ The model will generate a table name by converting the ``CamelCase`` class name 
     from sqlalchemy.orm import Mapped, mapped_column
 
     class User(db.Model):
-        id: Mapped[int] = mapped_column(Integer, primary_key=True)
-        username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-        email: Mapped[str] = mapped_column(String)
+        id: Mapped[int] = mapped_column(primary_key=True)
+        username: Mapped[str] = mapped_column(unique=True)
+        email: Mapped[str]
 
 
 See :doc:`models` for more information about defining and creating models and tables.

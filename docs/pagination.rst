@@ -58,7 +58,7 @@ The following Jinja macro renders a simple pagination widget.
 .. code-block:: jinja
 
     {% macro render_pagination(pagination, endpoint) %}
-      <div class=page-items>
+      <div class="page-items">
         {{ pagination.first }} - {{ pagination.last }} of {{ pagination.total }}
       </div>
       <div class=pagination>

@@ -86,9 +86,9 @@ is not set and a primary key column is defined.
     from sqlalchemy.orm import Mapped, mapped_column
 
     class User(db.Model):
-        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
-        username: Mapped[str] = mapped_column(db.String, unique=True, nullable=False)
-        email: Mapped[str] = mapped_column(db.String)
+        id: Mapped[int] = mapped_column(primary_key=True)
+        username: Mapped[str] = mapped_column(unique=True)
+        email: Mapped[str]
 
 
 Defining a model does not create it in the database. Use :meth:`~.SQLAlchemy.create_all`
