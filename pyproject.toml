@@ -59,6 +59,7 @@ source = ["flask_sqlalchemy", "tests"]
 source = ["src", "*/site-packages"]
 
 [tool.mypy]
+cache_dir = "/dev/null"
 python_version = "3.8"
 files = ["src/flask_sqlalchemy", "tests"]
 show_error_codes = true
