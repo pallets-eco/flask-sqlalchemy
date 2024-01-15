@@ -65,7 +65,8 @@ Pagination
     based on the current page and number of items per page.
 
     Don't create pagination objects manually. They are created by
-    :meth:`.SQLAlchemy.paginate` and :meth:`.Query.paginate`.
+    :meth:`.SQLAlchemy.paginate`, :meth:`.SQLAlchemy.paginate_rows`, and
+    :meth:`.Query.paginate`.
 
     .. versionchanged:: 3.0
         Iterating over a pagination object iterates over its items.
