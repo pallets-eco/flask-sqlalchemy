@@ -330,9 +330,9 @@ class SQLAlchemy:
             app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
         )
         echo: bool = app.config.setdefault("SQLALCHEMY_ECHO", False)
-        config_binds: dict[
-            str | None, str | sa.engine.URL | dict[str, t.Any]
-        ] = app.config.setdefault("SQLALCHEMY_BINDS", {})
+        config_binds: dict[str | None, str | sa.engine.URL | dict[str, t.Any]] = (
+            app.config.setdefault("SQLALCHEMY_BINDS", {})
+        )
         engine_options: dict[str | None, dict[str, t.Any]] = {}
 
         # Build the engine config for each bind key.
