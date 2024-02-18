@@ -607,7 +607,15 @@ class SQLAlchemy:
         url = sa.engine.make_url(options["url"])
 
         if url.drivername in {"sqlite", "sqlite+pysqlite"}:
-            if url.database is None or url.database in {"", ":memory:"}:
+            # the url might look like sqlite:///file:path?uri=true
+            is_uri = url.query.get("uri", False)
+
+            if is_uri and url.database:
+                db_str: t.Optional[str] = url.database[5:]
+            else:
+                db_str = url.database
+
+            if db_str is None or db_str in {"", ":memory:"}:
                 options["poolclass"] = sa.pool.StaticPool
 
                 if "connect_args" not in options:
@@ -615,14 +623,6 @@ class SQLAlchemy:
 
                 options["connect_args"]["check_same_thread"] = False
             else:
-                # the url might look like sqlite:///file:path?uri=true
-                is_uri = url.query.get("uri", False)
-
-                if is_uri:
-                    db_str = url.database[5:]
-                else:
-                    db_str = url.database
-
                 if not os.path.isabs(db_str):
                     os.makedirs(app.instance_path, exist_ok=True)
                     db_str = os.path.join(app.instance_path, db_str)
