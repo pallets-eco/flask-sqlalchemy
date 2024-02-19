@@ -110,6 +110,16 @@ def test_sqlite_driver_level_uri(app: Flask, model_class: t.Any) -> None:
     assert os.path.exists(db_path[5:])
 
 
+@pytest.mark.usefixtures("app_ctx")
+def test_sqlite_driver_level_uri_in_memory(app: Flask, model_class: t.Any) -> None:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///file::memory:?uri=true"
+    db = SQLAlchemy(app, model_class=model_class)
+    db.create_all()
+    db_path = db.engine.url.database
+    assert db_path is not None
+    assert not os.path.exists(db_path[5:])
+
+
 @unittest.mock.patch.object(SQLAlchemy, "_make_engine", autospec=True)
 def test_sqlite_memory_defaults(
     make_engine: unittest.mock.Mock, app: Flask, model_class: t.Any
