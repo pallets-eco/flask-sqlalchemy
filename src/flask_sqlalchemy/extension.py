@@ -954,7 +954,7 @@ class SQLAlchemy:
 
     def relationship(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> sa_orm.RelationshipProperty[t.Any]:
+    ) -> sa_orm.Relationship[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
@@ -978,7 +978,7 @@ class SQLAlchemy:
 
     def _relation(
         self, *args: t.Any, **kwargs: t.Any
-    ) -> sa_orm.RelationshipProperty[t.Any]:
+    ) -> sa_orm.Relationship[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
