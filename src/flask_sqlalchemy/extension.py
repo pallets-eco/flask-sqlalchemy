@@ -952,9 +952,7 @@ class SQLAlchemy:
 
             backref[1].setdefault("query_class", self.Query)
 
-    def relationship(
-        self, *args: t.Any, **kwargs: t.Any
-    ) -> sa_orm.Relationship[t.Any]:
+    def relationship(self, *args: t.Any, **kwargs: t.Any) -> sa_orm.Relationship[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
@@ -976,9 +974,7 @@ class SQLAlchemy:
         self._set_rel_query(kwargs)
         return sa_orm.dynamic_loader(argument, **kwargs)
 
-    def _relation(
-        self, *args: t.Any, **kwargs: t.Any
-    ) -> sa_orm.Relationship[t.Any]:
+    def _relation(self, *args: t.Any, **kwargs: t.Any) -> sa_orm.Relationship[t.Any]:
         """A :func:`sqlalchemy.orm.relationship` that applies this extension's
         :attr:`Query` class for dynamic relationships and backrefs.
 
