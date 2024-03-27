@@ -12,7 +12,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 
-def test_default_engine(app: Flask, db: SQLAlchemy) -> None:
+def test_default_engine(app: Flask, db: SQLAlchemy[t.Any]) -> None:
     with app.app_context():
         assert db.engine is db.engines[None]
 
