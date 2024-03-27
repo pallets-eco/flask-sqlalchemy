@@ -10,6 +10,7 @@ from flask import Flask
 from werkzeug.exceptions import NotFound
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.model import Model
 from flask_sqlalchemy.query import Query
 
 
@@ -25,7 +26,7 @@ def ignore_query_warning() -> t.Generator[None, None, None]:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_get_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_get_or_404(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     item = Todo()
     db.session.add(item)
     db.session.commit()
@@ -36,7 +37,7 @@ def test_get_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_first_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_first_or_404(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     db.session.add(Todo(title="a"))
     db.session.commit()
     assert Todo.query.filter_by(title="a").first_or_404().title == "a"
@@ -46,7 +47,7 @@ def test_first_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_one_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_one_or_404(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     db.session.add(Todo(title="a"))
     db.session.add(Todo(title="b"))
     db.session.add(Todo(title="b"))
@@ -63,7 +64,7 @@ def test_one_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_paginate(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_paginate(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     db.session.add_all(Todo() for _ in range(150))
     db.session.commit()
     p = Todo.query.paginate()
@@ -75,7 +76,7 @@ def test_paginate(db: SQLAlchemy, Todo: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_default_query_class(db: SQLAlchemy) -> None:
+def test_default_query_class(db: SQLAlchemy[t.Any]) -> None:
     class Parent(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
         children1 = db.relationship("Child", backref="parent1", lazy="dynamic")
@@ -101,7 +102,7 @@ def test_custom_query_class(app: Flask) -> None:
     class CustomQuery(Query):
         pass
 
-    db = SQLAlchemy(app, query_class=CustomQuery)
+    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app, query_class=CustomQuery)
 
     class Parent(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import typing as t
 
 import pytest
 import sqlalchemy as sa
@@ -8,13 +9,14 @@ import sqlalchemy.orm as sa_orm
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.model import Model
 from flask_sqlalchemy.record_queries import get_recorded_queries
 
 
 @pytest.mark.usefixtures("app_ctx")
 def test_query_info(app: Flask) -> None:
     app.config["SQLALCHEMY_RECORD_QUERIES"] = True
-    db = SQLAlchemy(app)
+    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app)
 
     # Copied and pasted from conftest.py
     if issubclass(db.Model, (sa_orm.MappedAsDataclass)):

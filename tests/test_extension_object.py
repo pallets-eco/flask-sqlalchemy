@@ -13,7 +13,7 @@ from flask_sqlalchemy.record_queries import get_recorded_queries
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_get_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_get_or_404(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     item = Todo()
     db.session.add(item)
     db.session.commit()

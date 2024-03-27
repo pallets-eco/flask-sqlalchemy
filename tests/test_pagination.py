@@ -119,7 +119,7 @@ def test_iter_pages_short(page: int) -> None:
 
 
 class _PaginateCallable:
-    def __init__(self, app: Flask, db: SQLAlchemy, Todo: t.Any) -> None:
+    def __init__(self, app: Flask, db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
         self.app = app
         self.db = db
         self.Todo = Todo
@@ -143,7 +143,7 @@ class _PaginateCallable:
 
 
 @pytest.fixture
-def paginate(app: Flask, db: SQLAlchemy, Todo: t.Any) -> _PaginateCallable:
+def paginate(app: Flask, db: SQLAlchemy[t.Any], Todo: t.Any) -> _PaginateCallable:
     with app.app_context():
         for i in range(1, 251):
             db.session.add(Todo(title=f"task {i}"))
@@ -197,7 +197,7 @@ def test_error_out(paginate: _PaginateCallable, page: t.Any, per_page: t.Any) ->
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_no_items_404(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_no_items_404(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     p = db.paginate(db.select(Todo))
     assert len(p.items) == 0
 

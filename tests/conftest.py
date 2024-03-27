@@ -63,7 +63,7 @@ test_classes = [
 
 
 @pytest.fixture(params=test_classes)
-def db(app: Flask, request: pytest.FixtureRequest) -> SQLAlchemy:
+def db(app: Flask, request: pytest.FixtureRequest) -> SQLAlchemy[t.Any]:
     if request.param is not Model:
         return SQLAlchemy(app, model_class=types.new_class(*request.param))
     else:
@@ -79,7 +79,7 @@ def model_class(request: pytest.FixtureRequest) -> t.Any:
 
 
 @pytest.fixture
-def Todo(app: Flask, db: SQLAlchemy) -> t.Generator[t.Any, None, None]:
+def Todo(app: Flask, db: SQLAlchemy[t.Any]) -> t.Generator[t.Any, None, None]:
     if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
 
         class Todo(db.Model):
