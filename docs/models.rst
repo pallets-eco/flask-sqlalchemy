@@ -86,9 +86,9 @@ is not set and a primary key column is defined.
     from sqlalchemy.orm import Mapped, mapped_column
 
     class User(db.Model):
-        id: Mapped[int] = mapped_column(db.Integer, primary_key=True)
-        username: Mapped[str] = mapped_column(db.String, unique=True, nullable=False)
-        email: Mapped[str] = mapped_column(db.String)
+        id: Mapped[int] = mapped_column(primary_key=True)
+        username: Mapped[str] = mapped_column(unique=True)
+        email: Mapped[str]
 
 
 Defining a model does not create it in the database. Use :meth:`~.SQLAlchemy.create_all`
@@ -139,14 +139,19 @@ defining the full model.
 
 Call the :meth:`~.SQLAlchemy.reflect` method on the extension. It will reflect all the
 tables for each bind key. Each metadata's ``tables`` attribute will contain the detected
-table objects.
+table objects. See :doc:`binds` for more details on bind keys.
 
 .. code-block:: python
 
     with app.app_context():
         db.reflect()
 
-    class User:
+    # From the default bind key
+    class Book(db.Model):
+        __table__ = db.metadata.tables["book"]
+
+    # From an "auth" bind key
+    class User(db.Model):
         __table__ = db.metadatas["auth"].tables["user"]
 
 In most cases, it will be more maintainable to define the model classes yourself. You
