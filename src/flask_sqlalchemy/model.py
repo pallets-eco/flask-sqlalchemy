@@ -19,9 +19,7 @@ class _QueryProperty:
     """
 
     def __get__(self, obj: Model | None, cls: type[Model]) -> Query:
-        return cls.query_class(
-            cls, session=cls.__fsa__.session()  # type: ignore[arg-type]
-        )
+        return cls.query_class(cls, session=cls.__fsa__.session())
 
 
 class Model:
@@ -110,7 +108,7 @@ class BindMixin:
     metadata: sa.MetaData
 
     @classmethod
-    def __init_subclass__(cls: t.Type[BindMixin], **kwargs: t.Dict[str, t.Any]) -> None:
+    def __init_subclass__(cls: type[BindMixin], **kwargs: dict[str, t.Any]) -> None:
         if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__) and hasattr(
             cls, "__bind_key__"
         ):
@@ -207,7 +205,7 @@ class NameMixin:
     __table__: sa.Table
 
     @classmethod
-    def __init_subclass__(cls: t.Type[NameMixin], **kwargs: t.Dict[str, t.Any]) -> None:
+    def __init_subclass__(cls: type[NameMixin], **kwargs: dict[str, t.Any]) -> None:
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
