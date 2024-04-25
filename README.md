@@ -47,13 +47,3 @@ with app.app_context():
 
     users = db.session.execute(db.select(User)).scalars()
 ```
-
-
-## Donate
-
-The Pallets organization develops and supports Flask-SQLAlchemy and
-other popular packages. In order to grow the community of contributors
-and users, and allow the maintainers to devote more time to the
-projects, [please donate today][].
-
-[please donate today]: https://palletsprojects.com/donate
