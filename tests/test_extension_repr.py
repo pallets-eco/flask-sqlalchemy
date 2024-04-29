@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import typing as t
-
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy

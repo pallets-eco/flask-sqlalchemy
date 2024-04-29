@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import typing as t
 
 import pytest
 import sqlalchemy as sa
