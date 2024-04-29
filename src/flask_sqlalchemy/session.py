@@ -23,7 +23,7 @@ class Session(sa_orm.Session):
         Renamed from ``SignallingSession``.
     """
 
-    def __init__(self, db: SQLAlchemy, **kwargs: t.Any) -> None:
+    def __init__(self, db: SQLAlchemy[t.Any], **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self._db = db
         self._model_changes: dict[object, tuple[t.Any, str]] = {}

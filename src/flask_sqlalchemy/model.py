@@ -31,7 +31,7 @@ class Model:
     already created declarative model class as ``model_class``.
     """
 
-    __fsa__: t.ClassVar[SQLAlchemy]
+    __fsa__: t.ClassVar[SQLAlchemy[t.Any]]
     """Internal reference to the extension object.
 
     :meta private:
@@ -73,7 +73,7 @@ class BindMetaMixin(type):
     directly on the child model.
     """
 
-    __fsa__: SQLAlchemy
+    __fsa__: SQLAlchemy[t.Any]
     metadata: sa.MetaData
 
     def __init__(
@@ -104,7 +104,7 @@ class BindMixin:
     .. versionchanged:: 3.1.0
     """
 
-    __fsa__: SQLAlchemy
+    __fsa__: SQLAlchemy[t.Any]
     metadata: sa.MetaData
 
     @classmethod
