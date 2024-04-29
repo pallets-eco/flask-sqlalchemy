@@ -52,8 +52,7 @@ class _FSAModel(Model):
 if t.TYPE_CHECKING:
 
     class _FSAModel_KW(_FSAModel):
-        def __init__(self, **kw: t.Any) -> None:
-            ...
+        def __init__(self, **kw: t.Any) -> None: ...
 
 else:
     # To minimize side effects, the type hint only works for static type checker.
@@ -76,8 +75,7 @@ if t.TYPE_CHECKING:
             sa_orm.deferred,
         ),
     )
-    class _FSAModel_DataClass(_FSAModel):
-        ...
+    class _FSAModel_DataClass(_FSAModel): ...
 
 else:
     # To minimize side effects, the type hint only works for static type checker.
@@ -113,8 +111,7 @@ class ModelGetter:
     @te.overload
     def __get__(
         self, obj: SQLAlchemy[t.Type[Model]], obj_cls: t.Any = None
-    ) -> t.Type[_FSAModel_KW]:
-        ...
+    ) -> t.Type[_FSAModel_KW]: ...
 
     # This variant needs to be prior than DeclarativeBase, because a class may inherit
     # multiple classes. When both MappedAsDataclass and DeclarativeBase are in the MRO
@@ -122,34 +119,29 @@ class ModelGetter:
     @te.overload
     def __get__(
         self, obj: SQLAlchemy[t.Type[sa_orm.MappedAsDataclass]], obj_cls: t.Any = None
-    ) -> t.Type[_FSAModel_DataClass]:
-        ...
+    ) -> t.Type[_FSAModel_DataClass]: ...
 
     @te.overload
     def __get__(
         self, obj: SQLAlchemy[t.Type[sa_orm.DeclarativeBase]], obj_cls: t.Any = None
-    ) -> t.Type[_FSAModel_KW]:
-        ...
+    ) -> t.Type[_FSAModel_KW]: ...
 
     @te.overload
     def __get__(
         self,
         obj: SQLAlchemy[t.Type[sa_orm.DeclarativeBaseNoMeta]],
         obj_cls: t.Any = None,
-    ) -> t.Type[_FSAModel_KW]:
-        ...
+    ) -> t.Type[_FSAModel_KW]: ...
 
     @te.overload
     def __get__(
         self, obj: SQLAlchemy[sa_orm.DeclarativeMeta], obj_cls: t.Any = None
-    ) -> t.Type[_FSAModel_KW]:
-        ...
+    ) -> t.Type[_FSAModel_KW]: ...
 
     @te.overload
     def __get__(
         self: te.Self, obj: None, obj_cls: t.Optional[t.Type[SQLAlchemy[t.Any]]] = None
-    ) -> t.Type[_FSAModel]:
-        ...
+    ) -> t.Type[_FSAModel]: ...
 
     def __get__(
         self: te.Self, obj: t.Optional[SQLAlchemy[t.Any]], obj_cls: t.Any = None
