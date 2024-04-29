@@ -34,7 +34,7 @@ def test_custom_metadata_2x_wrongway() -> None:
         pass
 
     with pytest.deprecated_call():
-        db: SQLAlchemy[t.Type[Base]] = SQLAlchemy(
+        db: SQLAlchemy[type[Base]] = SQLAlchemy(
             model_class=Base, metadata=custom_metadata
         )
 
@@ -90,7 +90,7 @@ def test_copy_naming_convention(app: Flask, model_class: t.Any) -> None:
         model_class.metadata = sa.MetaData(
             naming_convention={"pk": "spk_%(table_name)s"}
         )
-        db: SQLAlchemy[t.Type[t.Any]] = SQLAlchemy(app, model_class=model_class)
+        db: SQLAlchemy[type[t.Any]] = SQLAlchemy(app, model_class=model_class)
     else:
         db = SQLAlchemy(
             app, metadata=sa.MetaData(naming_convention={"pk": "spk_%(table_name)s"})
@@ -102,7 +102,7 @@ def test_copy_naming_convention(app: Flask, model_class: t.Any) -> None:
 @pytest.mark.usefixtures("app_ctx")
 def test_create_drop_all(app: Flask) -> None:
     app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
-    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app)
+    db: SQLAlchemy[type[Model]] = SQLAlchemy(app)
 
     class User(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
@@ -133,7 +133,7 @@ def test_create_drop_all(app: Flask) -> None:
 @pytest.mark.parametrize("bind_key", ["a", ["a"]])
 def test_create_key_spec(app: Flask, bind_key: str | list[str | None]) -> None:
     app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
-    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app)
+    db: SQLAlchemy[type[Model]] = SQLAlchemy(app)
 
     class User(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
@@ -153,7 +153,7 @@ def test_create_key_spec(app: Flask, bind_key: str | list[str | None]) -> None:
 def test_reflect(app: Flask) -> None:
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///user.db"
     app.config["SQLALCHEMY_BINDS"] = {"post": "sqlite:///post.db"}
-    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app)
+    db: SQLAlchemy[type[Model]] = SQLAlchemy(app)
     db.Table("user", sa.Column("id", sa.Integer, primary_key=True))
     db.Table("post", sa.Column("id", sa.Integer, primary_key=True), bind_key="post")
     db.create_all()

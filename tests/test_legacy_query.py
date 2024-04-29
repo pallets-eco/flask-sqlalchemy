@@ -102,7 +102,7 @@ def test_custom_query_class(app: Flask) -> None:
     class CustomQuery(Query):
         pass
 
-    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app, query_class=CustomQuery)
+    db: SQLAlchemy[type[Model]] = SQLAlchemy(app, query_class=CustomQuery)
 
     class Parent(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)

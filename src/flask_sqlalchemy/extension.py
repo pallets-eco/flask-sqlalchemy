@@ -35,11 +35,11 @@ _O = t.TypeVar("_O", bound=object)  # Based on sqlalchemy.orm._typing.py
 
 # Type accepted for model_class argument
 _FSA_MCT = t.Union[
-    t.Type[Model],
+    type[Model],
     sa_orm.DeclarativeMeta,
-    t.Type[sa_orm.DeclarativeBase],
-    t.Type[sa_orm.DeclarativeBaseNoMeta],
-    t.Type[sa_orm.MappedAsDataclass],
+    type[sa_orm.DeclarativeBase],
+    type[sa_orm.DeclarativeBaseNoMeta],
+    type[sa_orm.MappedAsDataclass],
 ]
 _FSA_MCT_T = t.TypeVar("_FSA_MCT_T", bound=_FSA_MCT, covariant=True)
 
@@ -110,42 +110,42 @@ class ModelGetter:
     # Note that in actual using cases, users do not need to inherit Model classes.
     @te.overload
     def __get__(
-        self, obj: SQLAlchemy[t.Type[Model]], obj_cls: t.Any = None
-    ) -> t.Type[_FSAModel_KW]: ...
+        self, obj: SQLAlchemy[type[Model]], obj_cls: t.Any = None
+    ) -> type[_FSAModel_KW]: ...
 
     # This variant needs to be prior than DeclarativeBase, because a class may inherit
     # multiple classes. When both MappedAsDataclass and DeclarativeBase are in the MRO
     # list, this configuration make type[_FSAModel_DataClass] preferred.
     @te.overload
     def __get__(
-        self, obj: SQLAlchemy[t.Type[sa_orm.MappedAsDataclass]], obj_cls: t.Any = None
-    ) -> t.Type[_FSAModel_DataClass]: ...
+        self, obj: SQLAlchemy[type[sa_orm.MappedAsDataclass]], obj_cls: t.Any = None
+    ) -> type[_FSAModel_DataClass]: ...
 
     @te.overload
     def __get__(
-        self, obj: SQLAlchemy[t.Type[sa_orm.DeclarativeBase]], obj_cls: t.Any = None
-    ) -> t.Type[_FSAModel_KW]: ...
+        self, obj: SQLAlchemy[type[sa_orm.DeclarativeBase]], obj_cls: t.Any = None
+    ) -> type[_FSAModel_KW]: ...
 
     @te.overload
     def __get__(
         self,
-        obj: SQLAlchemy[t.Type[sa_orm.DeclarativeBaseNoMeta]],
+        obj: SQLAlchemy[type[sa_orm.DeclarativeBaseNoMeta]],
         obj_cls: t.Any = None,
-    ) -> t.Type[_FSAModel_KW]: ...
+    ) -> type[_FSAModel_KW]: ...
 
     @te.overload
     def __get__(
         self, obj: SQLAlchemy[sa_orm.DeclarativeMeta], obj_cls: t.Any = None
-    ) -> t.Type[_FSAModel_KW]: ...
+    ) -> type[_FSAModel_KW]: ...
 
     @te.overload
     def __get__(
-        self: te.Self, obj: None, obj_cls: t.Optional[t.Type[SQLAlchemy[t.Any]]] = None
-    ) -> t.Type[_FSAModel]: ...
+        self: te.Self, obj: None, obj_cls: t.Optional[type[SQLAlchemy[t.Any]]] = None
+    ) -> type[_FSAModel]: ...
 
     def __get__(
         self: te.Self, obj: t.Optional[SQLAlchemy[t.Any]], obj_cls: t.Any = None
-    ) -> t.Union[te.Self, t.Type[Model], t.Type[t.Any]]:
+    ) -> t.Union[te.Self, type[Model], type[t.Any]]:
         if isinstance(obj, SQLAlchemy):
             return obj._Model
         else:
@@ -665,7 +665,7 @@ class SQLAlchemy(t.Generic[_FSA_MCT_T]):
             if disable_autonaming:
                 mixin_classes.remove(NameMixin)
             model = t.cast(
-                t.Type[_FSAModel],
+                type[_FSAModel],
                 types.new_class(
                     "FlaskSQLAlchemyBase",
                     (*mixin_classes, *model_class.__bases__),

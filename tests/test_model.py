@@ -20,7 +20,7 @@ def now() -> datetime:
 
 
 def test_default_model_class_1x(app: Flask) -> None:
-    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app)
+    db: SQLAlchemy[type[Model]] = SQLAlchemy(app)
 
     assert db.Model.query_class is db.Query
     assert db.Model.metadata is db.metadata
@@ -32,7 +32,7 @@ def test_custom_model_class_1x(app: Flask) -> None:
     class CustomModel(Model):
         pass
 
-    db: SQLAlchemy[t.Type[CustomModel]] = SQLAlchemy(app, model_class=CustomModel)
+    db: SQLAlchemy[type[CustomModel]] = SQLAlchemy(app, model_class=CustomModel)
     assert issubclass(db.Model, CustomModel)
     assert isinstance(db.Model, DefaultMeta)
 
@@ -87,7 +87,7 @@ def test_declarativebasenometamapped_2x(app: Flask) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_declaredattr(app: Flask, model_class: t.Type[Model]) -> None:
+def test_declaredattr(app: Flask, model_class: type[Model]) -> None:
     if model_class is Model:
 
         class IdModel(Model):
@@ -101,7 +101,7 @@ def test_declaredattr(app: Flask, model_class: t.Type[Model]) -> None:
                         return sa.Column(sa.ForeignKey(base.id), primary_key=True)
                 return sa.Column(sa.Integer, primary_key=True)
 
-        db: t.Union[SQLAlchemy[t.Type[IdModel]], SQLAlchemy[t.Type[Base]]] = SQLAlchemy(
+        db: t.Union[SQLAlchemy[type[IdModel]], SQLAlchemy[type[Base]]] = SQLAlchemy(
             app, model_class=IdModel
         )
 
@@ -206,7 +206,7 @@ def test_abstractmodel(app: Flask, model_class: t.Any) -> None:
 
 @pytest.mark.usefixtures("app_ctx")
 def test_mixinmodel(app: Flask, model_class: t.Any) -> None:
-    db: SQLAlchemy[t.Type[t.Any]] = SQLAlchemy(app, model_class=model_class)
+    db: SQLAlchemy[type[t.Any]] = SQLAlchemy(app, model_class=model_class)
 
     if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
 
@@ -261,7 +261,7 @@ def test_mixinmodel(app: Flask, model_class: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_model_repr(db: SQLAlchemy[t.Type[Model]]) -> None:
+def test_model_repr(db: SQLAlchemy[type[Model]]) -> None:
     class User(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
 
@@ -289,7 +289,7 @@ def test_too_many_bases(app: Flask) -> None:
 
 @pytest.mark.usefixtures("app_ctx")
 def test_disable_autonaming_true_sql1(app: Flask) -> None:
-    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app, disable_autonaming=True)
+    db: SQLAlchemy[type[Model]] = SQLAlchemy(app, disable_autonaming=True)
 
     with pytest.raises(sa_exc.InvalidRequestError):
 

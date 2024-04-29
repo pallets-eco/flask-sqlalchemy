@@ -16,7 +16,7 @@ from flask_sqlalchemy.record_queries import get_recorded_queries
 @pytest.mark.usefixtures("app_ctx")
 def test_query_info(app: Flask) -> None:
     app.config["SQLALCHEMY_RECORD_QUERIES"] = True
-    db: SQLAlchemy[t.Type[Model]] = SQLAlchemy(app)
+    db: SQLAlchemy[type[Model]] = SQLAlchemy(app)
 
     # Copied and pasted from conftest.py
     if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
