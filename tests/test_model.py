@@ -101,7 +101,7 @@ def test_declaredattr(app: Flask, model_class: type[Model]) -> None:
                         return sa.Column(sa.ForeignKey(base.id), primary_key=True)
                 return sa.Column(sa.Integer, primary_key=True)
 
-        db: t.Union[SQLAlchemy[type[IdModel]], SQLAlchemy[type[Base]]] = SQLAlchemy(
+        db: SQLAlchemy[type[IdModel]] | SQLAlchemy[type[Base]] = SQLAlchemy(
             app, model_class=IdModel
         )
 

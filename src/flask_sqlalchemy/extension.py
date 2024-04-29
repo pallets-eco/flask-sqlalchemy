@@ -35,11 +35,11 @@ _O = t.TypeVar("_O", bound=object)  # Based on sqlalchemy.orm._typing.py
 
 # Type accepted for model_class argument
 _FSA_MCT = t.Union[
-    type[Model],
+    t.Type[Model],
     sa_orm.DeclarativeMeta,
-    type[sa_orm.DeclarativeBase],
-    type[sa_orm.DeclarativeBaseNoMeta],
-    type[sa_orm.MappedAsDataclass],
+    t.Type[sa_orm.DeclarativeBase],
+    t.Type[sa_orm.DeclarativeBaseNoMeta],
+    t.Type[sa_orm.MappedAsDataclass],
 ]
 _FSA_MCT_T = t.TypeVar("_FSA_MCT_T", bound=_FSA_MCT, covariant=True)
 
@@ -140,12 +140,12 @@ class ModelGetter:
 
     @te.overload
     def __get__(
-        self: te.Self, obj: None, obj_cls: t.Optional[type[SQLAlchemy[t.Any]]] = None
+        self: te.Self, obj: None, obj_cls: type[SQLAlchemy[t.Any]] | None = None
     ) -> type[_FSAModel]: ...
 
     def __get__(
-        self: te.Self, obj: t.Optional[SQLAlchemy[t.Any]], obj_cls: t.Any = None
-    ) -> t.Union[te.Self, type[Model], type[t.Any]]:
+        self: te.Self, obj: SQLAlchemy[t.Any] | None, obj_cls: t.Any = None
+    ) -> te.Self | type[Model] | type[t.Any]:
         if isinstance(obj, SQLAlchemy):
             return obj._Model
         else:
