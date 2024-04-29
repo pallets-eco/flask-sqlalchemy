@@ -665,7 +665,7 @@ class SQLAlchemy(t.Generic[_FSA_MCT_T]):
             if disable_autonaming:
                 mixin_classes.remove(NameMixin)
             model = t.cast(
-                type[_FSAModel],
+                t.Type[_FSAModel],
                 types.new_class(
                     "FlaskSQLAlchemyBase",
                     (*mixin_classes, *model_class.__bases__),
