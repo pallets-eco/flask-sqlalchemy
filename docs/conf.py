@@ -12,17 +12,23 @@ release, version = get_version("Flask-SQLAlchemy")
 
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "pallets_sphinx_themes",
-    "sphinx_issues",
+    "sphinxcontrib.log_cabinet",
 ]
+autodoc_member_order = "bysource"
 autodoc_typehints = "description"
+autodoc_preserve_defaults = True
+extlinks = {
+    "issue": ("https://github.com/pallets-eco/flask-sqlalchemy/issues/%s", "#%s"),
+    "pr": ("https://github.com/pallets-eco/flask-sqlalchemy/pull/%s", "#%s"),
+}
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "flask": ("https://flask.palletsprojects.com/", None),
     "sqlalchemy": ("https://docs.sqlalchemy.org/", None),
 }
-issues_github_path = "pallets-eco/flask-sqlalchemy"
 
 # HTML -----------------------------------------------------------------
 

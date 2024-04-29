@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import typing as t
 from datetime import datetime
+from datetime import timezone
 
 import pytest
 import sqlalchemy as sa
@@ -12,6 +13,10 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.model import DefaultMeta
 from flask_sqlalchemy.model import Model
+
+
+def now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def test_default_model_class_1x(app: Flask) -> None:
@@ -147,12 +152,12 @@ def test_abstractmodel(app: Flask, model_class: t.Any) -> None:
         class TimestampModel(db.Model):
             __abstract__ = True
             created: sa_orm.Mapped[datetime] = sa_orm.mapped_column(
-                db.DateTime, nullable=False, insert_default=datetime.utcnow, init=False
+                db.DateTime, nullable=False, insert_default=now, init=False
             )
             updated: sa_orm.Mapped[datetime] = sa_orm.mapped_column(
                 db.DateTime,
-                insert_default=datetime.utcnow,
-                onupdate=datetime.utcnow,
+                insert_default=now,
+                onupdate=now,
                 init=False,
             )
 
@@ -167,10 +172,10 @@ def test_abstractmodel(app: Flask, model_class: t.Any) -> None:
         class TimestampModel(db.Model):  # type: ignore[no-redef]
             __abstract__ = True
             created: sa_orm.Mapped[datetime] = sa_orm.mapped_column(
-                db.DateTime, nullable=False, default=datetime.utcnow
+                db.DateTime, nullable=False, default=now
             )
             updated: sa_orm.Mapped[datetime] = sa_orm.mapped_column(
-                db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+                db.DateTime, default=now, onupdate=now
             )
 
         class Post(TimestampModel):  # type: ignore[no-redef]
@@ -181,10 +186,8 @@ def test_abstractmodel(app: Flask, model_class: t.Any) -> None:
 
         class TimestampModel(db.Model):  # type: ignore[no-redef]
             __abstract__ = True
-            created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-            updated = db.Column(
-                db.DateTime, onupdate=datetime.utcnow, default=datetime.utcnow
-            )
+            created = db.Column(db.DateTime, nullable=False, default=now)
+            updated = db.Column(db.DateTime, onupdate=now, default=now)
 
         class Post(TimestampModel):  # type: ignore[no-redef]
             id = db.Column(db.Integer, primary_key=True)
@@ -207,12 +210,12 @@ def test_mixinmodel(app: Flask, model_class: t.Any) -> None:
 
         class TimestampMixin(sa_orm.MappedAsDataclass):
             created: sa_orm.Mapped[datetime] = sa_orm.mapped_column(
-                db.DateTime, nullable=False, insert_default=datetime.utcnow, init=False
+                db.DateTime, nullable=False, insert_default=now, init=False
             )
             updated: sa_orm.Mapped[datetime] = sa_orm.mapped_column(
                 db.DateTime,
-                insert_default=datetime.utcnow,
-                onupdate=datetime.utcnow,
+                insert_default=now,
+                onupdate=now,
                 init=False,
             )
 
@@ -226,10 +229,10 @@ def test_mixinmodel(app: Flask, model_class: t.Any) -> None:
 
         class TimestampMixin:  # type: ignore[no-redef]
             created: sa_orm.Mapped[datetime] = sa_orm.mapped_column(
-                db.DateTime, nullable=False, default=datetime.utcnow
+                db.DateTime, nullable=False, default=now
             )
             updated: sa_orm.Mapped[datetime] = sa_orm.mapped_column(
-                db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+                db.DateTime, default=now, onupdate=now
             )
 
         class Post(TimestampMixin, db.Model):  # type: ignore[no-redef]
@@ -239,10 +242,8 @@ def test_mixinmodel(app: Flask, model_class: t.Any) -> None:
     else:
 
         class TimestampMixin:  # type: ignore[no-redef]
-            created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-            updated = db.Column(
-                db.DateTime, onupdate=datetime.utcnow, default=datetime.utcnow
-            )
+            created = db.Column(db.DateTime, nullable=False, default=now)
+            updated = db.Column(db.DateTime, onupdate=now, default=now)
 
         class Post(TimestampMixin, db.Model):  # type: ignore[no-redef]
             id = db.Column(db.Integer, primary_key=True)
