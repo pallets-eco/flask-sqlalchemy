@@ -9,39 +9,47 @@ on:
       - '*.md'
       - '*.rst'
   pull_request:
-    branches:
-      - main
-      - '*.x'
     paths-ignore:
       - 'docs/**'
       - '*.md'
       - '*.rst'
 jobs:
   tests:
-    name: ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    name: ${{ matrix.name || matrix.python }}
+    runs-on: ${{ matrix.os || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {name: '3.11', python: '3.11', tox: py311}
-          - {name: 'Lowest', python: '3.11', tox: py311-min}
-          - {name: '3.10', python: '3.10', tox: py310}
-          - {name: '3.9', python: '3.9', tox: py39}
-          - {name: '3.8', python: '3.8', tox: py38}
-          - {name: 'Typing', python: '3.11', tox: typing}
+          - {python: '3.12'}
+          - {python: '3.11'}
+          - {python: '3.10'}
+          - {python: '3.9'}
+          - {python: '3.8'}
+          - {name: Minimum Versions, python: '3.11', tox: py-min}
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: ${{ matrix.python }}
-          cache: 'pip'
-          cache-dependency-path: 'requirements/*.txt'
+          allow-prereleases: true
+          cache: pip
+          cache-dependency-path: requirements*/*.txt
+      - run: pip install tox
+      - run: tox run -e ${{ matrix.tox || format('py{0}', matrix.python) }}
+  typing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+      - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+        with:
+          python-version: '3.x'
+          cache: pip
+          cache-dependency-path: requirements*/*.txt
       - name: cache mypy
-        uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
         with:
           path: ./.mypy_cache
-          key: mypy|${{ matrix.python }}|${{ hashFiles('requirements/mypy.txt') }}
-        if: matrix.tox == 'typing'
+          key: mypy|${{ hashFiles('pyproject.toml') }}
       - run: pip install tox
-      - run: tox r -e ${{ matrix.tox }}
+      - run: tox run -e typing

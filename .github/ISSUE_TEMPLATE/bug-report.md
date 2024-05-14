@@ -4,9 +4,8 @@ about: Report a bug in Flask-SQLAlchemy (not SQLAlchemy, not other projects whic
 ---
 
 <!--
-This issue tracker is a tool to address bugs in Flask-SQLAlchemy itself.
-Please use Pallets Discord or Stack Overflow for questions about your
-own code.
+This issue tracker is a tool to address bugs in Flask-SQLAlchemy itself. Please
+use GitHub Discussions or the Pallets Discord for questions about your own code.
 
 Ensure your issue is with Flask-SQLAlchemy and not SQLAlchemy itself.
 

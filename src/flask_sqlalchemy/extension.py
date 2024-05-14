@@ -50,7 +50,7 @@ class _FSAModel(Model):
 
 def _get_2x_declarative_bases(
     model_class: _FSA_MCT,
-) -> list[t.Type[t.Union[sa_orm.DeclarativeBase, sa_orm.DeclarativeBaseNoMeta]]]:
+) -> list[type[sa_orm.DeclarativeBase | sa_orm.DeclarativeBaseNoMeta]]:
     return [
         b
         for b in model_class.__bases__
@@ -281,12 +281,14 @@ class SQLAlchemy:
         if not has_app_context():
             return f"<{type(self).__name__}>"
 
-        message = f"{type(self).__name__} {self.engine.url}"
+        num_default_engines = 1 if self.engines.get(None) else 0
+        engine_str = self.engine.url if num_default_engines else "(No default engine)"
 
-        if len(self.engines) > 1:
-            message = f"{message} +{len(self.engines) - 1}"
+        num_other_engines = len(self.engines) - num_default_engines
+        if num_other_engines >= 1:
+            engine_str = f"{engine_str} +{num_other_engines} engines"
 
-        return f"<{message}>"
+        return f"<{type(self).__name__} {engine_str}>"
 
     def init_app(self, app: Flask) -> None:
         """Initialize a Flask application for use with this extension instance. This
@@ -330,9 +332,9 @@ class SQLAlchemy:
             app.config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
         )
         echo: bool = app.config.setdefault("SQLALCHEMY_ECHO", False)
-        config_binds: dict[
-            str | None, str | sa.engine.URL | dict[str, t.Any]
-        ] = app.config.setdefault("SQLALCHEMY_BINDS", {})
+        config_binds: dict[str | None, str | sa.engine.URL | dict[str, t.Any]] = (
+            app.config.setdefault("SQLALCHEMY_BINDS", {})
+        )
         engine_options: dict[str | None, dict[str, t.Any]] = {}
 
         # Build the engine config for each bind key.
@@ -504,7 +506,7 @@ class SQLAlchemy:
         self,
         model_class: _FSA_MCT,
         disable_autonaming: bool = False,
-    ) -> t.Type[_FSAModel]:
+    ) -> type[_FSAModel]:
         """Create a SQLAlchemy declarative model class. The result is available as
         :attr:`Model`.
 
@@ -531,13 +533,13 @@ class SQLAlchemy:
         .. versionchanged:: 2.3
             ``model`` can be an already created declarative model class.
         """
-        model: t.Type[_FSAModel]
+        model: type[_FSAModel]
         declarative_bases = _get_2x_declarative_bases(model_class)
         if len(declarative_bases) > 1:
             # raise error if more than one declarative base is found
             raise ValueError(
                 "Only one declarative base can be passed to SQLAlchemy."
-                " Got: {}".format(model_class.__bases__)
+                f" Got: {model_class.__bases__}"
             )
         elif len(declarative_bases) == 1:
             body = dict(model_class.__dict__)

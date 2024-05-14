@@ -37,10 +37,10 @@ joined-table inheritance.
     db = SQLAlchemy(app, model_class=Base)
 
     class User(db.Model):
-        name: Mapped[str] = mapped_column(String)
+        name: Mapped[str]
 
     class Employee(User):
-        title: Mapped[str] = mapped_column(String)
+        title: Mapped[str]
 
 
 Abstract Models and Mixins
@@ -52,34 +52,33 @@ they are created or updated.
 
 .. code-block:: python
 
-    from datetime import datetime
-    from sqlalchemy import DateTime, Integer, String
-    from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, declared_attr
+    from datetime import datetime, timezone
+    from sqlalchemy.orm import Mapped, mapped_column
 
     class TimestampModel(db.Model):
         __abstract__ = True
-        created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-        updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        created: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
+        updated: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     class Author(db.Model):
-        id: Mapped[int] = mapped_column(Integer, primary_key=True)
-        username: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+        id: Mapped[int] = mapped_column(primary_key=True)
+        username: Mapped[str] = mapped_column(unique=True)
 
     class Post(TimestampModel):
-        id: Mapped[int] = mapped_column(Integer, primary_key=True)
-        title: Mapped[str] = mapped_column(String, nullable=False)
+        id: Mapped[int] = mapped_column(primary_key=True)
+        title: Mapped[str]
 
 This can also be done with a mixin class, inheriting from ``db.Model`` separately.
 
 .. code-block:: python
 
     class TimestampMixin:
-        created: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-        updated: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+        created: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
+        updated: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     class Post(TimestampMixin, db.Model):
-        id: Mapped[int] = mapped_column(Integer, primary_key=True)
-        title: Mapped[str] = mapped_column(String, nullable=False)
+        id: Mapped[int] = mapped_column(primary_key=True)
+        title: Mapped[str]
 
 
 Disabling Table Name Generation

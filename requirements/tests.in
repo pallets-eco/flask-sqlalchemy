@@ -1,4 +1,1 @@
 pytest
-pytest-cov
-coverage[toml]
-blinker
