@@ -30,7 +30,7 @@ pallets-sphinx-themes==2.1.3
     # via -r docs.in
 pygments==2.17.2
     # via sphinx
-requests==2.31.0
+requests==2.32.0
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
