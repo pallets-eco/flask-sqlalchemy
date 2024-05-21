@@ -110,7 +110,7 @@ pytest==8.2.0
     #   -r typing.txt
 pyyaml==6.0.1
     # via pre-commit
-requests==2.31.0
+requests==2.32.0
     # via
     #   -r docs.txt
     #   sphinx
