@@ -8,7 +8,6 @@ easier to accomplish common tasks.
 [Flask]: https://flask.palletsprojects.com
 [SQLAlchemy]: https://www.sqlalchemy.org
 
-
 ## Pallets Community Ecosystem
 
 > [!IMPORTANT]\
@@ -18,7 +17,6 @@ easier to accomplish common tasks.
 > this project, please reach out on [the Pallets Discord server][discord].
 >
 > [discord]: https://discord.gg/pallets
-
 
 ## A Simple Example
 
@@ -45,5 +43,5 @@ with app.app_context():
     db.session.add(User(username="example"))
     db.session.commit()
 
-    users = db.session.execute(db.select(User)).scalars()
+    users = db.session.scalars(db.select(User))
 ```
