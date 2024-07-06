@@ -14,7 +14,7 @@ babel==2.14.0
     #   sphinx
 cachetools==5.3.3
     # via tox
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   -r docs.txt
     #   requests
