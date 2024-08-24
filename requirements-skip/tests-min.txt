@@ -20,7 +20,7 @@ markupsafe==2.1.5
     #   werkzeug
 sqlalchemy==2.0.16
     # via -r tests-min.in
-typing-extensions==4.11.0
+typing-extensions==4.12.2
     # via sqlalchemy
 werkzeug==2.2.3
     # via
