@@ -3,10 +3,11 @@ from __future__ import annotations
 from flask import Flask
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.model import Model
 
 
 def test_repr_no_context() -> None:
-    db = SQLAlchemy()
+    db: SQLAlchemy[type[Model]] = SQLAlchemy()
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
 
@@ -15,7 +16,7 @@ def test_repr_no_context() -> None:
 
 
 def test_repr_default() -> None:
-    db = SQLAlchemy()
+    db: SQLAlchemy[type[Model]] = SQLAlchemy()
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
 
@@ -25,7 +26,7 @@ def test_repr_default() -> None:
 
 
 def test_repr_default_plustwo() -> None:
-    db = SQLAlchemy()
+    db: SQLAlchemy[type[Model]] = SQLAlchemy()
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
     app.config["SQLALCHEMY_BINDS"] = {
@@ -39,7 +40,7 @@ def test_repr_default_plustwo() -> None:
 
 
 def test_repr_nodefault() -> None:
-    db = SQLAlchemy()
+    db: SQLAlchemy[type[Model]] = SQLAlchemy()
     app = Flask(__name__)
     app.config["SQLALCHEMY_BINDS"] = {"x": "sqlite:///:memory:"}
 
@@ -49,7 +50,7 @@ def test_repr_nodefault() -> None:
 
 
 def test_repr_nodefault_plustwo() -> None:
-    db = SQLAlchemy()
+    db: SQLAlchemy[type[Model]] = SQLAlchemy()
     app = Flask(__name__)
     app.config["SQLALCHEMY_BINDS"] = {
         "a": "sqlite:///:memory:",

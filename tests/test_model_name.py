@@ -48,7 +48,7 @@ def test_camel_to_snake_case(name: str, expect: str) -> None:
     assert camel_to_snake_case(name) == expect
 
 
-def test_name(db: SQLAlchemy) -> None:
+def test_name(db: SQLAlchemy[t.Any]) -> None:
     class FOOBar(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
 
@@ -64,7 +64,7 @@ def test_name(db: SQLAlchemy) -> None:
     assert Ham.__tablename__ == "spam"
 
 
-def test_single_name(db: SQLAlchemy) -> None:
+def test_single_name(db: SQLAlchemy[t.Any]) -> None:
     """Single table inheritance should not set a new name."""
 
     class Duck(db.Model):
@@ -77,7 +77,7 @@ def test_single_name(db: SQLAlchemy) -> None:
     assert Mallard.__tablename__ == "duck"
 
 
-def test_joined_name(db: SQLAlchemy) -> None:
+def test_joined_name(db: SQLAlchemy[t.Any]) -> None:
     """Model has a separate primary key; it should set a new name."""
 
     class Duck(db.Model):
@@ -89,7 +89,7 @@ def test_joined_name(db: SQLAlchemy) -> None:
     assert Donald.__tablename__ == "donald"
 
 
-def test_mixin_id(db: SQLAlchemy) -> None:
+def test_mixin_id(db: SQLAlchemy[t.Any]) -> None:
     """Primary key provided by mixin should still allow model to set
     tablename.
     """
@@ -104,7 +104,7 @@ def test_mixin_id(db: SQLAlchemy) -> None:
     assert Duck.__tablename__ == "duck"
 
 
-def test_mixin_attr(db: SQLAlchemy) -> None:
+def test_mixin_attr(db: SQLAlchemy[t.Any]) -> None:
     """A declared attr tablename will be used down multiple levels of
     inheritance.
     """
@@ -130,7 +130,7 @@ def test_mixin_attr(db: SQLAlchemy) -> None:
     assert Mallard.__tablename__ == "MALLARD"
 
 
-def test_abstract_name(db: SQLAlchemy) -> None:
+def test_abstract_name(db: SQLAlchemy[t.Any]) -> None:
     """Abstract model should not set a name. Subclass should set a name."""
 
     class Base(db.Model):
@@ -144,7 +144,7 @@ def test_abstract_name(db: SQLAlchemy) -> None:
     assert Duck.__tablename__ == "duck"
 
 
-def test_complex_inheritance(db: SQLAlchemy) -> None:
+def test_complex_inheritance(db: SQLAlchemy[t.Any]) -> None:
     """Joined table inheritance, but the new primary key is provided by a
     mixin, not directly on the class.
     """
@@ -163,7 +163,7 @@ def test_complex_inheritance(db: SQLAlchemy) -> None:
     assert RubberDuck.__tablename__ == "rubber_duck"
 
 
-def test_manual_name(db: SQLAlchemy) -> None:
+def test_manual_name(db: SQLAlchemy[t.Any]) -> None:
     """Setting a manual name prevents generation for the immediate model. A
     name is generated for joined but not single-table inheritance.
     """
@@ -189,7 +189,7 @@ def test_manual_name(db: SQLAlchemy) -> None:
     assert Donald.__tablename__ == "DUCK"
 
 
-def test_primary_constraint(db: SQLAlchemy) -> None:
+def test_primary_constraint(db: SQLAlchemy[t.Any]) -> None:
     """Primary key will be picked up from table args."""
 
     class Duck(db.Model):
@@ -201,7 +201,7 @@ def test_primary_constraint(db: SQLAlchemy) -> None:
     assert Duck.__tablename__ == "duck"
 
 
-def test_no_access_to_class_property(db: SQLAlchemy) -> None:
+def test_no_access_to_class_property(db: SQLAlchemy[t.Any]) -> None:
     """Ensure the implementation doesn't access class properties or declared
     attrs while inspecting the unmapped model.
     """
@@ -237,7 +237,7 @@ def test_no_access_to_class_property(db: SQLAlchemy) -> None:
     assert not ns.floats
 
 
-def test_metadata_has_table(db: SQLAlchemy) -> None:
+def test_metadata_has_table(db: SQLAlchemy[t.Any]) -> None:
     user = db.Table("user", sa.Column("id", sa.Integer, primary_key=True))
 
     class User(db.Model):
@@ -246,7 +246,7 @@ def test_metadata_has_table(db: SQLAlchemy) -> None:
     assert User.__table__ is user
 
 
-def test_correct_error_for_no_primary_key(db: SQLAlchemy) -> None:
+def test_correct_error_for_no_primary_key(db: SQLAlchemy[t.Any]) -> None:
     with pytest.raises(sa_exc.ArgumentError) as info:
 
         class User(db.Model):
@@ -255,7 +255,7 @@ def test_correct_error_for_no_primary_key(db: SQLAlchemy) -> None:
     assert "could not assemble any primary key" in str(info.value)
 
 
-def test_single_has_parent_table(db: SQLAlchemy) -> None:
+def test_single_has_parent_table(db: SQLAlchemy[t.Any]) -> None:
     class Duck(db.Model):
         id = sa.Column(sa.Integer, primary_key=True)
 
