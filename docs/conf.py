@@ -41,8 +41,6 @@ html_context = {
         ProjectLink(
             "Issue Tracker", "https://github.com/pallets-eco/flask-sqlalchemy/issues/"
         ),
-        ProjectLink("Website", "https://palletsprojects.com/"),
-        ProjectLink("Twitter", "https://twitter.com/PalletsTeam"),
         ProjectLink("Chat", "https://discord.gg/pallets"),
     ]
 }
