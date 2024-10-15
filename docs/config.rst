@@ -165,6 +165,6 @@ a value less than the database's timeout.
 Alternatively, you can try setting ``pool_pre_ping`` if you expect the database to close
 connections often, such as if it's running in a container that may restart.
 
-See SQAlchemy's docs on `dealing with disconnects`_ for more information.
+See SQLAlchemy's docs on `dealing with disconnects`_ for more information.
 
 .. _dealing with disconnects: https://docs.sqlalchemy.org/core/pooling.html#dealing-with-disconnects
