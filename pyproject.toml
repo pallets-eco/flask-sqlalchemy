@@ -51,6 +51,7 @@ exclude = [
 testpaths = ["tests"]
 filterwarnings = [
     "error",
+    "ignore:unclosed database in <sqlite3.Connection:ResourceWarning",
 ]
 
 [tool.coverage.run]
