@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import pytest
 import sqlalchemy as sa
+import sqlalchemy.orm as sa_orm
 
 from flask_sqlalchemy import SQLAlchemy
 
@@ -76,6 +78,9 @@ def test_explicit_metadata(db: SQLAlchemy) -> None:
 
 
 def test_explicit_table(db: SQLAlchemy) -> None:
+    if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
+        pytest.skip("Explicit table binding with mapped dataclasses not supported")
+
     user_table = db.Table(
         "user",
         sa.Column("id", sa.Integer, primary_key=True),
