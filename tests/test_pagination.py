@@ -16,7 +16,7 @@ class RangePagination(Pagination):
         total: int | None = 150,
         page: int = 1,
         per_page: int | None = 10,
-        default_per_page: int | None = None,
+        default_per_page: int = 20,
         error_out: bool = True,
     ) -> None:
         if total is None:
@@ -48,7 +48,7 @@ def test_first_page() -> None:
     p = RangePagination()
     assert p.page == 1
     assert p.per_page == 10
-    assert p.default_per_page is None
+    assert p.default_per_page == 20
     assert p.total == 150
     assert p.pages == 15
     assert not p.has_prev
@@ -89,12 +89,6 @@ def test_item_numbers_0() -> None:
 def test_default_per_page_invalid_per_page() -> None:
     p = RangePagination(per_page=0, default_per_page=10, error_out=False)
     assert p.per_page == 10
-
-
-def test_default_per_page() -> None:
-    p = RangePagination(per_page=None, default_per_page=None, error_out=False)
-    assert p.per_page == 20
-
 
 def test_default_per_page_none() -> None:
     p = RangePagination(per_page=None)

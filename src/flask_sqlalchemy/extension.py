@@ -807,7 +807,7 @@ class SQLAlchemy:
         *,
         page: int | None = None,
         per_page: int | None = None,
-        default_per_page: int | None = None,
+        default_per_page: int = 20,
         max_per_page: int | None = None,
         error_out: bool = True,
         count: bool = True,
