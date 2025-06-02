@@ -90,6 +90,7 @@ def test_default_per_page_invalid_per_page() -> None:
     p = RangePagination(per_page=0, default_per_page=10, error_out=False)
     assert p.per_page == 10
 
+
 def test_default_per_page_none() -> None:
     p = RangePagination(per_page=None)
     assert p.per_page == 20
