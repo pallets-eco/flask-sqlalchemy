@@ -1,23 +1,25 @@
 from __future__ import annotations
 
+import typing as t
+
 import sqlalchemy as sa
 
 from flask_sqlalchemy import SQLAlchemy
 
 
-def test_bind_key_default(db: SQLAlchemy) -> None:
+def test_bind_key_default(db: SQLAlchemy[t.Any]) -> None:
     user_table = db.Table("user", sa.Column("id", sa.Integer, primary_key=True))
     assert user_table.metadata is db.metadata
 
 
-def test_metadata_per_bind(db: SQLAlchemy) -> None:
+def test_metadata_per_bind(db: SQLAlchemy[t.Any]) -> None:
     user_table = db.Table(
         "user", sa.Column("id", sa.Integer, primary_key=True), bind_key="other"
     )
     assert user_table.metadata is db.metadatas["other"]
 
 
-def test_multiple_binds_same_table_name(db: SQLAlchemy) -> None:
+def test_multiple_binds_same_table_name(db: SQLAlchemy[t.Any]) -> None:
     user1_table = db.Table("user", sa.Column("id", sa.Integer, primary_key=True))
     user2_table = db.Table(
         "user", sa.Column("id", sa.Integer, primary_key=True), bind_key="other"
@@ -27,7 +29,7 @@ def test_multiple_binds_same_table_name(db: SQLAlchemy) -> None:
     assert user2_table.metadata is db.metadatas["other"]
 
 
-def test_explicit_metadata(db: SQLAlchemy) -> None:
+def test_explicit_metadata(db: SQLAlchemy[t.Any]) -> None:
     other_metadata = sa.MetaData()
     user_table = db.Table(
         "user",

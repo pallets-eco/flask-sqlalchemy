@@ -12,7 +12,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_view_get_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_view_get_or_404(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     item = Todo()
     db.session.add(item)
     db.session.commit()
@@ -22,7 +22,7 @@ def test_view_get_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_first_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_first_or_404(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     db.session.add(Todo(title="a"))
     db.session.commit()
     result = db.first_or_404(db.select(Todo).filter_by(title="a"))
@@ -33,7 +33,7 @@ def test_first_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_view_one_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_view_one_or_404(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     db.session.add(Todo(title="a"))
     db.session.add(Todo(title="b"))
     db.session.add(Todo(title="b"))
@@ -51,7 +51,7 @@ def test_view_one_or_404(db: SQLAlchemy, Todo: t.Any) -> None:
 
 
 @pytest.mark.usefixtures("app_ctx")
-def test_paginate(db: SQLAlchemy, Todo: t.Any) -> None:
+def test_paginate(db: SQLAlchemy[t.Any], Todo: t.Any) -> None:
     db.session.add_all(Todo() for _ in range(150))
     db.session.commit()
     p = db.paginate(db.select(Todo))
@@ -64,7 +64,7 @@ def test_paginate(db: SQLAlchemy, Todo: t.Any) -> None:
 
 # This test creates its own inline model so that it can use that as the type
 @pytest.mark.usefixtures("app_ctx")
-def test_view_get_or_404_typed(db: SQLAlchemy, app: Flask) -> None:
+def test_view_get_or_404_typed(db: SQLAlchemy[t.Any], app: Flask) -> None:
     # Copied and pasted from conftest.py
     if issubclass(db.Model, (sa_orm.MappedAsDataclass)):
 

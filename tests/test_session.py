@@ -11,7 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.session import Session
 
 
-def test_scope(app: Flask, db: SQLAlchemy) -> None:
+def test_scope(app: Flask, db: SQLAlchemy[t.Any]) -> None:
     with pytest.raises(RuntimeError):
         db.session()
 
