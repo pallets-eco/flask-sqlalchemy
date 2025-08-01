@@ -3,7 +3,7 @@ name = "Flask-SQLAlchemy"
 version = "3.1.1"
 description = "Add SQLAlchemy support to your Flask application."
 readme = "README.md"
-license = { file = "LICENSE.txt" }
+license = "BSD-3-Clause"
 maintainers = [{name = "Pallets", email = "contact@palletsprojects.com"},]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
