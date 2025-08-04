@@ -342,6 +342,7 @@ class SQLAlchemy:
             engine_options[key] = self._engine_options.copy()
 
             if isinstance(value, (str, sa.engine.URL)):
+                engine_options[key].update(basic_engine_options)
                 engine_options[key]["url"] = value
             else:
                 engine_options[key].update(value)
