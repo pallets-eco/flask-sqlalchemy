@@ -1,3 +1,9 @@
+Version 3.1.3
+-------------
+
+- Use ``SQLALCHEMY_ENGINE_OPTIONS`` as default engine options specifically when engine options is not specified in ``SQLALCHEMY_BINDS``. :issue:`1396`
+
+
 Version 3.1.2
 -------------
 
