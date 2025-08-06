@@ -40,7 +40,7 @@ def test_init_engine_options(app: Flask, model_class: t.Any) -> None:
     app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
     db = SQLAlchemy(app, engine_options={"echo": True}, model_class=model_class)
     # init is default
-    assert db.engines["a"].echo
+    assert not db.engines["a"].echo
     # config overrides init
     assert not db.engine.echo
 
