@@ -378,8 +378,8 @@ class SQLAlchemy:
         if app.config.setdefault("SQLALCHEMY_RECORD_QUERIES", False):
             from . import record_queries
 
-            for engine in engines.values():
-                record_queries._listen(engine)
+            for bind_key, engine in engines.items():
+                record_queries._listen(bind_key, engine)
 
         if app.config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False):
             from . import track_modifications

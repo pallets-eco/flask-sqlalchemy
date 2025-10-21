@@ -49,3 +49,4 @@ def test_query_info(app: Flask) -> None:
     assert info.duration == info.end_time - info.start_time
     assert os.path.join("tests", "test_record_queries.py:") in info.location
     assert "(test_query_info)" in info.location
+    assert info.bind_key is None
