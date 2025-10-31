@@ -544,6 +544,11 @@ class SQLAlchemy:
         elif len(declarative_bases) == 1:
             body = dict(model_class.__dict__)
             body["__fsa__"] = self
+            # Default to *not* using SQLAlchemy's dataclass transform for db.Model.
+            # This avoids "ORM Annotated Dataclasses do not support a pre-existing '__table__' element"
+            # when a model sets __table__ explicitly (as in test_explicit_table).
+            # Individual models can opt back in with __sa_dataclass__ = True if desired.
+            body.setdefault("__sa_dataclass__", False)
             mixin_classes = [BindMixin, NameMixin, Model]
             if disable_autonaming:
                 mixin_classes.remove(NameMixin)
