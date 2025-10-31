@@ -109,6 +109,10 @@ class BindMixin:
 
     @classmethod
     def __init_subclass__(cls: type[BindMixin], **kwargs: dict[str, t.Any]) -> None:
+        # See note in NameMixin: explicit __table__ + mapped-as-dataclass are incompatible.
+        if "__table__" in cls.__dict__ and getattr(cls, "__sa_dataclass__", None) is not False:
+            cls.__sa_dataclass__ = False
+
         if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__) and hasattr(
             cls, "__bind_key__"
         ):
@@ -206,6 +210,12 @@ class NameMixin:
 
     @classmethod
     def __init_subclass__(cls: type[NameMixin], **kwargs: dict[str, t.Any]) -> None:
+        # If mapped-as-dataclass is globally enabled, models that declare an
+        # explicit __table__ must opt out, otherwise SQLAlchemy raises:
+        # "ORM Annotated Dataclasses do not support a pre-existing '__table__' element".
+        if "__table__" in cls.__dict__ and getattr(cls, "__sa_dataclass__", None) is not False:
+            cls.__sa_dataclass__ = False
+
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
