@@ -79,6 +79,12 @@ class BindMetaMixin(type):
     def __init__(
         cls, name: str, bases: tuple[type, ...], d: dict[str, t.Any], **kwargs: t.Any
     ) -> None:
+        # If mapped-as-dataclass is globally enabled, classes that declare an
+        # explicit __table__ must opt out; otherwise SQLAlchemy 2.x raises:
+        # "ORM Annotated Dataclasses do not support a pre-existing '__table__' element".
+        if "__table__" in cls.__dict__ and getattr(cls, "__sa_dataclass__", None) is not False:
+            cls.__sa_dataclass__ = False
+
         if not ("metadata" in cls.__dict__ or "__table__" in cls.__dict__):
             bind_key = getattr(cls, "__bind_key__", None)
             parent_metadata = getattr(cls, "metadata", None)
@@ -140,6 +146,11 @@ class NameMetaMixin(type):
     def __init__(
         cls, name: str, bases: tuple[type, ...], d: dict[str, t.Any], **kwargs: t.Any
     ) -> None:
+        # See note above: explicit __table__ + dataclass transform are incompatible.
+        # Opt out early during metaclass initialization.
+        if "__table__" in cls.__dict__ and getattr(cls, "__sa_dataclass__", None) is not False:
+            cls.__sa_dataclass__ = False
+
         if should_set_tablename(cls):
             cls.__tablename__ = camel_to_snake_case(cls.__name__)
 
