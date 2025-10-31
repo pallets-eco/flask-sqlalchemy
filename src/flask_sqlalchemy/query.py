@@ -27,7 +27,8 @@ class Query(sa_orm.Query):  # type: ignore[type-arg]
         :param ident: The primary key to query.
         :param description: A custom message to show on the error page.
         """
-        rv = self.get(ident)
+        mapper = self._only_full_mapper_zero("get")
+        rv = self.session.get(mapper.class_, ident)
 
         if rv is None:
             abort(404, description=description)
