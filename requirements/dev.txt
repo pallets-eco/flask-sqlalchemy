@@ -161,7 +161,7 @@ typing-extensions==4.12.2
     #   -r typing.txt
     #   mypy
     #   pyright
-urllib3==2.2.3
+urllib3==2.6.3
     # via
     #   -r docs.txt
     #   requests
