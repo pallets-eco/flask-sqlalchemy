@@ -34,7 +34,7 @@ docutils==0.21.2
     # via
     #   -r docs.txt
     #   sphinx
-filelock==3.16.1
+filelock==3.20.3
     # via
     #   tox
     #   virtualenv
