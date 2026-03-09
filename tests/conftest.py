@@ -15,11 +15,21 @@ from flask_sqlalchemy.model import Model
 
 
 @pytest.fixture
-def app(request: pytest.FixtureRequest, tmp_path: Path) -> Flask:
+def app(request: pytest.FixtureRequest, tmp_path: Path) -> t.Generator[Flask]:
     app = Flask(request.module.__name__, instance_path=str(tmp_path / "instance"))
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite://"
     app.config["SQLALCHEMY_RECORD_QUERIES"] = False
-    return app
+    yield app
+
+    if app.extensions:
+        db = app.extensions["sqlalchemy"]
+        # Duplicate SQLAlchemy.engines logic to avoid errors when the app
+        # is not initialized properly.
+        if app in db._app_engines:
+            engines = db._app_engines[app]
+            if engines:
+                for engine in engines.values():
+                    engine.dispose()
 
 
 @pytest.fixture
