@@ -36,6 +36,39 @@ After modifying data, you must call ``db.session.commit()`` to commit the change
 the database. Otherwise, they will be discarded at the end of the request.
 
 
+Complete Example
+----------------
+
+The following example demonstrates a full workflow including creating,
+updating, querying, and deleting a record.
+
+.. code-block:: python
+
+    class User(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        username = db.Column(db.String(100))
+        verified = db.Column(db.Boolean, default=False)
+
+    # Create
+    user = User(username="talbiya")
+    db.session.add(user)
+    db.session.commit()
+
+    # Read
+    user = db.session.execute(
+        db.select(User).filter_by(username="talbiya")
+    ).scalar_one()
+
+    # Update
+    user.verified = True
+    db.session.commit()
+
+    # Delete
+    db.session.delete(user)
+    db.session.commit()
+
+
+
 Select
 ------
 
@@ -101,36 +134,12 @@ interface is considered legacy in SQLAlchemy. Prefer using the
 See :doc:`legacy-query` for documentation.
 
 
-Complete Example
-----------------
-
-The following example demonstrates a full workflow including creating,
-updating, querying, and deleting a record.
-
-.. code-block:: python
-
-    # Create
-    user = User(username="talbiya")
-    db.session.add(user)
-    db.session.commit()
-
-    # Read
-    user = db.session.execute(
-        db.select(User).filter_by(username="talbiya")
-    ).scalar_one()
-
-    # Update
-    user.verified = True
-    db.session.commit()
-
-    # Delete
-    db.session.delete(user)
-    db.session.commit()
 
 
+Common Issues
+-------------
 
-Common Mistakes
----------------
+The following are common issues developers may encounter when using Flask-SQLAlchemy and how to resolve them.
 
 Working outside application context
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -141,7 +150,12 @@ Error::
 
 Fix::
 
-    Use the application context when performing database operations:
+    Ensure the application context is active when performing database operations:
+
+
+.. code-block:: python
+
+    from yourapplication import app
 
     with app.app_context():
         db.session.add(user)
@@ -151,7 +165,7 @@ Fix::
 Forgetting to commit changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Changes will not persist unless ``db.session.commit()`` is called.
+Changes will not persist unless ``db.session.commit()`` is called after modifying the session.
 
 
 Using legacy query interface
@@ -165,5 +179,7 @@ Incorrect database URI
 ~~~~~~~~~~~~~~~~~~~~~
 
 Ensure the database URI is correctly formatted. For example:
+
+::
 
     sqlite:///example.db
