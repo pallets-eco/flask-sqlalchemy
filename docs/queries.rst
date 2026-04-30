@@ -99,3 +99,71 @@ interface is considered legacy in SQLAlchemy. Prefer using the
 ``session.execute(select(...))`` instead.
 
 See :doc:`legacy-query` for documentation.
+
+
+Complete Example
+----------------
+
+The following example demonstrates a full workflow including creating,
+updating, querying, and deleting a record.
+
+.. code-block:: python
+
+    # Create
+    user = User(username="talbiya")
+    db.session.add(user)
+    db.session.commit()
+
+    # Read
+    user = db.session.execute(
+        db.select(User).filter_by(username="talbiya")
+    ).scalar_one()
+
+    # Update
+    user.verified = True
+    db.session.commit()
+
+    # Delete
+    db.session.delete(user)
+    db.session.commit()
+
+
+
+Common Mistakes
+---------------
+
+Working outside application context
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Error::
+
+    RuntimeError: Working outside of application context.
+
+Fix::
+
+    Use the application context when performing database operations:
+
+    with app.app_context():
+        db.session.add(user)
+        db.session.commit()
+
+
+Forgetting to commit changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Changes will not persist unless ``db.session.commit()`` is called.
+
+
+Using legacy query interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Avoid using ``Model.query`` or ``session.query`` as they are considered legacy.
+Prefer using ``db.session.execute(db.select(...))`` instead.
+
+
+Incorrect database URI
+~~~~~~~~~~~~~~~~~~~~~
+
+Ensure the database URI is correctly formatted. For example:
+
+    sqlite:///example.db
