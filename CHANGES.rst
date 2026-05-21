@@ -1,3 +1,12 @@
+Version 3.2.0
+-------------
+
+Unreleased
+
+-   Added ``paginate_rows`` method to the extension object for paginating over
+    ``Row`` objects :issue:`1168`:
+
+
 Version 3.1.2
 -------------
 

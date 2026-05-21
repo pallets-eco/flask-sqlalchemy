@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 import pytest
+import sqlalchemy as sa
 from flask import Flask
 from werkzeug.exceptions import NotFound
 
@@ -158,6 +159,8 @@ def test_paginate(paginate: _PaginateCallable) -> None:
     assert p.page == 1
     assert p.per_page == 20
     assert len(p.items) == 20
+    for it in p.items:
+        assert isinstance(it, paginate.Todo)
     assert p.total == 250
     assert p.pages == 13
 
@@ -203,3 +206,52 @@ def test_no_items_404(db: SQLAlchemy, Todo: t.Any) -> None:
 
     with pytest.raises(NotFound):
         db.paginate(db.select(Todo), page=2)
+
+
+class _RowPaginateCallable:
+    def __init__(self, app: Flask, db: SQLAlchemy, Todo: t.Any) -> None:
+        self.app = app
+        self.db = db
+        self.Todo = Todo
+
+    def __call__(
+        self,
+        page: int | None = None,
+        per_page: int | None = None,
+        max_per_page: int | None = None,
+        error_out: bool = True,
+        count: bool = True,
+    ) -> Pagination:
+        qs = {"page": page, "per_page": per_page}
+        with self.app.test_request_context(query_string=qs):
+            return self.db.paginate_rows(
+                self.db.select(self.Todo.id, self.Todo.title),
+                max_per_page=max_per_page,
+                error_out=error_out,
+                count=count,
+            )
+
+
+@pytest.fixture
+def paginate_rows(app: Flask, db: SQLAlchemy, Todo: t.Any) -> _RowPaginateCallable:
+    with app.app_context():
+        for i in range(1, 251):
+            db.session.add(Todo(title=f"task {i}"))
+
+        db.session.commit()
+
+    return _RowPaginateCallable(app, db, Todo)
+
+
+def test_paginate_rows(paginate_rows: _RowPaginateCallable) -> None:
+    p = paginate_rows()
+    assert p.page == 1
+    assert p.per_page == 20
+    assert len(p.items) == 20
+    for it in p.items:
+        assert isinstance(it, sa.Row)
+        assert len(it) == 2
+        assert isinstance(it[0], int)
+        assert isinstance(it[1], str)
+    assert p.total == 250
+    assert p.pages == 13
