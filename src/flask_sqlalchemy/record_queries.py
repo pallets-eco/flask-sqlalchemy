@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 import typing as t
+from functools import partial
 from time import perf_counter
 
 import sqlalchemy as sa
@@ -65,15 +66,21 @@ class _QueryInfo:
     start_time: float
     end_time: float
     location: str
+    bind_key: str | None
 
     @property
     def duration(self) -> float:
         return self.end_time - self.start_time
 
 
-def _listen(engine: sa.engine.Engine) -> None:
+def _listen(bind_key: str | None, engine: sa.engine.Engine) -> None:
     sa_event.listen(engine, "before_cursor_execute", _record_start, named=True)
-    sa_event.listen(engine, "after_cursor_execute", _record_end, named=True)
+    sa_event.listen(
+        engine,
+        "after_cursor_execute",
+        partial(_record_end, bind_key),
+        named=True,
+    )
 
 
 def _record_start(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
@@ -83,7 +90,11 @@ def _record_start(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
     context._fsa_start_time = perf_counter()  # type: ignore[attr-defined]
 
 
-def _record_end(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
+def _record_end(
+    bind_key: str | None,
+    context: sa.engine.ExecutionContext,
+    **kwargs: t.Any,
+) -> None:
     if not has_app_context():
         return
 
@@ -113,5 +124,6 @@ def _record_end(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
             start_time=context._fsa_start_time,  # type: ignore[attr-defined]
             end_time=perf_counter(),
             location=location,
+            bind_key=bind_key,
         )
     )

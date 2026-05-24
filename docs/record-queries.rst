@@ -25,3 +25,5 @@ object has the following attributes:
 ``location``
     A string description of where in your application code the query was executed. This
     may be unknown in certain cases.
+``bind_key``
+    The bind key of the engine which issued the query.
