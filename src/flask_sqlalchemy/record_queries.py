@@ -65,6 +65,7 @@ class _QueryInfo:
     start_time: float
     end_time: float
     location: str
+    bind_key: str | None
 
     @property
     def duration(self) -> float:
@@ -90,6 +91,14 @@ def _record_end(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
     if "_sqlalchemy_queries" not in g:
         g._sqlalchemy_queries = []
 
+    db = current_app.extensions["sqlalchemy"]
+    bind_key = None
+
+    for key, engine in db.engines.items():
+        if engine is context.engine:
+            bind_key = key
+            break
+
     import_top = current_app.import_name.partition(".")[0]
     import_dot = f"{import_top}."
     frame = inspect.currentframe()
@@ -113,5 +122,6 @@ def _record_end(context: sa.engine.ExecutionContext, **kwargs: t.Any) -> None:
             start_time=context._fsa_start_time,  # type: ignore[attr-defined]
             end_time=perf_counter(),
             location=location,
+            bind_key=bind_key,
         )
     )

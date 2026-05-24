@@ -8,8 +8,10 @@ import pytest
 import sqlalchemy as sa
 import sqlalchemy.pool
 from flask import Flask
+from flask import g
 
 from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.record_queries import get_recorded_queries
 
 
 def test_default_engine(app: Flask, db: SQLAlchemy) -> None:
@@ -129,3 +131,28 @@ def test_mysql_defaults(
     options = make_engine.call_args[0][2]
     assert options["pool_recycle"] == 7200
     assert options["url"].query["charset"] == "utf8mb4"
+
+
+@pytest.mark.usefixtures("app_ctx")
+def test_record_query_bind(app: Flask, model_class: t.Any) -> None:
+    app.config["SQLALCHEMY_RECORD_QUERIES"] = True
+    app.config["SQLALCHEMY_BINDS"] = {"a": "sqlite://"}
+    db = SQLAlchemy(app, model_class=model_class)
+
+    class Post(db.Model):
+        __bind_key__ = "a"
+        id = sa.Column(sa.Integer, primary_key=True)
+
+    db.create_all()
+
+    if hasattr(g, "_queries"):
+        g._queries.clear()
+
+    db.session.add(Post())
+    db.session.commit()
+    queries = get_recorded_queries()
+    insert_queries = [
+        q for q in queries if q.statement.strip().upper().startswith("INSERT")
+    ]
+    assert len(insert_queries) == 1
+    assert insert_queries[0].bind_key == "a"
