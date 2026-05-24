@@ -47,15 +47,21 @@ class Pagination:
         self,
         page: int | None = None,
         per_page: int | None = None,
+        default_per_page: int = 20,
         max_per_page: int | None = 100,
         error_out: bool = True,
         count: bool = True,
         **kwargs: t.Any,
     ) -> None:
         self._query_args = kwargs
+
+        self.default_per_page: int = default_per_page
+        """The default number of items on a page."""
+
         page, per_page = self._prepare_page_args(
             page=page,
             per_page=per_page,
+            default_per_page=self.default_per_page,
             max_per_page=max_per_page,
             error_out=error_out,
         )
@@ -92,6 +98,7 @@ class Pagination:
         *,
         page: int | None = None,
         per_page: int | None = None,
+        default_per_page: int,
         max_per_page: int | None = None,
         error_out: bool = True,
     ) -> tuple[int, int]:
@@ -112,13 +119,13 @@ class Pagination:
                     if error_out:
                         abort(404)
 
-                    per_page = 20
+                    per_page = default_per_page
         else:
             if page is None:
                 page = 1
 
             if per_page is None:
-                per_page = 20
+                per_page = default_per_page
 
         if max_per_page is not None:
             per_page = min(per_page, max_per_page)
@@ -133,7 +140,7 @@ class Pagination:
             if error_out:
                 abort(404)
             else:
-                per_page = 20
+                per_page = default_per_page
 
         return page, per_page
 

@@ -12,14 +12,25 @@ from flask_sqlalchemy.pagination import Pagination
 
 class RangePagination(Pagination):
     def __init__(
-        self, total: int | None = 150, page: int = 1, per_page: int = 10
+        self,
+        total: int | None = 150,
+        page: int = 1,
+        per_page: int | None = 10,
+        default_per_page: int = 20,
+        error_out: bool = True,
     ) -> None:
         if total is None:
             self._data = range(150)
         else:
             self._data = range(total)
 
-        super().__init__(total=total, page=page, per_page=per_page)
+        super().__init__(
+            total=total,
+            page=page,
+            per_page=per_page,
+            default_per_page=default_per_page,
+            error_out=error_out,
+        )
 
         if total is None:
             self.total = None
@@ -37,6 +48,7 @@ def test_first_page() -> None:
     p = RangePagination()
     assert p.page == 1
     assert p.per_page == 10
+    assert p.default_per_page == 20
     assert p.total == 150
     assert p.pages == 15
     assert not p.has_prev
@@ -72,6 +84,16 @@ def test_item_numbers_0() -> None:
     p = RangePagination(total=0)
     assert p.first == 0
     assert p.last == 0
+
+
+def test_default_per_page_invalid_per_page() -> None:
+    p = RangePagination(per_page=0, default_per_page=10, error_out=False)
+    assert p.per_page == 10
+
+
+def test_default_per_page_none() -> None:
+    p = RangePagination(per_page=None)
+    assert p.per_page == 20
 
 
 @pytest.mark.parametrize("total", [0, None])
