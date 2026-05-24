@@ -111,7 +111,6 @@ The model will generate a table name by converting the ``CamelCase`` class name 
 
 .. code-block:: python
 
-    from sqlalchemy import Integer, String
     from sqlalchemy.orm import Mapped, mapped_column
 
     class User(db.Model):
