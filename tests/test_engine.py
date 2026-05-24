@@ -110,6 +110,16 @@ def test_sqlite_driver_level_uri(app: Flask, model_class: t.Any) -> None:
     assert os.path.exists(db_path[5:])
 
 
+@pytest.mark.usefixtures("app_ctx")
+def test_bind_with_pool_instance(app: Flask, model_class: t.Any) -> None:
+    import sqlite3
+
+    pool = sa.pool.StaticPool(creator=lambda: sqlite3.connect(":memory:"))
+    app.config["SQLALCHEMY_BINDS"] = {"a": {"url": "sqlite://", "pool": pool}}
+    db = SQLAlchemy(app, model_class=model_class)
+    assert db.engines["a"].pool is pool
+
+
 @unittest.mock.patch.object(SQLAlchemy, "_make_engine", autospec=True)
 def test_sqlite_memory_defaults(
     make_engine: unittest.mock.Mock, app: Flask, model_class: t.Any

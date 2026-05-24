@@ -371,7 +371,8 @@ class SQLAlchemy:
         for key, options in engine_options.items():
             self._make_metadata(key)
             options.setdefault("echo", echo)
-            options.setdefault("echo_pool", echo)
+            if "pool" not in options:
+                options.setdefault("echo_pool", echo)
             self._apply_driver_defaults(options, app)
             engines[key] = self._make_engine(key, options, app)
 
@@ -610,7 +611,8 @@ class SQLAlchemy:
 
         if url.drivername in {"sqlite", "sqlite+pysqlite"}:
             if url.database is None or url.database in {"", ":memory:"}:
-                options["poolclass"] = sa.pool.StaticPool
+                if "pool" not in options:
+                    options["poolclass"] = sa.pool.StaticPool
 
                 if "connect_args" not in options:
                     options["connect_args"] = {}
