@@ -156,6 +156,10 @@ def test_reflect(app: Flask) -> None:
     db.Table("post", sa.Column("id", sa.Integer, primary_key=True), bind_key="post")
     db.create_all()
 
+    # Dispose engines to close connections and avoid warning
+    for engine in db.engines.values():
+        engine.dispose()
+
     del app.extensions["sqlalchemy"]
     db = SQLAlchemy(app)
     assert not db.metadata.tables
