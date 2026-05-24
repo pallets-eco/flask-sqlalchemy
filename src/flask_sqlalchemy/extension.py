@@ -609,7 +609,11 @@ class SQLAlchemy:
         url = sa.engine.make_url(options["url"])
 
         if url.drivername in {"sqlite", "sqlite+pysqlite"}:
-            if url.database is None or url.database in {"", ":memory:"}:
+            if (
+                url.database is None
+                or url.database in {"", ":memory:"}
+                or (url.database == "file::memory:" and url.query.get("uri"))
+            ):
                 options["poolclass"] = sa.pool.StaticPool
 
                 if "connect_args" not in options:
