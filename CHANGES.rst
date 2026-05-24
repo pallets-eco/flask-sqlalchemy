@@ -2,6 +2,7 @@ Version 3.1.2
 -------------
 
 - Fix issue with calling ``repr()`` on ``SQLAlchemy`` instance with no default engine. :issue:`1295`
+- Ignore unclosed sqlite connection in tests. :issue:`1379`
 
 
 Version 3.1.1
