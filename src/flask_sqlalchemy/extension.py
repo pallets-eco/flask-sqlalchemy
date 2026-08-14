@@ -523,6 +523,10 @@ class SQLAlchemy:
 
         :param disable_autonaming: Turns off automatic tablename generation in models.
 
+        .. versionchanged:: 3.1.2
+            Dataclass bookkeeping is not copied from the user ``model_class``,
+            so ``MappedAsDataclass`` works with SQLAlchemy 2.1.
+
         .. versionchanged:: 3.1.0
             Added support for passing SQLAlchemy 2.x base class as model class.
             Added optional ``disable_autonaming`` parameter.
@@ -542,7 +546,14 @@ class SQLAlchemy:
                 f" Got: {model_class.__bases__}"
             )
         elif len(declarative_bases) == 1:
-            body = dict(model_class.__dict__)
+            # Drop dataclass bookkeeping copied from the user base. SQLAlchemy
+            # 2.1 treats a pre-existing ``__dataclass_fields__`` as mixing
+            # decorator and base-class dataclass styles and raises.
+            body = {
+                key: value
+                for key, value in model_class.__dict__.items()
+                if key not in {"__dataclass_fields__", "__dataclass_params__"}
+            }
             body["__fsa__"] = self
             mixin_classes = [BindMixin, NameMixin, Model]
             if disable_autonaming:

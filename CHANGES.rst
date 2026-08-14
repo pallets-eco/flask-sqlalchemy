@@ -2,6 +2,7 @@ Version 3.1.2
 -------------
 
 - Fix issue with calling ``repr()`` on ``SQLAlchemy`` instance with no default engine. :issue:`1295`
+- Allow ``MappedAsDataclass`` model bases on SQLAlchemy 2.1. :issue:`1420`
 
 
 Version 3.1.1
