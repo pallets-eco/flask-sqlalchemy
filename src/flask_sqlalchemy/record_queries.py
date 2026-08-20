@@ -23,7 +23,7 @@ def get_recorded_queries() -> list[_QueryInfo]:
     ``parameters``
         The parameters sent with the SQL statement.
     ``start_time`` / ``end_time``
-        Timing info about when the query started execution and when the results where
+        Timing info about when the query started execution and when the results were
         returned. Accuracy and value depends on the operating system.
     ``duration``
         The time the query took in seconds.
